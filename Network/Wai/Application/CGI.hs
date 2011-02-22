@@ -24,11 +24,6 @@ import System.Process
 
 import Network.Wai.Application.EnumLine as ENL
 
-{-
-let cgi = pathinfoToCGI src dst pathi
-                  in cgiApp (unpack svr) cgi req
--}
-
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
@@ -42,17 +37,6 @@ data CgiInfo = CgiInfo {
 
 gatewayInterface :: String
 gatewayInterface = "CGI/1.1"
-
-{-
-data CGI = CGI {
-    -- | A porgram path to be executed.
-    progPath    :: FilePath
-    -- | A script name.
-  , scriptName  :: String
-    -- | A path information.
-  , pathinfo    :: String
-  } deriving (Eq,Show)
--}
 
 ----------------------------------------------------------------
 
