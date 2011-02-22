@@ -125,7 +125,7 @@ lookupField x (((CIByteString _ l), val):kvs)
 lookupField _ [] = Nothing
 
 getPeerAddr :: SockAddr -> IO NumericAddress
-getPeerAddr sa = strip . fromJust . snd <$> getInfo sa
+getPeerAddr sa = strip . fromJust . fst <$> getInfo sa
   where
     getInfo = getNameInfo [NI_NUMERICHOST, NI_NUMERICSERV] True True
     strip x
