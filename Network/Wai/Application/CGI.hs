@@ -44,10 +44,13 @@ cgiApp :: CgiInfo -> Application
 cgiApp cgii req = do
     naddr <- liftIO . getPeerAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,_) <- liftIO . createProcess . proSpec $ naddr
---    liftIO $ run_ EB.consume >>= BL.hPut whdl
-    liftIO $ run_ EL.consume >>= mapM_ (BS.hPutStr whdl)
+    liftIO $ do
+        hSetEncoding rhdl latin1
+        hSetEncoding whdl latin1
+    EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
     liftIO . hClose $ whdl
-    return . ResponseEnumerator $ \build -> run_ $ EB.enumHandle 4096 rhdl $$
+    return . ResponseEnumerator $ \build ->
+        run_ $ EB.enumHandle 4096 rhdl $$
         ((>>= check) <$> parseHeader) >>= maybe (responseNG build)
                                                 (responseOK build)
   where
@@ -63,10 +66,10 @@ cgiApp cgii req = do
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)
                                                  (pathInfo req)
-    withBuilder = E.map fromByteString
+    toBuilder = E.map fromByteString
     emptyBody = EB.isolate 0
-    responseOK build (status,hs)  = withBuilder =$ build status hs
-    responseNG build = emptyBody =$ withBuilder =$ build status500 []
+    responseOK build (status,hs)  = toBuilder =$ build status hs
+    responseNG build = emptyBody =$ toBuilder =$ build status500 []
     check hs = lookupField "content-type" hs >> case lookupField "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
