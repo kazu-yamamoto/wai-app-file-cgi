@@ -8,8 +8,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char
-import Data.Enumerator (($$))
-import Data.Enumerator (Iteratee,run_)
+import Data.Enumerator (Iteratee,run_,($$))
 import qualified Data.Enumerator as E (map)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
