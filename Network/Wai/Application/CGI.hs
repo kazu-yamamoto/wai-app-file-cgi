@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.CGI (cgiApp, CgiInfo(..)) where
+module Network.Wai.Application.CGI (cgiApp, CgiRoute(..)) where
 
 import Blaze.ByteString.Builder.ByteString
 import Control.Applicative
@@ -28,7 +28,7 @@ import Network.Wai.Application.EnumLine as ENL
 type ENVVARS = [(String,String)]
 type NumericAddress = String
 
-data CgiInfo = CgiInfo {
+data CgiRoute = CgiRoute {
     cgiSrc :: ByteString
   , cgiDst :: FilePath
   , softwareName :: String
@@ -39,7 +39,7 @@ gatewayInterface = "CGI/1.1"
 
 ----------------------------------------------------------------
 
-cgiApp :: CgiInfo -> Application
+cgiApp :: CgiRoute -> Application
 cgiApp cgii req = do
     naddr <- liftIO . getPeerAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,_) <- liftIO . createProcess . proSpec $ naddr
