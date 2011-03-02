@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.CGI (cgiApp, CgiRoute(..)) where
+module Network.Wai.Application.CGI (cgiApp, CgiRoute(..), AppSpec(..)) where
 
 import Blaze.ByteString.Builder.ByteString
 import Control.Applicative
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
@@ -22,6 +23,7 @@ import System.IO
 import System.Process
 
 import Network.Wai.Application.EnumLine as ENL
+import Network.Wai.Application.Types
 
 ----------------------------------------------------------------
 
@@ -31,7 +33,6 @@ type NumericAddress = String
 data CgiRoute = CgiRoute {
     cgiSrc :: ByteString
   , cgiDst :: FilePath
-  , softwareName :: String
   }
 
 gatewayInterface :: String
@@ -39,14 +40,24 @@ gatewayInterface = "CGI/1.1"
 
 ----------------------------------------------------------------
 
-cgiApp :: CgiRoute -> Application
-cgiApp cgii req = do
+cgiApp :: AppSpec -> CgiRoute -> Application
+cgiApp spec cgii req = case method of
+    "GET"  -> cgiApp' False spec cgii req
+    "POST" -> cgiApp' True  spec cgii req
+    _      -> return $ responseLBS statusNotAllowed
+                                   [("Content-Type", "text/plain")]
+                                   "Method not allowed"
+  where
+    method = requestMethod req
+
+cgiApp' :: Bool -> AppSpec -> CgiRoute -> Application
+cgiApp' body spec cgii req = do
     naddr <- liftIO . getPeerAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,_) <- liftIO . createProcess . proSpec $ naddr
     liftIO $ do
         hSetEncoding rhdl latin1
         hSetEncoding whdl latin1
-    EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
+    when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
     liftIO . hClose $ whdl
     return . ResponseEnumerator $ \build ->
         run_ $ EB.enumHandle 4096 rhdl $$
@@ -56,7 +67,7 @@ cgiApp cgii req = do
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
-      , env = Just (makeEnv req naddr scriptName pathinfo (softwareName cgii))
+      , env = Just (makeEnv req naddr scriptName pathinfo (softwareName spec))
       , std_in = CreatePipe
       , std_out = CreatePipe
       , std_err = Inherit

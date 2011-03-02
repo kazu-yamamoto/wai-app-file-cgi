@@ -19,6 +19,7 @@ library
   Exposed-Modules:      Network.Wai.Application.File
                         Network.Wai.Application.CGI
   Other-Modules:        Network.Wai.Application.EnumLine
+                        Network.Wai.Application.Types
                         Network.Wai.Application.Utils
   Build-Depends:        base >= 4 && < 5, process,
                         network, transformers, filepath, directory,

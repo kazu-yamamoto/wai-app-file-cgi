@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.File (fileApp, FileRoute(..)) where
+module Network.Wai.Application.File (fileApp, FileRoute(..), AppSpec(..)) where
 
 import Control.Monad (mplus)
 import Control.Monad.IO.Class (liftIO)
@@ -15,16 +15,17 @@ import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeTy
 import System.Directory
 import System.FilePath
 
+import Network.Wai.Application.Types
+
 data FileRoute = FileRoute {
     fileSrc :: ByteString
   , fileDst :: FilePath
-  , indexFile :: FilePath
   }
 
 type Rsp = Iteratee ByteString IO (Maybe Response)
 
-fileApp :: FileRoute -> Application
-fileApp filei req = case method of
+fileApp :: AppSpec -> FileRoute -> Application
+fileApp spec filei req = case method of
     "GET"  -> processGET req file
     "HEAD" -> return $ responseLBS statusNotAllowed
                                    [("Content-Type", "text/plain")]
@@ -33,7 +34,7 @@ fileApp filei req = case method of
                                    [("Content-Type", "text/plain")]
                                    "Method not allowed"
   where
-    file = pathinfoToFile req filei
+    file = pathinfoToFile req filei (indexFile spec)
     method = requestMethod req
 
 runAny :: [Rsp] -> Iteratee ByteString IO Response
@@ -76,13 +77,12 @@ tryRedirect req file = do
 notFound :: Rsp
 notFound = return . Just $ responseLBS statusNotFound textPlain "Not found"
 
-pathinfoToFile :: Request -> FileRoute -> FilePath
-pathinfoToFile req filei= file
+pathinfoToFile :: Request -> FileRoute -> String -> FilePath
+pathinfoToFile req filei index = file
   where
     path = pathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    index = indexFile filei
     path' = dst </> (drop (BS.length src) $ BS.unpack path)
     file = if hasTrailingPathSeparator path'
            then path' </> index
