@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- % mighty mighty.conf mighty.route
+-- % runghc -i.. Test.hs
 
 module Test where
 
 import Data.ByteString.Lazy.Char8 as L
 import Network.HTTP.Enumerator
+import Network.Wai.Application.Date
 import Network.Wai.Application.Lang
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
@@ -15,6 +17,7 @@ tests :: [Test]
 tests = [
     testGroup "default" [
          testCase "lang" test_lang
+       , testCase "date" test_date
        ]
   , testGroup "mighty" [
          testCase "post" test_post
@@ -29,6 +32,16 @@ test_lang = do
     res @?= ans
   where
     ans = ["da","en-gb","en"]
+
+----------------------------------------------------------------
+
+test_date :: Assertion
+test_date = do
+    let Just x = parseDate date
+        res = utcToDate x
+    res @?= date
+  where
+    date = "Tue, 15 Nov 1994 08:12:31 GMT"
 
 ----------------------------------------------------------------
 
