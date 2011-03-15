@@ -22,7 +22,7 @@ library
                         Network.Wai.Application.Types
                         Network.Wai.Application.Utils
   Build-Depends:        base >= 4 && < 5, process,
-                        network, transformers, filepath, directory,
+                        network >=2.2 && <2.3, transformers, filepath, directory,
                         containers,
                         wai, enumerator, bytestring, blaze-builder,
                         wai-app-static
