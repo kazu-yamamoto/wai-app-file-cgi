@@ -59,10 +59,10 @@ cgiApp' body spec cgii req = do
         hSetEncoding whdl latin1
     when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
     liftIO . hClose $ whdl
-    return . ResponseEnumerator $ \build ->
+    (return . ResponseEnumerator) (\build ->
         run_ $ EB.enumHandle 4096 rhdl $$
         ((>>= check) <$> parseHeader) >>= maybe (responseNG build)
-                                                (responseOK build)
+                                                (responseOK build))
   where
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
