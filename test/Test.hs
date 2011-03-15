@@ -6,16 +6,29 @@ module Test where
 
 import Data.ByteString.Lazy.Char8 as L
 import Network.HTTP.Enumerator
+import Network.Wai.Application.Lang
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
 
 tests :: [Test]
 tests = [
-    testGroup "CGI" [
+    testGroup "default" [
+         testCase "lang" test_lang
+       ]
+  , testGroup "mighty" [
          testCase "post" test_post
        ]
   ]
+
+----------------------------------------------------------------
+
+test_lang :: Assertion
+test_lang = do
+    let res = parseLang "en-gb;q=0.8, en;q=0.7, da"
+    res @?= ans
+  where
+    ans = ["da","en-gb","en"]
 
 ----------------------------------------------------------------
 
