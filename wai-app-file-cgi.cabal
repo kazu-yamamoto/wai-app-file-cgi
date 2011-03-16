@@ -18,12 +18,16 @@ library
     GHC-Options:        -Wall
   Exposed-Modules:      Network.Wai.Application.File
                         Network.Wai.Application.CGI
-  Other-Modules:        Network.Wai.Application.EnumLine
+  Other-Modules:        Network.Wai.Application.Date
+                        Network.Wai.Application.EnumLine
+                        Network.Wai.Application.Lang
+                        Network.Wai.Application.Range
                         Network.Wai.Application.Types
                         Network.Wai.Application.Utils
-  Build-Depends:        base >= 4 && < 5, process,
-                        network >=2.2 && <2.3, transformers, filepath, directory,
-                        containers,
+  Build-Depends:        base >= 4 && < 5, process, haskell98,
+                        network >=2.2 && <2.3, transformers, time,
+                        filepath, directory, unix,
+                        containers, attoparsec,
                         wai, enumerator, bytestring, blaze-builder,
                         wai-app-static
 Source-Repository head

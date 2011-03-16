@@ -80,7 +80,7 @@ cgiApp' body spec cgii req = do
     emptyBody = EB.isolate 0
     responseOK build (status,hs)  = toBuilder =$ build status hs
     responseNG build = emptyBody =$ toBuilder =$ build status500 []
-    check hs = lookupField "content-type" hs >> case lookupField "status" hs of
+    check hs = lookupField fkContentType hs >> case lookupField "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
@@ -105,21 +105,15 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("QUERY_STRING",      BS.unpack . queryString $ req)
       ]
     headers = requestHeaders req
-    addLength = addEnv "CONTENT_LENGTH" $ lookupField "content-length" headers
-    addType   = addEnv "CONTENT_TYPE" $ lookupField "content-type" headers
-    addCookie = addEnv "HTTP_COOKIE" $ lookupField "cookie" headers
+    addLength = addEnv "CONTENT_LENGTH" $ lookupField fkContentLength headers
+    addType   = addEnv "CONTENT_TYPE" $ lookupField fkContentType headers
+    addCookie = addEnv "HTTP_COOKIE" $ lookupField fkCookie headers
 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
 
 ----------------------------------------------------------------
-
-lookupField :: ByteString -> RequestHeaders -> Maybe ByteString
-lookupField x (((CIByteString _ l), val):kvs)
-  | x == l       = Just val
-  | otherwise    = lookupField x kvs
-lookupField _ [] = Nothing
 
 getPeerAddr :: SockAddr -> IO NumericAddress
 getPeerAddr sa = strip . fromJust . fst <$> getInfo sa

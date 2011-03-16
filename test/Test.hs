@@ -5,11 +5,13 @@
 
 module Test where
 
-import Data.ByteString.Lazy.Char8 as L
+import qualified Data.ByteString.Lazy.Char8 as BL
 import Network.HTTP.Enumerator
 import Network.Wai.Application.Date
 import Network.Wai.Application.Lang
 import Network.Wai.Application.Range
+import Network.Wai.Application.Types
+import Network.Wai.Application.Utils
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
@@ -23,6 +25,10 @@ tests = [
        ]
   , testGroup "mighty" [
          testCase "post" test_post
+       , testCase "get" test_get
+       , testCase "get_ja" test_get_ja
+       , testCase "get_modified" test_get_ja
+       , testCase "test_get_modified" test_get_modified
        ]
   ]
 
@@ -72,14 +78,14 @@ test_range = do
 
 test_post :: Assertion
 test_post = do
-    rsp <- sendHttp url "foo bar.\nbaz!\n"
-    ans <- L.readFile "data/post"
+    rsp <- sendPOST url "foo bar.\nbaz!\n"
+    ans <- BL.readFile "data/post"
     rsp @?= ans
  where
     url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query"
 
-sendHttp :: String -> L.ByteString -> IO L.ByteString
-sendHttp url body = do
+sendPOST :: String -> BL.ByteString -> IO BL.ByteString
+sendPOST url body = do
     req' <- parseUrl url
     let req = req' {
             method = "POST"
@@ -88,7 +94,46 @@ sendHttp url body = do
     Response sc _ b <- httpLbsRedirect req
     if 200 <= sc && sc < 300
         then return b
-        else error "sendHttp"
+        else error "sendPOST"
+
+----------------------------------------------------------------
+
+test_get :: Assertion
+test_get = do
+    rsp <- simpleHttp url
+    ans <- BL.readFile "html/index.html"
+    rsp @?= ans
+ where
+    url = "http://localhost:8080/"
+
+----------------------------------------------------------------
+
+test_get_ja :: Assertion
+test_get_ja = do
+    Response _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
+    ans <- BL.readFile "html/ja/index.html.ja"
+    bdy @?= ans
+ where
+    url = "http://localhost:8080/ja/"
+
+----------------------------------------------------------------
+
+test_get_modified :: Assertion
+test_get_modified = do
+    Response _ hdr _ <- sendGET url []
+    let Just lm = lookupField fkLastModified hdr
+    Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
+    sc @?= 304
+ where
+    url = "http://localhost:8080/"
+
+----------------------------------------------------------------
+
+sendGET :: String -> Headers -> IO Response
+sendGET url hdr = do
+    req' <- parseUrl url
+    let req = req' { requestHeaders = hdr }
+    httpLbsRedirect req
 
 ----------------------------------------------------------------
 
