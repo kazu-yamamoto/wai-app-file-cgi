@@ -7,6 +7,7 @@ module Test where
 
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Network.HTTP.Enumerator
+import qualified Network.Wai as W
 import Network.Wai.Application.Date
 import Network.Wai.Application.Lang
 import Network.Wai.Application.Range
@@ -15,6 +16,7 @@ import Network.Wai.Application.Utils
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
+import Data.Enumerator (run_)
 
 tests :: [Test]
 tests = [
@@ -29,6 +31,10 @@ tests = [
        , testCase "get_ja" test_get_ja
        , testCase "get_modified" test_get_ja
        , testCase "test_get_modified" test_get_modified
+       , testCase "head" test_head
+       , testCase "head_ja" test_head_ja
+       , testCase "head_modified" test_head_ja
+       , testCase "test_head_modified" test_head_modified
        ]
   ]
 
@@ -91,7 +97,7 @@ sendPOST url body = do
             method = "POST"
           , requestBody = body
           }
-    Response sc _ b <- httpLbsRedirect req
+    Response sc _ b <- httpLbs req
     if 200 <= sc && sc < 300
         then return b
         else error "sendPOST"
@@ -133,7 +139,51 @@ sendGET :: String -> Headers -> IO Response
 sendGET url hdr = do
     req' <- parseUrl url
     let req = req' { requestHeaders = hdr }
-    httpLbsRedirect req
+    httpLbs req
+
+----------------------------------------------------------------
+
+test_head :: Assertion
+test_head = do
+    Response rc _ _ <- sendHEAD url []
+    rc @?= ok
+ where
+    url = "http://localhost:8080/"
+    ok = 200
+
+----------------------------------------------------------------
+
+test_head_ja :: Assertion
+test_head_ja = do
+    Response rc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
+    rc @?= ok
+ where
+    url = "http://localhost:8080/ja/"
+    ok = 200
+
+----------------------------------------------------------------
+
+test_head_modified :: Assertion
+test_head_modified = do
+    Response _ hdr _ <- sendHEAD url []
+    let Just lm = lookupField fkLastModified hdr
+    Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
+    sc @?= 304
+ where
+    url = "http://localhost:8080/"
+
+----------------------------------------------------------------
+
+sendHEAD :: String -> Headers -> IO Response
+sendHEAD url hdr = do
+    req' <- parseUrl url
+    let req = req' {
+            requestHeaders = hdr
+          , method = "HEAD"
+          }
+    run_ $ http req headIter
+  where
+    headIter (W.Status sc _) hs = return $ Response sc hs ""
 
 ----------------------------------------------------------------
 

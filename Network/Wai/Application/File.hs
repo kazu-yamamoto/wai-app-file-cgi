@@ -2,7 +2,6 @@
 
 module Network.Wai.Application.File (fileApp, FileRoute(..), AppSpec(..)) where
 
-import Blaze.ByteString.Builder.ByteString
 import Control.Monad (mplus)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
@@ -35,9 +34,7 @@ type Rsp = MaybeIter Response
 fileApp :: AppSpec -> FileRoute -> Application
 fileApp spec filei req = case method of
     "GET"  -> processGET req file ishtml
-    "HEAD" -> return $ responseLBS statusNotAllowed
-                                   textPlain
-                                   "Method not allowed"
+    "HEAD" -> processHEAD req file ishtml
     _      -> return $ responseLBS statusNotAllowed
                                    textPlain
                                    "Method not allowed"
@@ -45,6 +42,9 @@ fileApp spec filei req = case method of
     file = pathinfoToFile req filei (indexFile spec)
     ishtml = isHTML spec file
     method = requestMethod req
+
+textPlain :: ResponseHeaders
+textPlain = [("Content-Type", "text/plain")]
 
 ----------------------------------------------------------------
 
@@ -78,9 +78,6 @@ processGET req file ishtml = runAny [
 languages :: Request -> [String]
 languages req = maybe [] parseLang $ lookupRequestField fkAcceptLanguage req
 
-textPlain :: ResponseHeaders
-textPlain = [("Content-Type", "text/plain")]
-
 tryGet :: Request -> FilePath -> Bool -> [String] -> Rsp
 tryGet req file True langs = runAnyMaybe $ map (tryGetFile req file) langs
 tryGet req file _    _     = tryGetFile req file ""
@@ -88,29 +85,26 @@ tryGet req file _    _     = tryGetFile req file ""
 tryGetFile :: Request -> FilePath -> String -> Rsp
 tryGetFile req file lang = do
     let file' = if null lang then file else file ++ lang
-    liftIO $ putStrLn file'
+    liftIO $ putStrLn $ "GET " ++ file'
     (liftIO $ fileInfo file') |>| \(size, mtime) -> do
-      let ct = mimeType file -- FixME check me
-          modified = utcToDate mtime -- FixME
+      let hdr = getFileHeader file mtime
           mst = ifmodified req size mtime
             ||| ifunmodified req size mtime
             ||| ifrange req size mtime
             ||| unconditional req size mtime
-          hdr = okHeader ct modified
-          emptyBody = fromByteString ""
       case mst of
         Just st
           -- FIXME: size modified
           | st == statusOK -> return . Just $ ResponseFile statusOK hdr file'
           -- FIXME skip len
           | st == statusPartialContent -> undefined
-          | otherwise -> return . Just $ ResponseBuilder st hdr emptyBody
-        _       -> return Nothing  -- never reached FIXME
+          | otherwise -> return . Just $ responseLBS st hdr ""
+        _       -> return Nothing -- never reached
 
-okHeader :: ByteString -> ByteString -> ResponseHeaders
-okHeader ct modified = [
-    ("Content-Type", ct)
-  , ("Last-Modified", modified)
+getFileHeader :: FilePath -> UTCTime -> ResponseHeaders
+getFileHeader file mtime = [
+    ("Content-Type", mimeType file)
+  , ("Last-Modified", utcToDate mtime)
   ]
 
 ifmodified :: Request -> Integer -> UTCTime -> Maybe Status
@@ -155,6 +149,32 @@ tryRedirect req file langs = do
             ,("Location", BS.pack $ file ++ "/")]
             "Moved permanently"
        else return Nothing
+
+----------------------------------------------------------------
+
+processHEAD :: Request -> FilePath -> Bool -> Iteratee ByteString IO Response
+processHEAD req file ishtml = runAny [
+    tryHead req file ishtml langs
+  , tryRedirect req file langs
+  , notFound ] -- always Just
+  where
+    langs = map ('.':) (languages req) ++ ["",".en"]
+
+tryHead :: Request -> FilePath -> Bool -> [String] -> Rsp
+tryHead req file True langs = runAnyMaybe $ map (tryHeadFile req file) langs
+tryHead req file _    _     = tryHeadFile req file ""
+
+tryHeadFile :: Request -> FilePath -> String -> Rsp
+tryHeadFile req file lang = do
+    let file' = if null lang then file else file ++ lang
+    liftIO $ putStrLn $ "HEAD " ++ file'
+    (liftIO $ fileInfo file') |>| \(size, mtime) -> do
+      let hdr = getFileHeader file mtime
+          mst = ifmodified req size mtime
+            ||| Just statusOK
+      case mst of
+        Just st -> return . Just $ responseLBS st hdr ""
+        _       -> return Nothing -- never reached
 
 ----------------------------------------------------------------
 
