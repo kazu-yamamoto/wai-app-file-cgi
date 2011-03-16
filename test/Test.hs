@@ -28,10 +28,12 @@ tests = [
   , testGroup "mighty" [
          testCase "post" test_post
        , testCase "get" test_get
+       , testCase "get2" test_get2
        , testCase "get_ja" test_get_ja
        , testCase "get_modified" test_get_ja
        , testCase "test_get_modified" test_get_modified
        , testCase "head" test_head
+       , testCase "head2" test_head2
        , testCase "head_ja" test_head_ja
        , testCase "head_modified" test_head_ja
        , testCase "test_head_modified" test_head_modified
@@ -87,7 +89,7 @@ test_post = do
     rsp <- sendPOST url "foo bar.\nbaz!\n"
     ans <- BL.readFile "data/post"
     rsp @?= ans
- where
+  where
     url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query"
 
 sendPOST :: String -> BL.ByteString -> IO BL.ByteString
@@ -109,8 +111,18 @@ test_get = do
     rsp <- simpleHttp url
     ans <- BL.readFile "html/index.html"
     rsp @?= ans
- where
+  where
     url = "http://localhost:8080/"
+
+----------------------------------------------------------------
+
+test_get2 :: Assertion
+test_get2 = do
+    Response rc _ _ <- parseUrl url >>= httpLbs
+    rc @?= notfound
+  where
+    url = "http://localhost:8080/dummy"
+    notfound = 404
 
 ----------------------------------------------------------------
 
@@ -119,7 +131,7 @@ test_get_ja = do
     Response _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
     ans <- BL.readFile "html/ja/index.html.ja"
     bdy @?= ans
- where
+  where
     url = "http://localhost:8080/ja/"
 
 ----------------------------------------------------------------
@@ -130,7 +142,7 @@ test_get_modified = do
     let Just lm = lookupField fkLastModified hdr
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
     sc @?= 304
- where
+  where
     url = "http://localhost:8080/"
 
 ----------------------------------------------------------------
@@ -147,9 +159,19 @@ test_head :: Assertion
 test_head = do
     Response rc _ _ <- sendHEAD url []
     rc @?= ok
- where
+  where
     url = "http://localhost:8080/"
     ok = 200
+
+----------------------------------------------------------------
+
+test_head2 :: Assertion
+test_head2 = do
+    Response rc _ _ <- sendHEAD url []
+    rc @?= notfound
+  where
+    url = "http://localhost:8080/dummy"
+    notfound = 404
 
 ----------------------------------------------------------------
 
@@ -157,7 +179,7 @@ test_head_ja :: Assertion
 test_head_ja = do
     Response rc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
     rc @?= ok
- where
+  where
     url = "http://localhost:8080/ja/"
     ok = 200
 
@@ -169,7 +191,7 @@ test_head_modified = do
     let Just lm = lookupField fkLastModified hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
     sc @?= 304
- where
+  where
     url = "http://localhost:8080/"
 
 ----------------------------------------------------------------
