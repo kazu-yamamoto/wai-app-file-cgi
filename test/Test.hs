@@ -34,8 +34,8 @@ tests = [
        , testCase "head" test_head
        , testCase "head2" test_head2
        , testCase "head_ja" test_head_ja
-       , testCase "head_modified" test_head_ja
-       , testCase "test_head_modified" test_head_modified
+       , testCase "head_modified" test_head_modified
+       , testCase "redirect" test_redirect
        ]
   ]
 
@@ -205,6 +205,16 @@ sendHEAD url hdr = do
     run_ $ http req headIter
   where
     headIter (W.Status sc _) hs = return $ Response sc hs ""
+
+----------------------------------------------------------------
+
+test_redirect :: Assertion
+test_redirect = do
+    rsp <- simpleHttp url
+    ans <- BL.readFile "html/redirect/index.html"
+    rsp @?= ans
+  where
+    url = "http://localhost:8080/redirect"
 
 ----------------------------------------------------------------
 

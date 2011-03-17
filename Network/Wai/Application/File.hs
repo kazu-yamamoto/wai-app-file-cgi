@@ -16,21 +16,22 @@ import Network.Wai.Application.Types
 
 fileApp :: AppSpec -> FileRoute -> Application
 fileApp spec filei req = case method of
-    "GET"  -> processGET req file ishtml
-    "HEAD" -> processHEAD req file ishtml
+    "GET"  -> processGET  req file ishtml rfile
+    "HEAD" -> processHEAD req file ishtml rfile
     _      -> return $ responseLBS statusNotAllowed textPlain "Method not allowed"
   where
-    file = pathinfoToFile req filei (indexFile spec)
-    -- FIXME redirect information should be generated here
-    ishtml = isHTML spec file
     method = requestMethod req
+    path = pathinfoToFilePath req filei
+    file = addIndex spec path
+    ishtml = isHTML spec file
+    rfile = redirectPath spec path
 
 ----------------------------------------------------------------
 
-processGET :: Request -> FilePath -> Bool -> Iteratee ByteString IO Response
-processGET req file ishtml = runAny [
+processGET :: Request -> FilePath -> Bool -> (Maybe FilePath) -> Iteratee ByteString IO Response
+processGET req file ishtml rfile = runAny [
     tryGet req file ishtml langs
-  , tryRedirect req file langs
+  , tryRedirect req rfile langs
   , notFound
   ]
   where
@@ -60,10 +61,10 @@ tryGetFile req file lang = do
 
 ----------------------------------------------------------------
 
-processHEAD :: Request -> FilePath -> Bool -> Iteratee ByteString IO Response
-processHEAD req file ishtml = runAny [
+processHEAD :: Request -> FilePath -> Bool -> (Maybe FilePath) -> Iteratee ByteString IO Response
+processHEAD req file ishtml rfile = runAny [
     tryHead req file ishtml langs
-  , tryRedirect req file langs
+  , tryRedirect req rfile langs
   , notFound ] -- always Just
   where
     langs = map ('.':) (languages req) ++ ["",".en"]
@@ -86,25 +87,27 @@ tryHeadFile req file lang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: Request -> FilePath -> [String] -> Rsp
-tryRedirect req file langs =
-    redirectURI file >>| \rfile -> runAnyMaybe $ map (tryRedirectFile req rfile file) langs
+tryRedirect  :: Request -> (Maybe FilePath) -> [String] -> Rsp
+tryRedirect _   Nothing     _     = nothing
+tryRedirect req (Just file) langs =
+    runAnyMaybe $ map (tryRedirectFile req file) langs
 
-tryRedirectFile :: Request -> FilePath -> FilePath -> String -> Rsp
-tryRedirectFile req rpath file lang = do
+tryRedirectFile :: Request -> FilePath -> String -> Rsp
+tryRedirectFile req file lang = do
     let file' = file ++ lang
     minfo <- liftIO $ fileInfo file'
     case minfo of
       Nothing -> nothing
       Just _  -> just $ responseLBS statusMovedPermanently hdr ""
   where
-    hdr = [("Location", toURL rpath)]
+    hdr = [("Location", redirectURL)]
     (+++) = BS.append
-    toURL path = "http://"
-             +++ serverName req
-             +++ ":"
-             +++ (BS.pack . show . serverPort) req
-             +++ BS.pack path
+    redirectURL = "http://"
+              +++ serverName req
+              +++ ":"
+              +++ (BS.pack . show . serverPort) req
+              +++ pathInfo req
+              +++ "/"
 
 ----------------------------------------------------------------
 

@@ -62,19 +62,20 @@ range size rng = case skipAndSize rng size of
 
 ----------------------------------------------------------------
 
-pathinfoToFile :: Request -> FileRoute -> String -> FilePath
-pathinfoToFile req filei index = file
+pathinfoToFilePath :: Request -> FileRoute -> FilePath
+pathinfoToFilePath req filei = path'
   where
     path = pathInfo req
     src = fileSrc filei
     dst = fileDst filei
     path' = dst </> (drop (BS.length src) $ BS.unpack path)
-    file = if hasTrailingPathSeparator path'
-           then path' </> index
-           else path'
 
-redirectURI :: FilePath -> Maybe FilePath
-redirectURI path =
-   if hasTrailingPathSeparator path
-      then Nothing
-      else Just $ path ++ "/"
+addIndex :: AppSpec -> FilePath -> FilePath
+addIndex spec path
+  | hasTrailingPathSeparator path = path </> indexFile spec
+  | otherwise                     = path
+
+redirectPath :: AppSpec -> FilePath -> Maybe FilePath
+redirectPath spec path
+  | hasTrailingPathSeparator path = Nothing
+  | otherwise                     = Just (path </> indexFile spec)
