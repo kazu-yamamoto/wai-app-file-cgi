@@ -2,17 +2,23 @@ module Network.Wai.Application.MaybeIter where
 
 import Control.Monad (mplus)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BL (ByteString)
 import Data.Enumerator (Iteratee)
 import Network.Wai
 
 ----------------------------------------------------------------
 
 type MaybeIter a = Iteratee ByteString IO (Maybe a)
-type Rsp = MaybeIter Response
+type MRsp = MaybeIter Ctl
+
+data CtlBody = CtlNone | CtlBody BL.ByteString | CtlFile FilePath Integer
+data Ctl = Ctl Status ResponseHeaders CtlBody
+
+type Rsp = Iteratee ByteString IO Ctl
 
 ----------------------------------------------------------------
 
-runAny :: [Rsp] -> Iteratee ByteString IO Response
+runAny :: [MRsp] -> Iteratee ByteString IO Ctl
 runAny [] = error "runAny"
 runAny (a:as) = do
     mrsp <- a
@@ -20,7 +26,7 @@ runAny (a:as) = do
       Nothing  -> runAny as
       Just rsp -> return rsp
 
-runAnyMaybe :: [Rsp] -> Rsp
+runAnyMaybe :: [MRsp] -> MRsp
 runAnyMaybe []     = nothing
 runAnyMaybe (a:as) = do
     mx <- a

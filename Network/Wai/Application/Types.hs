@@ -6,7 +6,7 @@ import Data.ByteString (ByteString)
 import Network.Wai
 
 data AppSpec = AppSpec {
-    softwareName :: String
+    softwareName :: ByteString
   , indexFile :: FilePath
   , isHTML :: FilePath -> Bool
   }

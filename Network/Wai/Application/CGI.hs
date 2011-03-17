@@ -40,7 +40,7 @@ cgiApp :: AppSpec -> CgiRoute -> Application
 cgiApp spec cgii req = case method of
     "GET"  -> cgiApp' False spec cgii req
     "POST" -> cgiApp' True  spec cgii req
-    _      -> return $ responseLBS statusNotAllowed textPlain "Method not allowed"
+    _      -> return $ responseLBS statusNotAllowed textPlain "Method Not Allowed"
   where
     method = requestMethod req
 
@@ -83,7 +83,7 @@ cgiApp' body spec cgii req = do
 
 ----------------------------------------------------------------
 
-makeEnv :: Request -> NumericAddress -> String -> String -> String -> ENVVARS
+makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
 makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ baseEnv
   where
     baseEnv = [
@@ -94,7 +94,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("SERVER_PORT",       show . serverPort $ req)
       , ("REMOTE_ADDR",       naddr)
       , ("SERVER_PROTOCOL",   "HTTP/" ++ (BS.unpack . httpVersion $ req))
-      , ("SERVER_SOFTWARE",   sname)
+      , ("SERVER_SOFTWARE",   BS.unpack sname)
       , ("PATH_INFO",         pathinfo)
       , ("QUERY_STRING",      BS.unpack . queryString $ req)
       ]
