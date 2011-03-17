@@ -24,16 +24,12 @@ import System.Process
 
 import Network.Wai.Application.EnumLine as ENL
 import Network.Wai.Application.Types
+import Network.Wai.Application.Header
 
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
 type NumericAddress = String
-
-data CgiRoute = CgiRoute {
-    cgiSrc :: ByteString
-  , cgiDst :: FilePath
-  }
 
 gatewayInterface :: String
 gatewayInterface = "CGI/1.1"
@@ -44,9 +40,7 @@ cgiApp :: AppSpec -> CgiRoute -> Application
 cgiApp spec cgii req = case method of
     "GET"  -> cgiApp' False spec cgii req
     "POST" -> cgiApp' True  spec cgii req
-    _      -> return $ responseLBS statusNotAllowed
-                                   [("Content-Type", "text/plain")]
-                                   "Method not allowed"
+    _      -> return $ responseLBS statusNotAllowed textPlain "Method not allowed"
   where
     method = requestMethod req
 

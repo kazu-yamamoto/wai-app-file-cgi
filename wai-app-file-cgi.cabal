@@ -20,7 +20,10 @@ library
                         Network.Wai.Application.CGI
   Other-Modules:        Network.Wai.Application.Date
                         Network.Wai.Application.EnumLine
+                        Network.Wai.Application.FileInfo
+                        Network.Wai.Application.Header
                         Network.Wai.Application.Lang
+                        Network.Wai.Application.MaybeIter
                         Network.Wai.Application.Range
                         Network.Wai.Application.Types
                         Network.Wai.Application.Utils

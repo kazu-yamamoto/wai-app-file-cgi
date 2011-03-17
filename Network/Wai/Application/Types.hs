@@ -11,6 +11,18 @@ data AppSpec = AppSpec {
   , isHTML :: FilePath -> Bool
   }
 
+data FileRoute = FileRoute {
+    fileSrc :: ByteString
+  , fileDst :: FilePath
+  }
+
+data CgiRoute = CgiRoute {
+    cgiSrc :: ByteString
+  , cgiDst :: FilePath
+  }
+
+---------------------------------------------------------------
+
 statusNotModified :: Status
 statusNotModified = Status 304 "Not Modified"
 
@@ -20,32 +32,5 @@ statusPreconditionFailed = Status 412 "Precondition Failed"
 statusRequestedRangeNotSatisfiable :: Status
 statusRequestedRangeNotSatisfiable = Status 416 "Requested Range Not Satisfiable"
 
-type FieldKey = ByteString
-
-fkAcceptLanguage :: ByteString
-fkAcceptLanguage = "accept-language"
-
-fkRange :: FieldKey
-fkRange = "range"
-
-fkIfRange :: FieldKey
-fkIfRange = "if-range"
-
-fkLastModified :: FieldKey
-fkLastModified = "last-modified"
-
-fkIfModifiedSince :: FieldKey
-fkIfModifiedSince = "if-modified-since"
-
-fkIfUnmodifiedSince :: FieldKey
-fkIfUnmodifiedSince = "if-unmodified-since"
-
-fkContentLength :: FieldKey
-fkContentLength = "content-length"
-
-fkContentType :: FieldKey
-fkContentType = "content-type"
-
-fkCookie :: FieldKey
-fkCookie = "cookie"
-
+statusNotImplemented :: Status
+statusNotImplemented = Status 501 "Not Implemented"

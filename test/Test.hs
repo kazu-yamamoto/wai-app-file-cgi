@@ -11,8 +11,7 @@ import qualified Network.Wai as W
 import Network.Wai.Application.Date
 import Network.Wai.Application.Lang
 import Network.Wai.Application.Range
-import Network.Wai.Application.Types
-import Network.Wai.Application.Utils
+import Network.Wai.Application.Header
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
