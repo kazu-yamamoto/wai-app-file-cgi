@@ -8,10 +8,10 @@ module Test where
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Network.HTTP.Enumerator
 import qualified Network.Wai as W
-import Network.Wai.Application.Date
-import Network.Wai.Application.Lang
-import Network.Wai.Application.Range
-import Network.Wai.Application.Header
+import Network.Wai.Application.Classic.Date
+import Network.Wai.Application.Classic.Lang
+import Network.Wai.Application.Classic.Range
+import Network.Wai.Application.Classic.Header
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
