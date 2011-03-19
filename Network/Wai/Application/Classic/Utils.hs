@@ -1,22 +1,17 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Network.Wai.Application.Classic.Utils where
 
-import Data.ByteString.Lazy.Char8 ()
-import Data.Enumerator (($$))
-import Data.Enumerator (Iteratee,Enumeratee,joinI)
+import Control.Applicative
+import Network.Socket (getNameInfo, SockAddr, NameInfoFlag(..))
+import Data.Maybe
+import Data.List (isPrefixOf)
 
-----------------------------------------------------------------
+type NumericAddress = String
 
-infixr 0 =$
-
-(=$) :: Monad m => Enumeratee ao ai m b -> Iteratee ai m b -> Iteratee ao m b
-ee =$ ie = joinI $ ee $$ ie
-
-----------------------------------------------------------------
-
-infixr 6 $.
-
-($.) :: (a -> b) -> a -> b
-($.) = ($)
+getPeerAddr :: SockAddr -> IO NumericAddress
+getPeerAddr sa = strip . fromJust . fst <$> getInfo sa
+  where
+    getInfo = getNameInfo [NI_NUMERICHOST, NI_NUMERICSERV] True True
+    strip x
+      | "::ffff:" `isPrefixOf` x = drop 7 x
+      | otherwise                = x
 

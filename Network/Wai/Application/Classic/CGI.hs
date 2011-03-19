@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.CGI (
-    cgiApp, getPeerAddr, NumericAddress
+    cgiApp
   ) where
 
 import Blaze.ByteString.Builder.ByteString
@@ -11,28 +11,25 @@ import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char
-import Data.Enumerator (Iteratee,run_,($$))
+import Data.Enumerator (Iteratee,Enumeratee,run_,($$),joinI)
 import qualified Data.Enumerator as E (map)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
 import Data.List (isPrefixOf)
 import Data.Maybe
-import Network.Socket (getNameInfo, SockAddr, NameInfoFlag(..))
 import Network.Wai
+import Network.Wai.Application.Classic.EnumLine as ENL
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Header
+import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import System.FilePath
 import System.IO
 import System.Process
 
-import Network.Wai.Application.Classic.EnumLine as ENL
-import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Header
-
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
-type NumericAddress = String
 
 gatewayInterface :: String
 gatewayInterface = "CGI/1.1"
@@ -113,16 +110,6 @@ addEnv key (Just val) envs = (key,BS.unpack val) : envs
 
 ----------------------------------------------------------------
 
-getPeerAddr :: SockAddr -> IO NumericAddress
-getPeerAddr sa = strip . fromJust . fst <$> getInfo sa
-  where
-    getInfo = getNameInfo [NI_NUMERICHOST, NI_NUMERICSERV] True True
-    strip x
-      | "::ffff:" `isPrefixOf` x = drop 7 x
-      | otherwise                = x
-
-----------------------------------------------------------------
-
 parseHeader :: Iteratee ByteString IO (Maybe RequestHeaders)
 parseHeader = takeHeader >>= maybe (return Nothing)
                                    (return . Just . map parseField)
@@ -148,3 +135,17 @@ pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
     (prog',pathinfo) = break (== '/') path'
     prog = dst </> prog'
     scriptName = src' </> prog'
+
+----------------------------------------------------------------
+
+infixr 0 =$
+
+(=$) :: Monad m => Enumeratee ao ai m b -> Iteratee ai m b -> Iteratee ao m b
+ee =$ ie = joinI $ ee $$ ie
+
+----------------------------------------------------------------
+
+infixr 6 $.
+
+($.) :: (a -> b) -> a -> b
+($.) = ($)
