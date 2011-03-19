@@ -5,8 +5,15 @@ import Network.Socket (getNameInfo, SockAddr, NameInfoFlag(..))
 import Data.Maybe
 import Data.List (isPrefixOf)
 
+{-|
+  A type for IP address in numeric string representation.
+-}
 type NumericAddress = String
 
+{-|
+  Convert 'SockAddr' to 'NumericAddress'. If the address is
+  an IPv4-embedded IPv6 address, the IPv4 is extracted.
+-}
 getPeerAddr :: SockAddr -> IO NumericAddress
 getPeerAddr sa = strip . fromJust . fst <$> getInfo sa
   where

@@ -36,6 +36,13 @@ gatewayInterface = "CGI/1.1"
 
 ----------------------------------------------------------------
 
+{-|
+  Handle GET and POST for CGI.
+
+The program to link this library must ignore SIGCHLD as follow:
+
+>   installHandler sigCHLD Ignore Nothing
+-}
 cgiApp :: AppSpec -> CgiRoute -> Application
 cgiApp spec cgii req = case method of
     "GET"  -> cgiApp' False spec cgii req
