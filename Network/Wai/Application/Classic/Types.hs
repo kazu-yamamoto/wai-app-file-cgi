@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-module Network.Wai.Application.Types where
+module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
@@ -30,17 +28,3 @@ data RspSpec = RspSpec {
   }
 
 data RspBody = NoBody | BodyLBS BL.ByteString | BodyFile FilePath Integer
-
----------------------------------------------------------------
-
-statusNotModified :: Status
-statusNotModified = Status 304 "Not Modified"
-
-statusPreconditionFailed :: Status
-statusPreconditionFailed = Status 412 "Precondition Failed"
-
-statusRequestedRangeNotSatisfiable :: Status
-statusRequestedRangeNotSatisfiable = Status 416 "Requested Range Not Satisfiable"
-
-statusNotImplemented :: Status
-statusNotImplemented = Status 501 "Not Implemented"

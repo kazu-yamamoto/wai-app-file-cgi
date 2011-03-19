@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Header where
+module Network.Wai.Application.Classic.Header where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 ()

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Range (skipAndSize) where
+module Network.Wai.Application.Classic.Range (skipAndSize) where
 
 import Control.Applicative hiding (many,optional)
 import Data.Attoparsec.Char8 hiding (take)

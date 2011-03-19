@@ -1,20 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.File (
+module Network.Wai.Application.Classic.File (
     fileApp
-  , module Network.Wai.Application.Types
-  , module Network.Wai.Application.Header
   ) where
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL ()
 import Network.Wai
-import Network.Wai.Application.Field
-import Network.Wai.Application.FileInfo
-import Network.Wai.Application.Header
-import Network.Wai.Application.MaybeIter
-import Network.Wai.Application.Types
+import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.FileInfo
+import Network.Wai.Application.Classic.MaybeIter
+import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 

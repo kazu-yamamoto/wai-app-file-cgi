@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Utils where
+module Network.Wai.Application.Classic.Utils where
 
 import Data.ByteString.Lazy.Char8 ()
 import Data.Enumerator (($$))

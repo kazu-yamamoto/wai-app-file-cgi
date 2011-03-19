@@ -1,0 +1,10 @@
+module Network.Wai.Application.Classic (
+    module Network.Wai.Application.Classic.CGI
+  , module Network.Wai.Application.Classic.File
+  , module Network.Wai.Application.Classic.Types
+  ) where
+
+import Network.Wai.Application.Classic.CGI
+import Network.Wai.Application.Classic.File
+import Network.Wai.Application.Classic.Types
+

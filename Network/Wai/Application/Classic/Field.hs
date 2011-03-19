@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Field where
+module Network.Wai.Application.Classic.Field where
 
 import Control.Monad (mplus)
 import Data.List
 import qualified Data.Map as M (lookup)
 import Data.Time
-import Network.Wai.Application.Date
-import Network.Wai.Application.Lang
-import Network.Wai.Application.Header
+import Network.Wai.Application.Classic.Date
+import Network.Wai.Application.Classic.Lang
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 ()

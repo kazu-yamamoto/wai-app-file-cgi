@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Lang (parseLang) where
+module Network.Wai.Application.Classic.Lang (parseLang) where
 
 import Control.Applicative hiding (many, optional)
 import Data.Attoparsec.Char8 hiding (take)

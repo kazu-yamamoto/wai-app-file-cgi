@@ -1,4 +1,4 @@
-module Network.Wai.Application.Date (parseDate, utcToDate) where
+module Network.Wai.Application.Classic.Date (parseDate, utcToDate) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS

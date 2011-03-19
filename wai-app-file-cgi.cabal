@@ -16,18 +16,19 @@ library
     GHC-Options:        -Wall -fno-warn-unused-do-bind
   else
     GHC-Options:        -Wall
-  Exposed-Modules:      Network.Wai.Application.File
-                        Network.Wai.Application.CGI
-  Other-Modules:        Network.Wai.Application.Date
-                        Network.Wai.Application.EnumLine
-                        Network.Wai.Application.Field
-                        Network.Wai.Application.FileInfo
-                        Network.Wai.Application.Header
-                        Network.Wai.Application.Lang
-                        Network.Wai.Application.MaybeIter
-                        Network.Wai.Application.Range
-                        Network.Wai.Application.Types
-                        Network.Wai.Application.Utils
+  Exposed-Modules:      Network.Wai.Application.Classic
+                        Network.Wai.Application.Classic.CGI
+                        Network.Wai.Application.Classic.File
+                        Network.Wai.Application.Classic.Types
+  Other-Modules:        Network.Wai.Application.Classic.Date
+                        Network.Wai.Application.Classic.EnumLine
+                        Network.Wai.Application.Classic.Field
+                        Network.Wai.Application.Classic.FileInfo
+                        Network.Wai.Application.Classic.Header
+                        Network.Wai.Application.Classic.Lang
+                        Network.Wai.Application.Classic.MaybeIter
+                        Network.Wai.Application.Classic.Range
+                        Network.Wai.Application.Classic.Utils
   Build-Depends:        base >= 4 && < 5, process, haskell98,
                         network >=2.2 && <2.3, transformers, time,
                         filepath, directory, unix,

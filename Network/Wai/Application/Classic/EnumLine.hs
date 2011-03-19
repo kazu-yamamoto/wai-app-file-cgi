@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.EnumLine (head) where
+module Network.Wai.Application.Classic.EnumLine (head) where
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as S () -- for OverloadedStrings

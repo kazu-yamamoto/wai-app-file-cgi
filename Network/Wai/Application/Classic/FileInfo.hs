@@ -1,14 +1,15 @@
-module Network.Wai.Application.FileInfo where
+module Network.Wai.Application.Classic.FileInfo where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Time
 import Data.Time.Clock.POSIX
 import Network.Wai
-import Network.Wai.Application.Header
-import Network.Wai.Application.Field
-import Network.Wai.Application.Range
-import Network.Wai.Application.Types
+import Network.Wai.Application.Classic.Header
+import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Range
+import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Status
 import System.Directory
 import System.FilePath
 import System.Posix.Files

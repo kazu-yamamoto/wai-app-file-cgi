@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.CGI (
+module Network.Wai.Application.Classic.CGI (
     cgiApp, getPeerAddr, NumericAddress
-  , module Network.Wai.Application.Types
-  , module Network.Wai.Application.Field
   ) where
 
 import Blaze.ByteString.Builder.ByteString
@@ -21,15 +19,15 @@ import Data.List (isPrefixOf)
 import Data.Maybe
 import Network.Socket (getNameInfo, SockAddr, NameInfoFlag(..))
 import Network.Wai
-import Network.Wai.Application.Field
-import Network.Wai.Application.Utils
+import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Utils
 import System.FilePath
 import System.IO
 import System.Process
 
-import Network.Wai.Application.EnumLine as ENL
-import Network.Wai.Application.Types
-import Network.Wai.Application.Header
+import Network.Wai.Application.Classic.EnumLine as ENL
+import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Header
 
 ----------------------------------------------------------------
 
