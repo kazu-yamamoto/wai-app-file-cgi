@@ -1,11 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.File (fileApp, FileRoute(..), AppSpec(..)) where
+module Network.Wai.Application.File (
+    fileApp
+  , module Network.Wai.Application.Types
+  , module Network.Wai.Application.Header
+  ) where
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL ()
 import Network.Wai
+import Network.Wai.Application.Field
 import Network.Wai.Application.FileInfo
 import Network.Wai.Application.Header
 import Network.Wai.Application.MaybeIter
@@ -15,15 +20,16 @@ import Network.Wai.Application.Types
 
 fileApp :: AppSpec -> FileRoute -> Application
 fileApp spec filei req = do
-    Ctl st hdr body <- case method of
+    rspspec@(RspSpec st hdr body) <- case method of
         "GET"  -> processGET  req file ishtml rfile
         "HEAD" -> processHEAD req file ishtml rfile
         _      -> return $ notAllowed
+    liftIO $ logger spec req rspspec
     let hdr' = addHeader hdr
     case body of
-        CtlNone           -> return $ responseLBS st hdr' ""
-        CtlBody bd        -> return $ responseLBS st hdr' bd
-        CtlFile afile _   -> return $ ResponseFile st hdr' afile -- FIXME size
+        NoBody           -> return $ responseLBS st hdr' ""
+        BodyLBS bd       -> return $ responseLBS st hdr' bd
+        BodyFile afile _ -> return $ ResponseFile st hdr' afile -- FIXME size
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
@@ -58,10 +64,10 @@ tryGetFile req file lang = do
             ||| unconditional req size mtime
       case mst of
         Just st
-          | st == statusOK -> just $ Ctl statusOK hdr (CtlFile file' size)
+          | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' size)
           -- FIXME skip len
           | st == statusPartialContent -> undefined
-          | otherwise      -> just $ Ctl st hdr CtlNone
+          | otherwise      -> just $ RspSpec st hdr NoBody
         _                  -> nothing -- never reached
 
 ----------------------------------------------------------------
@@ -87,7 +93,7 @@ tryHeadFile req file lang = do
           mst = ifmodified req size mtime
             ||| Just statusOK
       case mst of
-        Just st -> just $ Ctl st hdr CtlNone
+        Just st -> just $ RspSpec st hdr NoBody
         _       -> nothing -- never reached
 
 ----------------------------------------------------------------
@@ -103,7 +109,7 @@ tryRedirectFile req file lang = do
     minfo <- liftIO $ fileInfo file'
     case minfo of
       Nothing -> nothing
-      Just _  -> just $ Ctl statusMovedPermanently hdr CtlNone
+      Just _  -> just $ RspSpec statusMovedPermanently hdr NoBody
   where
     hdr = [("Location", redirectURL)]
     (+++) = BS.append
@@ -116,8 +122,8 @@ tryRedirectFile req file lang = do
 
 ----------------------------------------------------------------
 
-notFound :: Ctl
-notFound = Ctl statusNotFound textPlain (CtlBody "Not Found")
+notFound :: RspSpec
+notFound = RspSpec statusNotFound textPlain (BodyLBS "Not Found")
 
-notAllowed :: Ctl
-notAllowed = Ctl statusNotAllowed textPlain (CtlBody "Method Not Allowed")
+notAllowed :: RspSpec
+notAllowed = RspSpec statusNotAllowed textPlain (BodyLBS "Method Not Allowed")

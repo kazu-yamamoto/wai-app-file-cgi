@@ -6,6 +6,7 @@ import Data.Time
 import Data.Time.Clock.POSIX
 import Network.Wai
 import Network.Wai.Application.Header
+import Network.Wai.Application.Field
 import Network.Wai.Application.Range
 import Network.Wai.Application.Types
 import System.Directory

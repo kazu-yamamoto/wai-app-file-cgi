@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.CGI (cgiApp, CgiRoute(..), AppSpec(..)) where
+module Network.Wai.Application.CGI (
+    cgiApp, getPeerAddr, NumericAddress
+  , module Network.Wai.Application.Types
+  , module Network.Wai.Application.Field
+  ) where
 
 import Blaze.ByteString.Builder.ByteString
 import Control.Applicative
@@ -17,6 +21,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe
 import Network.Socket (getNameInfo, SockAddr, NameInfoFlag(..))
 import Network.Wai
+import Network.Wai.Application.Field
 import Network.Wai.Application.Utils
 import System.FilePath
 import System.IO
@@ -55,6 +60,7 @@ cgiApp' body spec cgii req = do
     liftIO . hClose $ whdl
     (return . ResponseEnumerator) (\build ->
         run_ $ EB.enumHandle 4096 rhdl $$
+        -- FIXME logger
         ((>>= check) <$> parseHeader) >>= maybe (responseNG build)
                                                 (responseOK build))
   where
