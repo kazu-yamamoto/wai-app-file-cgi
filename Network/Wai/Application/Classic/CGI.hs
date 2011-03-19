@@ -15,8 +15,6 @@ import Data.Enumerator (Iteratee,Enumeratee,run_,($$),joinI)
 import qualified Data.Enumerator as E (map)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
-import Data.List (isPrefixOf)
-import Data.Maybe
 import Network.Wai
 import Network.Wai.Application.Classic.EnumLine as ENL
 import Network.Wai.Application.Classic.Field
