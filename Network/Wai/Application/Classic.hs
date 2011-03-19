@@ -1,3 +1,7 @@
+{-|
+  WAI (Web Application Interface) Application for static files and CGI.
+-}
+
 module Network.Wai.Application.Classic (
     module Network.Wai.Application.Classic.CGI
   , module Network.Wai.Application.Classic.File
