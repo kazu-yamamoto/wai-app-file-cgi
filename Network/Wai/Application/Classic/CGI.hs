@@ -59,10 +59,16 @@ cgiApp' body spec cgii req = do
     when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
     liftIO . hClose $ whdl
     (return . ResponseEnumerator) (\build ->
-        run_ $ EB.enumHandle 4096 rhdl $$
-        -- FIXME logger
-        ((>>= check) <$> parseHeader) >>= maybe (responseNG build)
-                                                (responseOK build))
+        run_ $ EB.enumHandle 4096 rhdl $$ do
+            m <- (>>= check) <$> parseHeader
+            let (st, hdr, emp) = case m of
+                    Nothing    -> (status500,[],True)
+                    Just (s,h) -> (s,h,False)
+                hdr' = addHeader hdr
+            liftIO $ logger spec req st
+            if emp
+               then emptyBody =$ response build st hdr'
+               else              response build st hdr')
   where
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
@@ -78,14 +84,14 @@ cgiApp' body spec cgii req = do
                                                  (pathInfo req)
     toBuilder = E.map fromByteString
     emptyBody = EB.isolate 0
-    responseOK build (status,hs)  = toBuilder =$ build status hs
-    responseNG build = emptyBody =$ toBuilder =$ build status500 []
+    response build status hs = toBuilder =$ build status hs
     check hs = lookupField fkContentType hs >> case lookupField "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
         hs' = filter (\(k,_) -> ciLowerCase k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
+    addHeader hdr = ("Server", softwareName spec) : hdr
 
 ----------------------------------------------------------------
 
@@ -102,7 +108,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("SERVER_PROTOCOL",   "HTTP/" ++ (BS.unpack . httpVersion $ req))
       , ("SERVER_SOFTWARE",   BS.unpack sname)
       , ("PATH_INFO",         pathinfo)
-      , ("QUERY_STRING",      BS.unpack . queryString $ req)
+      , ("QUERY_STRING",      BS.unpack . BS.tail . queryString $ req)
       ]
     headers = requestHeaders req
     addLength = addEnv "CONTENT_LENGTH" $ lookupField fkContentLength headers

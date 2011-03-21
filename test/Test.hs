@@ -89,7 +89,7 @@ test_post = do
     ans <- BL.readFile "data/post"
     rsp @?= ans
   where
-    url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query"
+    url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query=foo"
 
 sendPOST :: String -> BL.ByteString -> IO BL.ByteString
 sendPOST url body = do
