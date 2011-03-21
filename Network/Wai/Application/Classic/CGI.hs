@@ -108,12 +108,16 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("SERVER_PROTOCOL",   "HTTP/" ++ (BS.unpack . httpVersion $ req))
       , ("SERVER_SOFTWARE",   BS.unpack sname)
       , ("PATH_INFO",         pathinfo)
-      , ("QUERY_STRING",      BS.unpack . BS.tail . queryString $ req)
+      , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
     addLength = addEnv "CONTENT_LENGTH" $ lookupField fkContentLength headers
     addType   = addEnv "CONTENT_TYPE" $ lookupField fkContentType headers
     addCookie = addEnv "HTTP_COOKIE" $ lookupField fkCookie headers
+    query = BS.unpack . safeTail . queryString
+      where
+        safeTail "" = ""
+        safeTail bs = BS.tail bs
 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
