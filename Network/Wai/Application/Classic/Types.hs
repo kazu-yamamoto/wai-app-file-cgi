@@ -12,7 +12,7 @@ data AppSpec = AppSpec {
     -- | Whether this is an HTML or not.
   , isHTML :: FilePath -> Bool
     -- | A function for logging.
-  , logger :: Request -> RspSpec -> IO ()
+  , logger :: Request -> Status -> IO ()
   }
 
 data FileRoute = FileRoute {

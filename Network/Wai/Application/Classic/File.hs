@@ -36,11 +36,11 @@ If-Modified-Since:. (Range:, If-Range:, If-Unmodified-Since:)
 
 fileApp :: AppSpec -> FileRoute -> Application
 fileApp spec filei req = do
-    rspspec@(RspSpec st hdr body) <- case method of
+    RspSpec st hdr body <- case method of
         "GET"  -> processGET  req file ishtml rfile
         "HEAD" -> processHEAD req file ishtml rfile
         _      -> return $ notAllowed
-    liftIO $ logger spec req rspspec
+    liftIO $ logger spec req st
     let hdr' = addHeader hdr
     case body of
         NoBody           -> return $ responseLBS st hdr' ""
