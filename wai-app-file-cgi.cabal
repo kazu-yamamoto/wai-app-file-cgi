@@ -8,7 +8,7 @@ Synopsis:               File/CGI App of WAI
 Description:            This WAI application handles static files and
                         executes CGI scripts.
 Homepage:               http://www.mew.org/~kazu/
-Category:               Web
+Category:               Web, Yesod
 Cabal-Version:          >= 1.6
 Build-Type:             Simple
 library
