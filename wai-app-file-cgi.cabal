@@ -5,8 +5,8 @@ Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
 License-File:           LICENSE
 Synopsis:               File/CGI App of WAI
-Description:            This WAI application handles files and
-                        executes CGI scripts
+Description:            This WAI application handles static files and
+                        executes CGI scripts.
 Homepage:               http://www.mew.org/~kazu/
 Category:               Network
 Cabal-Version:          >= 1.6
