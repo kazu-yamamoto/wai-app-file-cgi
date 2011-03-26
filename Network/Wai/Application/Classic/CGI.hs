@@ -12,7 +12,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char
 import Data.Enumerator (Iteratee,Enumeratee,run_,($$),joinI)
-import qualified Data.Enumerator as E (map)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
 import Network.Wai
@@ -82,7 +81,7 @@ cgiApp' body spec cgii req = do
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)
                                                  (pathInfo req)
-    toBuilder = E.map fromByteString
+    toBuilder = EL.map fromByteString
     emptyBody = EB.isolate 0
     response build status hs = toBuilder =$ build status hs
     check hs = lookupField fkContentType hs >> case lookupField "status" hs of
