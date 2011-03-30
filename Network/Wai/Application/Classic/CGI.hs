@@ -11,7 +11,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Char
-import Data.Enumerator (Iteratee,Enumeratee,run_,($$),joinI)
+import Data.Enumerator hiding (map, filter, drop, break)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
 import Network.Wai
@@ -149,13 +149,6 @@ pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
     (prog',pathinfo) = break (== '/') path'
     prog = dst </> prog'
     scriptName = src' </> prog'
-
-----------------------------------------------------------------
-
-infixr 0 =$
-
-(=$) :: Monad m => Enumeratee ao ai m b -> Iteratee ai m b -> Iteratee ao m b
-ee =$ ie = joinI $ ee $$ ie
 
 ----------------------------------------------------------------
 

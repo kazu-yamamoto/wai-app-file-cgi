@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.0.1
+Version:                0.0.2
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -34,7 +34,8 @@ library
                         network >=2.2 && <2.3, transformers, time,
                         filepath, directory, unix,
                         containers, attoparsec,
-                        wai, enumerator, bytestring, blaze-builder,
+                        wai, enumerator >= 0.4.9,
+                        bytestring, blaze-builder,
                         wai-app-static
 Source-Repository head
   Type:                 git
