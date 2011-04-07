@@ -70,7 +70,7 @@ pathinfoToFilePath req filei = path'
     path = pathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    path' = dst </> (drop (BS.length src) $ BS.unpack path)
+    path' = dst </> drop (BS.length src) (BS.unpack path)
 
 addIndex :: AppSpec -> FilePath -> FilePath
 addIndex spec path

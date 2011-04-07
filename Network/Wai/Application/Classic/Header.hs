@@ -78,7 +78,7 @@ lookupRequestField' x req = fromMaybe "" $ lookupField x hdrs
   Looking up a header in 'RequestHeaders'.
 -}
 lookupField :: FieldKey -> RequestHeaders -> Maybe ByteString
-lookupField x (((CIByteString _ l), val):kvs)
+lookupField x ((CIByteString _ l, val):kvs)
   | x == l       = Just val
   | otherwise    = lookupField x kvs
 lookupField _ [] = Nothing

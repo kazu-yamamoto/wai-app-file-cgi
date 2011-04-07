@@ -39,7 +39,7 @@ fileApp spec filei req = do
     RspSpec st hdr body <- case method of
         "GET"  -> processGET  req file ishtml rfile
         "HEAD" -> processHEAD req file ishtml rfile
-        _      -> return $ notAllowed
+        _      -> return notAllowed
     liftIO $ logger spec req st
     let hdr' = addHeader hdr
     case body of
@@ -56,7 +56,7 @@ fileApp spec filei req = do
 
 ----------------------------------------------------------------
 
-processGET :: Request -> FilePath -> Bool -> (Maybe FilePath) -> Rsp
+processGET :: Request -> FilePath -> Bool -> Maybe FilePath -> Rsp
 processGET req file ishtml rfile = runAny [
     tryGet req file ishtml langs
   , tryRedirect req rfile langs
@@ -72,7 +72,7 @@ tryGet req file _    _     = tryGetFile req file ""
 tryGetFile :: Request -> FilePath -> String -> MRsp
 tryGetFile req file lang = do
     let file' = if null lang then file else file ++ lang
-    (liftIO $ fileInfo file') |>| \(size, mtime) -> do
+    liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
           mst = ifmodified req size mtime
             ||| ifunmodified req size mtime
@@ -88,7 +88,7 @@ tryGetFile req file lang = do
 
 ----------------------------------------------------------------
 
-processHEAD :: Request -> FilePath -> Bool -> (Maybe FilePath) -> Rsp
+processHEAD :: Request -> FilePath -> Bool -> Maybe FilePath -> Rsp
 processHEAD req file ishtml rfile = runAny [
     tryHead req file ishtml langs
   , tryRedirect req rfile langs
@@ -104,7 +104,7 @@ tryHead req file _    _     = tryHeadFile req file ""
 tryHeadFile :: Request -> FilePath -> String -> MRsp
 tryHeadFile req file lang = do
     let file' = if null lang then file else file ++ lang
-    (liftIO $ fileInfo file') |>| \(size, mtime) -> do
+    liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
           mst = ifmodified req size mtime
             ||| Just statusOK
@@ -114,7 +114,7 @@ tryHeadFile req file lang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: Request -> (Maybe FilePath) -> [String] -> MRsp
+tryRedirect  :: Request -> Maybe FilePath -> [String] -> MRsp
 tryRedirect _   Nothing     _     = nothing
 tryRedirect req (Just file) langs =
     runAnyMaybe $ map (tryRedirectFile req file) langs

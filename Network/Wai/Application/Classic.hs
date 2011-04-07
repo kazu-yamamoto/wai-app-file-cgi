@@ -2,17 +2,12 @@
   WAI (Web Application Interface) Application for static files and CGI.
 -}
 
-module Network.Wai.Application.Classic (
-    module Network.Wai.Application.Classic.CGI
-  , module Network.Wai.Application.Classic.File
-  , module Network.Wai.Application.Classic.Types
-  , module Network.Wai.Application.Classic.Header
-  , module Network.Wai.Application.Classic.Utils
-  ) where
+module Network.Wai.Application.Classic (module Classic) where
 
-import Network.Wai.Application.Classic.CGI
-import Network.Wai.Application.Classic.File
-import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Header
-import Network.Wai.Application.Classic.Utils
+import Network.Wai.Application.Classic.CGI as Classic
+import Network.Wai.Application.Classic.File as Classic
+import Network.Wai.Application.Classic.Types as Classic
+import Network.Wai.Application.Classic.Header as Classic
+import Network.Wai.Application.Classic.Utils as Classic
+
 

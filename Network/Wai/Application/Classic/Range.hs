@@ -50,4 +50,4 @@ spcs :: Parser ()
 spcs = () <$ many spc
 
 spc :: Parser Char
-spc = satisfy (\c -> c == ' ' || c == '\t')
+spc = satisfy $ \c -> c `elem` " \t"
