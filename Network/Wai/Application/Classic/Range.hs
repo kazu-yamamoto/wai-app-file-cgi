@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.Range (skipAndSize) where
 
 import Control.Applicative hiding (many,optional)
 import Data.Attoparsec.Char8 hiding (take)
-import Data.ByteString.Char8 hiding (map, count, take)
+import Data.ByteString.Char8 hiding (map, count, take, elem)
 
 skipAndSize :: ByteString -> Integer -> Maybe (Integer,Integer)
 skipAndSize bs size = case parseRange bs of
