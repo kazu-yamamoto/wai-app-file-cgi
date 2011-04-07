@@ -48,7 +48,7 @@ line build dropLF = continue go
         czs = BL.toChunks zs
     lf = 10
     cr = 13
-    eol c = c `elem` [lf, cr]
+    eol = (`elem` [lf, cr])
 
 type Builder = BL.ByteString -> BL.ByteString
 
