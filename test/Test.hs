@@ -5,17 +5,19 @@
 
 module Test where
 
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Enumerator (run_)
 import Network.HTTP.Enumerator
+import qualified Network.HTTP.Types as W
 import qualified Network.Wai as W
 import Network.Wai.Application.Classic.Date
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Range
-import Network.Wai.Application.Classic.Header
 import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
-import Data.Enumerator (run_)
 
 tests :: [Test]
 tests = [
@@ -96,9 +98,9 @@ sendPOST url body = do
     req' <- parseUrl url
     let req = req' {
             method = "POST"
-          , requestBody = body
+          , requestBody = RequestBodyLBS body
           }
-    Response sc _ b <- httpLbs req
+    Response sc _ b <- withManager $ httpLbs req
     if 200 <= sc && sc < 300
         then return b
         else error "sendPOST"
@@ -117,7 +119,9 @@ test_get = do
 
 test_get2 :: Assertion
 test_get2 = do
-    Response rc _ _ <- parseUrl url >>= httpLbs
+    Response rc _ _ <- withManager $ \mgr -> do
+        purl <- liftIO $ parseUrl url
+        httpLbs purl mgr
     rc @?= notfound
   where
     url = "http://localhost:8080/dummy"
@@ -146,11 +150,11 @@ test_get_modified = do
 
 ----------------------------------------------------------------
 
-sendGET :: String -> Headers -> IO Response
+sendGET :: String -> W.RequestHeaders -> IO Response
 sendGET url hdr = do
     req' <- parseUrl url
     let req = req' { requestHeaders = hdr }
-    httpLbs req
+    withManager $ httpLbs req
 
 ----------------------------------------------------------------
 
@@ -195,14 +199,14 @@ test_head_modified = do
 
 ----------------------------------------------------------------
 
-sendHEAD :: String -> Headers -> IO Response
+sendHEAD :: String -> W.RequestHeaders -> IO Response
 sendHEAD url hdr = do
     req' <- parseUrl url
     let req = req' {
             requestHeaders = hdr
           , method = "HEAD"
           }
-    run_ $ http req headIter
+    withManager $ \mgr -> run_ $ http req headIter mgr
   where
     headIter (W.Status sc _) hs = return $ Response sc hs ""
 
