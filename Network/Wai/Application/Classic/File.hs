@@ -7,6 +7,7 @@ module Network.Wai.Application.Classic.File (
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL ()
+import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
@@ -45,7 +46,7 @@ fileApp spec filei req = do
     case body of
         NoBody           -> return $ responseLBS st hdr' ""
         BodyLBS bd       -> return $ responseLBS st hdr' bd
-        BodyFile afile _ -> return $ ResponseFile st hdr' afile -- FIXME size
+        BodyFile afile _ -> return $ ResponseFile st hdr' afile Nothing -- FIXME size
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
@@ -133,7 +134,7 @@ tryRedirectFile req file lang = do
               +++ serverName req
               +++ ":"
               +++ (BS.pack . show . serverPort) req
-              +++ pathInfo req
+              +++ rawPathInfo req
               +++ "/"
 
 ----------------------------------------------------------------

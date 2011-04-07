@@ -2,6 +2,7 @@ module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
+import Network.HTTP.Types
 import Network.Wai
 
 data AppSpec = AppSpec {

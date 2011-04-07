@@ -4,7 +4,9 @@ module Network.Wai.Application.Classic.Header where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 ()
+import Data.CaseInsensitive
 import Data.Maybe
+import Network.HTTP.Types
 import Network.Wai
 
 ----------------------------------------------------------------
@@ -78,7 +80,7 @@ lookupRequestField' x req = fromMaybe "" $ lookupField x hdrs
   Looking up a header in 'RequestHeaders'.
 -}
 lookupField :: FieldKey -> RequestHeaders -> Maybe ByteString
-lookupField x ((CIByteString _ l, val):kvs)
-  | x == l       = Just val
-  | otherwise    = lookupField x kvs
-lookupField _ [] = Nothing
+lookupField x ((key, val):kvs)
+  | x == foldedCase key = Just val
+  | otherwise           = lookupField x kvs
+lookupField _ []        = Nothing

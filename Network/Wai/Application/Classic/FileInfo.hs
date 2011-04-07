@@ -4,12 +4,12 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Time
 import Data.Time.Clock.POSIX
+import Network.HTTP.Types
 import Network.Wai
-import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Status
 import System.Directory
 import System.FilePath
 import System.Posix.Files
@@ -67,7 +67,7 @@ range size rng = case skipAndSize rng size of
 pathinfoToFilePath :: Request -> FileRoute -> FilePath
 pathinfoToFilePath req filei = path'
   where
-    path = pathInfo req
+    path = rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
     path' = dst </> drop (BS.length src) (BS.unpack path)

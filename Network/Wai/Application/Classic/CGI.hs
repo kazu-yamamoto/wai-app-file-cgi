@@ -10,10 +10,11 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
-import Data.Char
+import Data.CaseInsensitive hiding (map)
 import Data.Enumerator hiding (map, filter, drop, break)
 import qualified Data.Enumerator.Binary as EB
 import qualified Data.Enumerator.List as EL
+import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.EnumLine as ENL
 import Network.Wai.Application.Classic.Field
@@ -80,7 +81,7 @@ cgiApp' body spec cgii req = do
       }
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)
-                                                 (pathInfo req)
+                                                 (rawPathInfo req)
     toBuilder = EL.map fromByteString
     emptyBody = EB.isolate 0
     response build status hs = toBuilder =$ build status hs
@@ -88,7 +89,7 @@ cgiApp' body spec cgii req = do
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
-        hs' = filter (\(k,_) -> ciLowerCase k /= "status") hs
+        hs' = filter (\(k,_) -> foldedCase k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     addHeader hdr = ("Server", softwareName spec) : hdr
 
@@ -104,7 +105,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("SERVER_NAME",       BS.unpack . serverName $ req)
       , ("SERVER_PORT",       show . serverPort $ req)
       , ("REMOTE_ADDR",       naddr)
-      , ("SERVER_PROTOCOL",   "HTTP/" ++ (BS.unpack . httpVersion $ req))
+      , ("SERVER_PROTOCOL",   "HTTP/" ++ (show . httpVersion $ req))
       , ("SERVER_SOFTWARE",   BS.unpack sname)
       , ("PATH_INFO",         pathinfo)
       , ("QUERY_STRING",      query req)
@@ -113,7 +114,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
     addLength = addEnv "CONTENT_LENGTH" $ lookupField fkContentLength headers
     addType   = addEnv "CONTENT_TYPE" $ lookupField fkContentType headers
     addCookie = addEnv "HTTP_COOKIE" $ lookupField fkCookie headers
-    query = BS.unpack . safeTail . queryString
+    query = BS.unpack . safeTail . rawQueryString
       where
         safeTail "" = ""
         safeTail bs = BS.tail bs
@@ -128,12 +129,11 @@ parseHeader :: Iteratee ByteString IO (Maybe RequestHeaders)
 parseHeader = takeHeader >>= maybe (return Nothing)
                                    (return . Just . map parseField)
   where
-    parseField bs = (CIByteString key skey, val)
+    parseField bs = (mk key, val)
       where
         (key,val) = case BS.break (==':') bs of
             kv@(_,"") -> kv
             (k,v) -> let v' = BS.dropWhile (==' ') $ BS.tail v in (k,v')
-        skey = BS.map toLower key
 
 takeHeader :: Iteratee ByteString IO (Maybe [ByteString])
 takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->

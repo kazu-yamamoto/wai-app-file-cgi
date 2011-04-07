@@ -13,6 +13,7 @@ import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeTy
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 ()
 import Data.Maybe
+import Network.HTTP.Types
 import Network.Wai
 
 ----------------------------------------------------------------

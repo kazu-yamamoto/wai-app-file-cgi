@@ -3,7 +3,7 @@ module Network.Wai.Application.Classic.MaybeIter where
 import Control.Monad (mplus)
 import Data.ByteString (ByteString)
 import Data.Enumerator (Iteratee)
-import Network.Wai
+import Network.HTTP.Types
 import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
