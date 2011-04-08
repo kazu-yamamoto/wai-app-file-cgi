@@ -31,8 +31,8 @@ tests = [
        , testCase "get" test_get
        , testCase "get2" test_get2
        , testCase "get_ja" test_get_ja
-       , testCase "get_modified" test_get_ja
-       , testCase "test_get_modified" test_get_modified
+       , testCase "get_modified" test_get_modified
+       , testCase "get_partial" test_get_partial
        , testCase "head" test_head
        , testCase "head2" test_head2
        , testCase "head_ja" test_head_ja
@@ -147,6 +147,16 @@ test_get_modified = do
     sc @?= 304
   where
     url = "http://localhost:8080/"
+
+----------------------------------------------------------------
+
+test_get_partial :: Assertion
+test_get_partial = do
+    Response _ _ bdy <- sendGET url [("Range", "bytes=10-20")]
+    bdy @?= ans
+  where
+    url = "http://localhost:8080/"
+    ans = "html>\n<html"
 
 ----------------------------------------------------------------
 

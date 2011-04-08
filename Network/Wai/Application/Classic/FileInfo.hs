@@ -29,7 +29,7 @@ fileInfo file = do
 
 ----------------------------------------------------------------
 
-data StatusAux = Full Status | Partial Integer Integer
+data StatusAux = Full Status | Partial Integer Integer deriving Show
 
 ifmodified :: Request -> Integer -> UTCTime -> Maybe StatusAux
 ifmodified req size mtime = do
