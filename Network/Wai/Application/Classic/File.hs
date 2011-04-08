@@ -41,12 +41,15 @@ fileApp spec filei req = do
         "GET"  -> processGET  req file ishtml rfile
         "HEAD" -> processHEAD req file ishtml rfile
         _      -> return notAllowed
-    liftIO $ logger spec req st
+    liftIO $ logger spec req st body
     let hdr' = addHeader hdr
     case body of
-        NoBody             -> return $ responseLBS st hdr' ""
-        BodyLBS bd         -> return $ responseLBS st hdr' bd
-        BodyFile afile mfp -> return $ ResponseFile st hdr' afile mfp
+        NoBody     -> return $ responseLBS st hdr' ""
+        BodyLBS bd -> return $ responseLBS st hdr' bd
+        BodyFile afile (Entire _)
+            -> return $ ResponseFile st hdr' afile Nothing
+        BodyFile afile (Part skip len)
+            -> return $ ResponseFile st hdr' afile (Just (FilePart skip len))
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
@@ -81,10 +84,10 @@ tryGetFile req file lang = do
                  ||| unconditional req size mtime
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' Nothing)
+            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' (Entire size))
             | otherwise      -> just $ RspSpec st hdr NoBody
 
-          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Just (FilePart skip len)))
+          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Part skip len))
 
 ----------------------------------------------------------------
 

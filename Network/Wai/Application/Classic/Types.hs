@@ -13,7 +13,7 @@ data AppSpec = AppSpec {
     -- | Whether this is an HTML or not.
   , isHTML :: FilePath -> Bool
     -- | A function for logging.
-  , logger :: Request -> Status -> IO ()
+  , logger :: Request -> Status -> RspBody -> IO ()
   }
 
 data FileRoute = FileRoute {
@@ -45,4 +45,10 @@ data RspBody =
     -- | Body as Lazy ByteString.
   | BodyLBS BL.ByteString
     -- | Body as a file.
-  | BodyFile FilePath (Maybe FilePart)
+  | BodyFile FilePath Range
+
+data Range =
+    -- | Entire file showing its file size
+    Entire Integer
+    -- | A part of a file taking offset and length
+  | Part Integer Integer

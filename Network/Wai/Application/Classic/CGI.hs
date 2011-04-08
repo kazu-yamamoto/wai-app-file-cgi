@@ -65,7 +65,7 @@ cgiApp' body spec cgii req = do
                     Nothing    -> (status500,[],True)
                     Just (s,h) -> (s,h,False)
                 hdr' = addHeader hdr
-            liftIO $ logger spec req st
+            liftIO $ logger spec req st NoBody -- cannot know body length
             if emp
                then emptyBody =$ response build st hdr'
                else              response build st hdr')
