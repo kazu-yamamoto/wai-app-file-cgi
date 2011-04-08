@@ -32,7 +32,7 @@ Directory contents are NOT automatically listed. To list directory
 contents, an index file must be created beforehand.
 
 The following HTTP headers are handled: Acceptable-Language:,
-If-Modified-Since:. (Range:, If-Range:, If-Unmodified-Since:)
+If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 -}
 
 fileApp :: AppSpec -> FileRoute -> Application
@@ -44,9 +44,9 @@ fileApp spec filei req = do
     liftIO $ logger spec req st
     let hdr' = addHeader hdr
     case body of
-        NoBody           -> return $ responseLBS st hdr' ""
-        BodyLBS bd       -> return $ responseLBS st hdr' bd
-        BodyFile afile _ -> return $ ResponseFile st hdr' afile Nothing -- FIXME size
+        NoBody             -> return $ responseLBS st hdr' ""
+        BodyLBS bd         -> return $ responseLBS st hdr' bd
+        BodyFile afile mfp -> return $ ResponseFile st hdr' afile mfp
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
@@ -75,17 +75,16 @@ tryGetFile req file lang = do
     let file' = if null lang then file else file ++ lang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
-          mst = ifmodified req size mtime
-            ||| ifunmodified req size mtime
-            ||| ifrange req size mtime
-            ||| unconditional req size mtime
-      case mst of
-        Just st
-          | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' size)
-          -- FIXME skip len
-          | st == statusPartialContent -> undefined
-          | otherwise      -> just $ RspSpec st hdr NoBody
-        _                  -> nothing -- never reached
+          Just pst = ifmodified req size mtime -- never Nothing
+                 ||| ifunmodified req size mtime
+                 ||| ifrange req size mtime
+                 ||| unconditional req size mtime
+      case pst of
+          Full st
+            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' Nothing)
+            | otherwise      -> just $ RspSpec st hdr NoBody
+
+          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Just (FilePart skip len)))
 
 ----------------------------------------------------------------
 
@@ -107,11 +106,11 @@ tryHeadFile req file lang = do
     let file' = if null lang then file else file ++ lang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
-          mst = ifmodified req size mtime
-            ||| Just statusOK
-      case mst of
-        Just st -> just $ RspSpec st hdr NoBody
-        _       -> nothing -- never reached
+          Just pst = ifmodified req size mtime -- never Nothing
+                 ||| Just (Full statusOK)
+      case pst of
+          Full st -> just $ RspSpec st hdr NoBody
+          _       -> nothing -- never reached
 
 ----------------------------------------------------------------
 

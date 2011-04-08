@@ -45,4 +45,4 @@ data RspBody =
     -- | Body as Lazy ByteString.
   | BodyLBS BL.ByteString
     -- | Body as a file.
-  | BodyFile FilePath Integer
+  | BodyFile FilePath (Maybe FilePart)

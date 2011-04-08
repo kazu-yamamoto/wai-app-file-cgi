@@ -29,37 +29,38 @@ fileInfo file = do
 
 ----------------------------------------------------------------
 
-ifmodified :: Request -> Integer -> UTCTime -> Maybe Status
+data StatusAux = Full Status | Partial Integer Integer
+
+ifmodified :: Request -> Integer -> UTCTime -> Maybe StatusAux
 ifmodified req size mtime = do
     date <- ifModifiedSince req
     if date /= mtime
        then unconditional req size mtime
-       else Just statusNotModified
+       else Just (Full statusNotModified)
 
-ifunmodified :: Request -> Integer -> UTCTime -> Maybe Status
+ifunmodified :: Request -> Integer -> UTCTime -> Maybe StatusAux
 ifunmodified req size mtime = do
     date <- ifUnmodifiedSince req
     if date == mtime
        then unconditional req size mtime
-       else Just statusPreconditionFailed
+       else Just (Full statusPreconditionFailed)
 
-ifrange :: Request -> Integer -> UTCTime -> Maybe Status
+ifrange :: Request -> Integer -> UTCTime -> Maybe StatusAux
 ifrange req size mtime = do
     date <- ifRange req
     rng  <- lookupRequestField fkRange req
     if date == mtime
-       then Just statusOK
+       then Just (Full statusOK)
        else range size rng
 
-unconditional :: Request -> Integer -> UTCTime -> Maybe Status
+unconditional :: Request -> Integer -> UTCTime -> Maybe StatusAux
 unconditional req size _ =
-    maybe (Just statusOK) (range size) $ lookupRequestField fkRange req
+    maybe (Just (Full statusOK)) (range size) $ lookupRequestField fkRange req
 
-range :: Integer -> ByteString -> Maybe Status
+range :: Integer -> ByteString -> Maybe StatusAux
 range size rng = case skipAndSize rng size of
-  Nothing         -> Just statusRequestedRangeNotSatisfiable
-  Just (_,_)      -> Just statusNotImplemented
---  Just (skip,len) -> Just statusPartialContent -- FIXME skip len
+  Nothing         -> Just (Full statusRequestedRangeNotSatisfiable)
+  Just (skip,len) -> Just (Partial skip len)
 
 
 ----------------------------------------------------------------

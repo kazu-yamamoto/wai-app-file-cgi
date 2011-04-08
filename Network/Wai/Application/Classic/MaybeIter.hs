@@ -3,7 +3,6 @@ module Network.Wai.Application.Classic.MaybeIter where
 import Control.Monad (mplus)
 import Data.ByteString (ByteString)
 import Data.Enumerator (Iteratee)
-import Network.HTTP.Types
 import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
@@ -46,7 +45,7 @@ a |>| act = do
       Nothing -> nothing
       Just x  -> act x
 
-(|||) :: Maybe Status -> Maybe Status -> Maybe Status
+(|||) :: Maybe a -> Maybe a -> Maybe a
 (|||) = mplus
 
 ----------------------------------------------------------------
