@@ -105,7 +105,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("SERVER_NAME",       BS.unpack . serverName $ req)
       , ("SERVER_PORT",       show . serverPort $ req)
       , ("REMOTE_ADDR",       naddr)
-      , ("SERVER_PROTOCOL",   "HTTP/" ++ (show . httpVersion $ req))
+      , ("SERVER_PROTOCOL",   show . httpVersion $ req)
       , ("SERVER_SOFTWARE",   BS.unpack sname)
       , ("PATH_INFO",         pathinfo)
       , ("QUERY_STRING",      query req)
