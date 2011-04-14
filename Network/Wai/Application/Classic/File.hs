@@ -142,7 +142,7 @@ tryRedirectFile req file lang = do
 ----------------------------------------------------------------
 
 notFound :: RspSpec
-notFound = RspSpec statusNotFound textPlain (BodyLBS "Not Found")
+notFound = RspSpec statusNotFound textPlain (BodyLBS "Not Found\r\n")
 
 notAllowed :: RspSpec
-notAllowed = RspSpec statusNotAllowed textPlain (BodyLBS "Method Not Allowed")
+notAllowed = RspSpec statusNotAllowed textPlain (BodyLBS "Method Not Allowed\r\n")

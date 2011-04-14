@@ -45,7 +45,7 @@ cgiApp :: AppSpec -> CgiRoute -> Application
 cgiApp spec cgii req = case method of
     "GET"  -> cgiApp' False spec cgii req
     "POST" -> cgiApp' True  spec cgii req
-    _      -> return $ responseLBS statusNotAllowed textPlain "Method Not Allowed"
+    _      -> return $ responseLBS statusNotAllowed textPlain "Method Not Allowed\r\n"
   where
     method = requestMethod req
 
