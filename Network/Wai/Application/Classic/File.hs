@@ -82,9 +82,10 @@ tryGetFile req file lang = do
                  ||| ifunmodified req size mtime
                  ||| ifrange req size mtime
                  ||| unconditional req size mtime
+          hdr' = ("Content-Length", BS.pack . show $ size) : hdr -- xxx
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' (Entire size))
+            | st == statusOK -> just $ RspSpec statusOK hdr' (BodyFile file' (Entire size))
             | otherwise      -> just $ RspSpec st hdr NoBody
 
           Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Part skip len))
