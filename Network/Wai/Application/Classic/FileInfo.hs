@@ -1,5 +1,6 @@
 module Network.Wai.Application.Classic.FileInfo where
 
+import Control.Exception
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Time
@@ -10,22 +11,25 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
-import System.Directory
+import Prelude hiding (catch)
 import System.FilePath
 import System.Posix.Files
 
 ----------------------------------------------------------------
 
+-- This function is slow.
+-- So, let's avoid using doesFileExist which uses getFilesStatus.
 fileInfo :: FilePath -> IO (Maybe (Integer, UTCTime))
-fileInfo file = do
-    exist <- doesFileExist file
-    if exist
-       then do
-         fs <- getFileStatus file
-         let size = fromIntegral . fileSize $ fs
-             mtime = posixSecondsToUTCTime . realToFrac . modificationTime $ fs
-         return $ Just (size, mtime)
+fileInfo file = flip catch nothing $ do
+    fs <- getFileStatus file
+    if isDirectory fs
+       then return $ Just (size fs, mtime fs)
        else return Nothing
+  where
+    nothing :: IOException -> IO (Maybe (Integer, UTCTime))
+    nothing _ = return Nothing
+    size = fromIntegral . fileSize
+    mtime = posixSecondsToUTCTime . realToFrac . modificationTime
 
 ----------------------------------------------------------------
 
