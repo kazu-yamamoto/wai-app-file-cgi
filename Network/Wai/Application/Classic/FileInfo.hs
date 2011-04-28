@@ -22,7 +22,7 @@ import System.Posix.Files
 fileInfo :: FilePath -> IO (Maybe (Integer, UTCTime))
 fileInfo file = flip catch nothing $ do
     fs <- getFileStatus file
-    if isDirectory fs
+    if doesExist fs
        then return $ Just (size fs, mtime fs)
        else return Nothing
   where
@@ -30,6 +30,7 @@ fileInfo file = flip catch nothing $ do
     nothing _ = return Nothing
     size = fromIntegral . fileSize
     mtime = posixSecondsToUTCTime . realToFrac . modificationTime
+    doesExist = not . isDirectory
 
 ----------------------------------------------------------------
 
