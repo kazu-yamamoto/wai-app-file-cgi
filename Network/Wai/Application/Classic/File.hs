@@ -5,7 +5,9 @@ module Network.Wai.Application.Classic.File (
   ) where
 
 import Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS hiding (unpack, pack)
+import qualified Data.ByteString.Char8 as BS (unpack, pack)
 import qualified Data.ByteString.Lazy.Char8 as BL ()
 import Network.HTTP.Types
 import Network.Wai
@@ -13,6 +15,7 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
 import Network.Wai.Application.Classic.MaybeIter
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Utils
 
 ----------------------------------------------------------------
 
@@ -47,9 +50,9 @@ fileApp spec filei req = do
         NoBody     -> return $ responseLBS st hdr' ""
         BodyLBS bd -> return $ responseLBS st hdr' bd
         BodyFile afile (Entire _)
-            -> return $ ResponseFile st hdr' afile Nothing
+            -> return $ ResponseFile st hdr' (BS.unpack afile) Nothing
         BodyFile afile (Part skip len)
-            -> return $ ResponseFile st hdr' afile (Just (FilePart skip len))
+            -> return $ ResponseFile st hdr' (BS.unpack afile) (Just (FilePart skip len))
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
@@ -60,22 +63,22 @@ fileApp spec filei req = do
 
 ----------------------------------------------------------------
 
-processGET :: Request -> FilePath -> Bool -> Maybe FilePath -> Rsp
+processGET :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processGET req file ishtml rfile = runAny [
     tryGet req file ishtml langs
   , tryRedirect req rfile langs
   , just notFound
   ]
   where
-    langs = map ('.':) (languages req) ++ ["",".en"]
+    langs = map (46 `BS.cons`) (languages req) ++ ["",".en"] -- '.'
 
-tryGet :: Request -> FilePath -> Bool -> [String] -> MRsp
+tryGet :: Request -> ByteString -> Bool -> [ByteString] -> MRsp
 tryGet req file True langs = runAnyMaybe $ map (tryGetFile req file) langs
 tryGet req file _    _     = tryGetFile req file ""
 
-tryGetFile :: Request -> FilePath -> String -> MRsp
+tryGetFile :: Request -> ByteString -> ByteString -> MRsp
 tryGetFile req file lang = do
-    let file' = if null lang then file else file ++ lang
+    let file' = if BS.null lang then file else file +++ lang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
           Just pst = ifmodified req size mtime -- never Nothing
@@ -92,22 +95,22 @@ tryGetFile req file lang = do
 
 ----------------------------------------------------------------
 
-processHEAD :: Request -> FilePath -> Bool -> Maybe FilePath -> Rsp
+processHEAD :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processHEAD req file ishtml rfile = runAny [
     tryHead req file ishtml langs
   , tryRedirect req rfile langs
   , just notFound
   ]
   where
-    langs = map ('.':) (languages req) ++ ["",".en"]
+    langs = map (46 `BS.cons`) (languages req) ++ ["",".en"]
 
-tryHead :: Request -> FilePath -> Bool -> [String] -> MRsp
+tryHead :: Request -> ByteString -> Bool -> [ByteString] -> MRsp
 tryHead req file True langs = runAnyMaybe $ map (tryHeadFile req file) langs
 tryHead req file _    _     = tryHeadFile req file ""
 
-tryHeadFile :: Request -> FilePath -> String -> MRsp
+tryHeadFile :: Request -> ByteString -> ByteString -> MRsp
 tryHeadFile req file lang = do
-    let file' = if null lang then file else file ++ lang
+    let file' = if BS.null lang then file else file +++ lang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
       let hdr = newHeader file mtime
           Just pst = ifmodified req size mtime -- never Nothing
@@ -118,21 +121,20 @@ tryHeadFile req file lang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: Request -> Maybe FilePath -> [String] -> MRsp
+tryRedirect  :: Request -> Maybe ByteString -> [ByteString] -> MRsp
 tryRedirect _   Nothing     _     = nothing
 tryRedirect req (Just file) langs =
     runAnyMaybe $ map (tryRedirectFile req file) langs
 
-tryRedirectFile :: Request -> FilePath -> String -> MRsp
+tryRedirectFile :: Request -> ByteString -> ByteString -> MRsp
 tryRedirectFile req file lang = do
-    let file' = file ++ lang
+    let file' = file +++ lang
     minfo <- liftIO $ fileInfo file'
     case minfo of
       Nothing -> nothing
       Just _  -> just $ RspSpec statusMovedPermanently hdr NoBody
   where
     hdr = [("Location", redirectURL)]
-    (+++) = BS.append
     redirectURL = "http://"
               +++ serverName req
               +++ ":"

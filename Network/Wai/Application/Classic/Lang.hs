@@ -3,12 +3,14 @@
 module Network.Wai.Application.Classic.Lang (parseLang) where
 
 import Control.Applicative hiding (many, optional)
-import Data.Attoparsec.Char8 hiding (take)
-import Data.ByteString.Char8 hiding (map, count, take)
-import Data.List
+import Data.Attoparsec (Parser, takeWhile, parse, feed, Result(..))
+import Data.Attoparsec.Char8 (char, string, count, many, space, digit, option, sepBy1)
+import Data.ByteString.Char8 hiding (map, count, take, takeWhile)
+import Data.List (sortBy)
 import Data.Ord
+import Prelude hiding (takeWhile)
 
-parseLang :: ByteString -> [String]
+parseLang :: ByteString -> [ByteString]
 parseLang bs = case feed (parse acceptLanguage bs) "" of
     Done _ ls -> map fst $ sortBy detrimental ls
     _         -> []
@@ -17,20 +19,14 @@ parseLang bs = case feed (parse acceptLanguage bs) "" of
 
 ----------------------------------------------------------------
 
-acceptLanguage :: Parser [(String,Int)]
+acceptLanguage :: Parser [(ByteString,Int)]
 acceptLanguage = rangeQvalue `sepBy1` (spaces *> char ',' *> spaces)
 
-rangeQvalue :: Parser (String,Int)
+rangeQvalue :: Parser (ByteString,Int)
 rangeQvalue = (,) <$> languageRange <*> quality
 
-languageRange :: Parser String
-languageRange = (++) <$> language <*> sublang
-
-language :: Parser String
-language = many1 letter_ascii
-
-sublang :: Parser String
-sublang = option "" ((:) <$> char '-' <*> many1 letter_ascii)
+languageRange :: Parser ByteString
+languageRange = takeWhile (\w -> w /= 32 && w /= 44 && w /= 59)
 
 quality :: Parser Int
 quality = option 1000 (string ";q=" *> qvalue)

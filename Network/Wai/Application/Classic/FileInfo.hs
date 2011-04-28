@@ -2,7 +2,8 @@ module Network.Wai.Application.Classic.FileInfo where
 
 import Control.Exception
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as BS hiding (unpack)
+import qualified Data.ByteString.Char8 as BS (unpack)
 import Data.Time
 import Data.Time.Clock.POSIX
 import Network.HTTP.Types
@@ -11,17 +12,17 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
-import System.FilePath
 import System.Posix.Files
 
 ----------------------------------------------------------------
 
 -- This function is slow.
 -- So, let's avoid using doesFileExist which uses getFilesStatus.
-fileInfo :: FilePath -> IO (Maybe (Integer, UTCTime))
+fileInfo :: ByteString -> IO (Maybe (Integer, UTCTime))
 fileInfo file = flip catch nothing $ do
-    fs <- getFileStatus file
+    fs <- getFileStatus (BS.unpack file)
     if doesExist fs
        then return $ Just (size fs, mtime fs)
        else return Nothing
@@ -70,20 +71,20 @@ range size rng = case skipAndSize rng size of
 
 ----------------------------------------------------------------
 
-pathinfoToFilePath :: Request -> FileRoute -> FilePath
+pathinfoToFilePath :: Request -> FileRoute -> ByteString
 pathinfoToFilePath req filei = path'
   where
     path = rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    path' = dst </> drop (BS.length src) (BS.unpack path)
+    path' = dst </> BS.drop (BS.length src) path
 
-addIndex :: AppSpec -> FilePath -> FilePath
+addIndex :: AppSpec -> ByteString -> ByteString
 addIndex spec path
   | hasTrailingPathSeparator path = path </> indexFile spec
   | otherwise                     = path
 
-redirectPath :: AppSpec -> FilePath -> Maybe FilePath
+redirectPath :: AppSpec -> ByteString -> Maybe ByteString
 redirectPath spec path
   | hasTrailingPathSeparator path = Nothing
   | otherwise                     = Just (path </> indexFile spec)

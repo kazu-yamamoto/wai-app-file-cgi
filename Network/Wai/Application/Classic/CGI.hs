@@ -9,7 +9,8 @@ import Control.Applicative
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as BS hiding (unpack)
+import qualified Data.ByteString.Char8 as BS (readInt, unpack)
 import Data.CaseInsensitive hiding (map)
 import Data.Enumerator hiding (map, filter, drop, break)
 import qualified Data.Enumerator.Binary as EB
@@ -21,7 +22,6 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
-import System.FilePath
 import System.IO
 import System.Process
 
@@ -131,9 +131,9 @@ parseHeader = takeHeader >>= maybe (return Nothing)
   where
     parseField bs = (mk key, val)
       where
-        (key,val) = case BS.break (==':') bs of
+        (key,val) = case BS.breakByte 58 bs of -- ':'
             kv@(_,"") -> kv
-            (k,v) -> let v' = BS.dropWhile (==' ') $ BS.tail v in (k,v')
+            (k,v) -> let v' = BS.dropWhile (==32) $ BS.tail v in (k,v') -- ' '
 
 takeHeader :: Iteratee ByteString IO (Maybe [ByteString])
 takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
@@ -141,14 +141,14 @@ takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
        then return (Just [])
        else takeHeader >>= maybe (return Nothing) (return . Just . (l:))
 
-pathinfoToCGI :: ByteString -> FilePath -> ByteString -> (FilePath, String, String)
+pathinfoToCGI :: ByteString -> ByteString -> ByteString -> (FilePath, String, String)
 pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
   where
-    src' = BS.unpack src
-    path' = drop (BS.length src) $ BS.unpack path
-    (prog',pathinfo) = break (== '/') path'
-    prog = dst </> prog'
-    scriptName = src' </> prog'
+    path' = BS.drop (BS.length src) $ path
+    (prog',pathinfo') = BS.breakByte pathSep path'
+    prog = BS.unpack (dst </> prog')
+    scriptName = BS.unpack (src </> prog')
+    pathinfo = BS.unpack pathinfo'
 
 ----------------------------------------------------------------
 
