@@ -52,7 +52,7 @@ newHeader file mtime = [
   ]
 
 mimeType :: ByteString -> MimeType
-mimeType file =fromMaybe defaultMimeType . foldl1' mplus . map lok $ targets
+mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
   where
     targets = extensions file
     lok x = unsafePerformIO $ H.lookup defaultMimeTypes' x
