@@ -7,10 +7,11 @@ import Control.Monad (mplus)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (pack)
 import Data.ByteString.Char8 as BS (pack)
-import Data.HashMap (Map)
-import qualified Data.HashMap as M
+import Data.HashTable (HashTable)
+import qualified Data.HashTable as H
 import Data.List
-import Data.Map as Map (toList)
+import Data.Hashable
+import qualified Data.Map as M (toList)
 import Data.Maybe
 import Data.Time
 import Network.HTTP.Types
@@ -19,6 +20,8 @@ import Network.Wai.Application.Classic.Date
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
+
+import System.IO.Unsafe
 
 ----------------------------------------------------------------
 
@@ -52,7 +55,7 @@ mimeType :: ByteString -> MimeType
 mimeType file =fromMaybe defaultMimeType . foldl1' mplus . map lok $ targets
   where
     targets = extensions file
-    lok x = M.lookup x defaultMimeTypes'
+    lok x = unsafePerformIO $ H.lookup defaultMimeTypes' x
 
 extensions :: ByteString -> [ByteString]
 extensions file = exts
@@ -62,5 +65,5 @@ extensions file = exts
         (_,x)  -> BS.tail x
     exts = if entire == "" then [] else entire : BS.split 46 file
 
-defaultMimeTypes' :: Map ByteString MimeType
-defaultMimeTypes' = M.fromList $ map (first BS.pack) $ Map.toList defaultMimeTypes
+defaultMimeTypes' :: HashTable ByteString MimeType
+defaultMimeTypes' = unsafePerformIO $ H.fromList (fromIntegral . hash) $ map (first BS.pack) $ M.toList defaultMimeTypes
