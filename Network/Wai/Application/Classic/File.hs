@@ -45,21 +45,24 @@ fileApp spec filei req = do
         "HEAD" -> processHEAD req file ishtml rfile
         _      -> return notAllowed
     liftIO $ logger spec req st body
-    let hdr' = addHeader hdr
+    let hdr' = addServer hdr
     case body of
         NoBody     -> return $ responseLBS st hdr' ""
         BodyLBS bd -> return $ responseLBS st hdr' bd
-        BodyFile afile (Entire _)
-            -> return $ ResponseFile st hdr' (BS.unpack afile) Nothing
-        BodyFile afile (Part skip len)
-            -> return $ ResponseFile st hdr' (BS.unpack afile) (Just (FilePart skip len))
+        BodyFile afile (Entire len) -> do
+            let hdr'' = addLength hdr' len
+            return $ ResponseFile st hdr'' (BS.unpack afile) Nothing
+        BodyFile afile (Part skip len) -> do
+            let hdr'' = addLength hdr' len
+            return $ ResponseFile st hdr'' (BS.unpack afile) (Just (FilePart skip len))
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
     file = addIndex spec path
     ishtml = isHTML spec file
     rfile = redirectPath spec path
-    addHeader hdr = ("Server", softwareName spec) : hdr
+    addServer hdr = ("Server", softwareName spec) : hdr
+    addLength hdr len = ("Content-Length", BS.pack . show $ len) : hdr
 
 ----------------------------------------------------------------
 
@@ -85,10 +88,9 @@ tryGetFile req file lang = do
                  ||| ifunmodified req size mtime
                  ||| ifrange req size mtime
                  ||| unconditional req size mtime
-          hdr' = ("Content-Length", BS.pack . show $ size) : hdr -- xxx
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr' (BodyFile file' (Entire size))
+            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' (Entire size))
             | otherwise      -> just $ RspSpec st hdr NoBody
 
           Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Part skip len))
