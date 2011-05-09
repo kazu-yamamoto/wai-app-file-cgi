@@ -2,21 +2,23 @@
 
 module Network.Wai.Application.Classic.Field where
 
+import Control.Arrow (first)
 import Control.Monad (mplus)
-import Data.List
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Time
-import Network.Wai.Application.Classic.Date
-import Network.Wai.Application.Classic.Lang
-import Network.Wai.Application.Classic.Header
-import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (pack)
 import Data.ByteString.Char8 as BS (pack)
+import Data.HashMap (Map)
+import qualified Data.HashMap as M
+import Data.List
+import Data.Map as Map (toList)
 import Data.Maybe
+import Data.Time
 import Network.HTTP.Types
 import Network.Wai
+import Network.Wai.Application.Classic.Date
+import Network.Wai.Application.Classic.Header
+import Network.Wai.Application.Classic.Lang
+import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
 
 ----------------------------------------------------------------
 
@@ -61,4 +63,4 @@ extensions file = exts
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: Map ByteString MimeType
-defaultMimeTypes' = M.fromList $ map (\(x,y) -> (BS.pack x, y)) $ M.toList defaultMimeTypes
+defaultMimeTypes' = M.fromList $ map (first BS.pack) $ Map.toList defaultMimeTypes
