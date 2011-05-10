@@ -1,18 +1,22 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.Wai.Application.Classic.Date (parseDate, utcToDate) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS
-import Data.Time
-import Locale
+import Data.Array
 import Control.Monad
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
+import Data.Time
+import Data.Time.Calendar.WeekDate
+import Locale hiding (months)
 
--- xxx: ClockTime -> UTCTime
 ----------------------------------------------------------------
 
 parseDate :: ByteString -> Maybe UTCTime
 parseDate bs = rfc1123Date cs `mplus` rfc850Date cs `mplus` asctimeDate cs
   where
-    cs = BS.unpack bs
+    cs = BS8.unpack bs
 
 ----------------------------------------------------------------
 
@@ -48,4 +52,40 @@ asctimeDate = parseTime defaultTimeLocale asctimeFormat
 ----------------------------------------------------------------
 
 utcToDate :: UTCTime -> ByteString
-utcToDate = BS.pack . formatTime defaultTimeLocale preferredFormat
+utcToDate utcTime = BS.concat [
+      week, ", "
+    , day, " ", month, " ", year, " "
+    , hh, ":", mm, ":", ss, " "
+    , "GMT"
+    ]
+  where
+    (y,m,d) = toGregorian (utctDay utcTime)
+    (_,_,w)       = toWeekDate (utctDay utcTime)
+    toB :: Integral i => i -> ByteString
+    toB = BS8.pack . show
+    to2B :: Integral i => i -> ByteString
+    to2B = BS8.pack . ('0' :) . show
+    year =  toB $ y
+    month = months ! m
+    week = weekDays ! w
+    pad n = if n < 10 then to2B n else toB n
+    day = pad d
+    tod = timeToTimeOfDay . utctDayTime $ utcTime
+    hh = pad . todHour $ tod
+    mm = pad . todMin $ tod
+    ss' :: Int
+    ss' = floor . todSec $ tod
+    ss = pad ss'
+
+months :: Array Int ByteString
+months = listArray (1,12) [
+      "Jan", "Feb", "Mar"
+    , "Apr", "May", "Jun"
+    , "Jul", "Aug", "Sep"
+    , "Oct", "Nov", "Dec"
+    ]
+
+weekDays :: Array Int ByteString
+weekDays = listArray (1,7) [
+      "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+    ]
