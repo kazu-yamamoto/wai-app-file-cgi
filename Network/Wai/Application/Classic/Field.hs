@@ -9,7 +9,6 @@ import qualified Data.ByteString as BS hiding (pack)
 import Data.ByteString.Char8 as BS (pack)
 import Data.HashMap (Map)
 import qualified Data.HashMap as M
-import Data.List
 import Data.Map as Map (toList)
 import Data.Maybe
 import Data.Time
@@ -42,9 +41,9 @@ lookupAndParseDate key req = lookupRequestField key req >>= parseDate
 textPlain :: ResponseHeaders
 textPlain = [("Content-Type", "text/plain")]
 
-newHeader :: ByteString -> UTCTime -> ResponseHeaders
-newHeader file mtime = [
-    ("Content-Type", mimeType file)
+newHeader :: Bool -> ByteString -> UTCTime -> ResponseHeaders
+newHeader ishtml file mtime = [
+    ("Content-Type", if ishtml then "text/html" else mimeType file)
   , ("Last-Modified", utcToDate mtime)
   ]
 
