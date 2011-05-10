@@ -66,24 +66,31 @@ fileApp spec filei req = do
 
 ----------------------------------------------------------------
 
+type Lang = Maybe ByteString
+
+langSuffixes :: Request -> [Lang]
+langSuffixes req = map (Just . BS.cons 46) (languages req) ++ [Nothing, Just ".en"] -- '.'
+
+----------------------------------------------------------------
+
 processGET :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processGET req file ishtml rfile = runAny [
-    tryGet req file ishtml langs
-  , tryRedirect req rfile langs
+    tryGet req file ishtml
+  , tryRedirect req rfile
   , just notFound
   ]
+
+tryGet :: Request -> ByteString -> Bool -> MRsp
+tryGet req file True  = runAnyMaybe $ map (tryGetFile req file True) langs
   where
-    langs = map (46 `BS.cons`) (languages req) ++ ["",".en"] -- '.'
+    langs = langSuffixes req
+tryGet req file False = tryGetFile req file False Nothing
 
-tryGet :: Request -> ByteString -> Bool -> [ByteString] -> MRsp
-tryGet req file True langs = runAnyMaybe $ map (tryGetFile req file) langs
-tryGet req file _    _     = tryGetFile req file ""
-
-tryGetFile :: Request -> ByteString -> ByteString -> MRsp
-tryGetFile req file lang = do
-    let file' = if BS.null lang then file else file +++ lang
+tryGetFile :: Request -> ByteString -> Bool -> Lang -> MRsp
+tryGetFile req file ishtml mlang = do
+    let file' = maybe file (file +++) mlang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
-      let hdr = newHeader file mtime
+      let hdr = newHeader ishtml file mtime
           Just pst = ifmodified req size mtime -- never Nothing
                  ||| ifunmodified req size mtime
                  ||| ifrange req size mtime
@@ -99,22 +106,22 @@ tryGetFile req file lang = do
 
 processHEAD :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processHEAD req file ishtml rfile = runAny [
-    tryHead req file ishtml langs
-  , tryRedirect req rfile langs
+    tryHead req file ishtml
+  , tryRedirect req rfile
   , just notFound
   ]
+
+tryHead :: Request -> ByteString -> Bool -> MRsp
+tryHead req file True  = runAnyMaybe $ map (tryHeadFile req file True) langs
   where
-    langs = map (46 `BS.cons`) (languages req) ++ ["",".en"]
+    langs = langSuffixes req
+tryHead req file False= tryHeadFile req file False Nothing
 
-tryHead :: Request -> ByteString -> Bool -> [ByteString] -> MRsp
-tryHead req file True langs = runAnyMaybe $ map (tryHeadFile req file) langs
-tryHead req file _    _     = tryHeadFile req file ""
-
-tryHeadFile :: Request -> ByteString -> ByteString -> MRsp
-tryHeadFile req file lang = do
-    let file' = if BS.null lang then file else file +++ lang
+tryHeadFile :: Request -> ByteString -> Bool -> Lang -> MRsp
+tryHeadFile req file ishtml mlang = do
+    let file' = maybe file (file +++) mlang
     liftIO (fileInfo file') |>| \(size, mtime) -> do
-      let hdr = newHeader file mtime
+      let hdr = newHeader ishtml file mtime
           Just pst = ifmodified req size mtime -- never Nothing
                  ||| Just (Full statusOK)
       case pst of
@@ -123,14 +130,16 @@ tryHeadFile req file lang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: Request -> Maybe ByteString -> [ByteString] -> MRsp
-tryRedirect _   Nothing     _     = nothing
-tryRedirect req (Just file) langs =
+tryRedirect  :: Request -> Maybe ByteString -> MRsp
+tryRedirect _   Nothing     = nothing
+tryRedirect req (Just file) =
     runAnyMaybe $ map (tryRedirectFile req file) langs
+  where
+    langs = langSuffixes req
 
-tryRedirectFile :: Request -> ByteString -> ByteString -> MRsp
-tryRedirectFile req file lang = do
-    let file' = file +++ lang
+tryRedirectFile :: Request -> ByteString -> Lang -> MRsp
+tryRedirectFile req file mlang = do
+    let file' = maybe file (file +++) mlang
     minfo <- liftIO $ fileInfo file'
     case minfo of
       Nothing -> nothing
