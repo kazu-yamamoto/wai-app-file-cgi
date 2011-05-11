@@ -4,8 +4,7 @@ import Control.Exception
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (unpack)
-import Data.Time
-import Data.Time.Clock.POSIX
+import Data.Word
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
@@ -15,43 +14,53 @@ import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 import System.Posix.Files
+import System.Posix.Types
 
 ----------------------------------------------------------------
 
 -- This function is slow.
 -- So, let's avoid using doesFileExist which uses getFilesStatus.
-fileInfo :: ByteString -> IO (Maybe (Integer, UTCTime))
+fileInfo :: ByteString -> IO (Maybe (Integer, UnixTime))
 fileInfo file = flip catch nothing $ do
     fs <- getFileStatus (BS.unpack file)
     if doesExist fs
        then return $ Just (size fs, mtime fs)
        else return Nothing
   where
-    nothing :: IOException -> IO (Maybe (Integer, UTCTime))
+    nothing :: IOException -> IO (Maybe (Integer, UnixTime))
     nothing _ = return Nothing
     size = fromIntegral . fileSize
-    mtime = posixSecondsToUTCTime . realToFrac . modificationTime
+    mtime = epochTimeToUnixTime . modificationTime
     doesExist = not . isDirectory
+
+epochTimeToUnixTime :: EpochTime -> UnixTime
+epochTimeToUnixTime x = UnixTime d t
+  where
+    w64 :: Word64
+    w64 = truncate . toRational $ x
+    (d',t') = w64 `divMod` 86400
+    d = fromIntegral d'
+    t = fromIntegral t'
 
 ----------------------------------------------------------------
 
 data StatusAux = Full Status | Partial Integer Integer deriving Show
 
-ifmodified :: Request -> Integer -> UTCTime -> Maybe StatusAux
+ifmodified :: Request -> Integer -> UnixTime -> Maybe StatusAux
 ifmodified req size mtime = do
     date <- ifModifiedSince req
     if date /= mtime
        then unconditional req size mtime
        else Just (Full statusNotModified)
 
-ifunmodified :: Request -> Integer -> UTCTime -> Maybe StatusAux
+ifunmodified :: Request -> Integer -> UnixTime -> Maybe StatusAux
 ifunmodified req size mtime = do
     date <- ifUnmodifiedSince req
     if date == mtime
        then unconditional req size mtime
        else Just (Full statusPreconditionFailed)
 
-ifrange :: Request -> Integer -> UTCTime -> Maybe StatusAux
+ifrange :: Request -> Integer -> UnixTime -> Maybe StatusAux
 ifrange req size mtime = do
     date <- ifRange req
     rng  <- lookupRequestField fkRange req
@@ -59,7 +68,7 @@ ifrange req size mtime = do
        then Just (Full statusOK)
        else range size rng
 
-unconditional :: Request -> Integer -> UTCTime -> Maybe StatusAux
+unconditional :: Request -> Integer -> UnixTime -> Maybe StatusAux
 unconditional req size _ =
     maybe (Just (Full statusOK)) (range size) $ lookupRequestField fkRange req
 

@@ -1,81 +1,81 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Classic.Date (parseDate, utcToDate) where
+module Network.Wai.Application.Classic.Date (fromWebDate, toWebDate) where
 
 import Data.Array
-import Control.Monad
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
-import Data.Time
-import Data.Time.Calendar.WeekDate
-import Locale hiding (months)
+import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 
-parseDate :: ByteString -> Maybe UTCTime
-parseDate bs = rfc1123Date cs `mplus` rfc850Date cs `mplus` asctimeDate cs
-  where
-    cs = BS8.unpack bs
+fromWebDate :: ByteString -> Maybe UnixTime
+fromWebDate _ = Just (UnixTime 0 0)
 
 ----------------------------------------------------------------
 
-rfc1123Format :: String
-rfc1123Format = "%a, %d %b %Y %H:%M:%S GMT"
-
-rfc850Format :: String
-rfc850Format  = "%A, %d-%b-%y %H:%M:%S GMT"
-
--- xxx: allows "Nov 6" as well as "Nov  6", sigh.
-asctimeFormat :: String
-asctimeFormat = "%a %b %e %H:%M:%S %Y"
-
-preferredFormat :: String
-preferredFormat = rfc1123Format
-
-----------------------------------------------------------------
-
-rfc1123Date :: String -> Maybe UTCTime
-rfc1123Date = parseTime defaultTimeLocale preferredFormat
-
-rfc850Date :: String -> Maybe UTCTime
-rfc850Date str = parseTime defaultTimeLocale rfc850Format str >>= y2k
-  where
-    y2k utct = let (y,m,d) = toGregorian $ utctDay utct
-               in if y < 1950
-                  then Just utct { utctDay = fromGregorian (y+100) m d }
-                  else Just utct
-
-asctimeDate :: String -> Maybe UTCTime
-asctimeDate = parseTime defaultTimeLocale asctimeFormat
-
-----------------------------------------------------------------
-
-utcToDate :: UTCTime -> ByteString
-utcToDate utcTime = BS.concat [
+toWebDate :: UnixTime -> ByteString
+toWebDate (UnixTime days secs) = BS.concat [
       week, ", "
     , day, " ", month, " ", year, " "
     , hh, ":", mm, ":", ss, " "
     , "GMT"
     ]
   where
-    (y,m,d) = toGregorian (utctDay utcTime)
-    (_,_,w)       = toWeekDate (utctDay utcTime)
+    (h,m,s) = toHHMMSS secs
+    hh = pad h
+    mm = pad m
+    ss = pad s
+    week = weekDays ! w
+      where
+        -- 1970/1/1 is Thu (4)
+        w = (days + 3) `mod` 7 + 1
+    day = pad d
+    month = months ! m'
+    (y,m',d) = toYYMMDD days
+    year = toB y
     toB :: Integral i => i -> ByteString
     toB = BS8.pack . show
     to2B :: Integral i => i -> ByteString
     to2B = BS8.pack . ('0' :) . show
-    year =  toB $ y
-    month = months ! m
-    week = weekDays ! w
     pad n = if n < 10 then to2B n else toB n
-    day = pad d
-    tod = timeToTimeOfDay . utctDayTime $ utcTime
-    hh = pad . todHour $ tod
-    mm = pad . todMin $ tod
-    ss' :: Int
-    ss' = floor . todSec $ tod
-    ss = pad ss'
+
+toHHMMSS :: Int -> (Int,Int,Int)
+toHHMMSS x = (hh,mm,ss)
+  where
+    (hhmm,ss) = x `divMod` 60
+    (hh,mm) = hhmm `divMod` 60
+
+toYYMMDD :: Int -> (Int,Int,Int)
+toYYMMDD x = (yy, mm, dd)
+  where
+    (y,d) = x `divMod` 365
+    cy = 1970 + y
+    cy' = cy - 1
+    leap = cy' `div` 4 - cy' `div` 100 + cy' `div` 400 - 477
+    (yy,days) = adjust cy d leap
+    (mm,dd) = findMonth 1 monthDays (days + 1)
+    adjust ty td aj
+      | td >= aj        = (ty, td - aj)
+      | isLeap (ty - 1) = if td + 366 >= aj
+                          then (ty - 1, td + 366 - aj)
+                          else adjust (ty - 1) (td + 366) aj
+      | otherwise       = if td + 365 >= aj
+                          then (ty - 1, td + 365 - aj)
+                          else adjust (ty - 1) (td + 365) aj
+    isLeap year = year `mod` 4 == 0
+              && (year `mod` 400 == 0 ||
+                  year `mod` 100 /= 0)
+    monthDays
+      | isLeap yy = leapMonthDays
+      | otherwise = normalMonthDays
+    findMonth _ [] _ = error "findMonth"
+    findMonth m (n:ns) z
+      | z <= n    = (m,z)
+      | otherwise = findMonth (m+1) ns (z-n)
+
+--------------------------------
 
 months :: Array Int ByteString
 months = listArray (1,12) [
@@ -89,3 +89,9 @@ weekDays :: Array Int ByteString
 weekDays = listArray (1,7) [
       "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
     ]
+
+normalMonthDays :: [Int]
+normalMonthDays = [31,28,31,30,31,30,31,31,30,31,30,31]
+
+leapMonthDays :: [Int]
+leapMonthDays   = [31,29,31,30,31,30,31,31,30,31,30,31]
