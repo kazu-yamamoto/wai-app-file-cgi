@@ -144,7 +144,7 @@ takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
 pathinfoToCGI :: ByteString -> ByteString -> ByteString -> (FilePath, String, String)
 pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
   where
-    path' = BS.drop (BS.length src) $ path
+    path' = BS.drop (BS.length src) path
     (prog',pathinfo') = BS.breakByte pathSep path'
     prog = BS.unpack (dst </> prog')
     scriptName = BS.unpack (src </> prog')
