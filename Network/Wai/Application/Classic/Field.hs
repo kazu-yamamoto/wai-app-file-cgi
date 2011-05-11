@@ -11,12 +11,11 @@ import Data.HashMap (Map)
 import qualified Data.HashMap as M
 import Data.Map as Map (toList)
 import Data.Maybe
+import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
-import Network.Wai.Application.Classic.Date
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
-import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
 
 ----------------------------------------------------------------
@@ -24,27 +23,27 @@ import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeTy
 languages :: Request -> [ByteString]
 languages req = maybe [] parseLang $ lookupRequestField fkAcceptLanguage req
 
-ifModifiedSince :: Request -> Maybe UnixTime
+ifModifiedSince :: Request -> Maybe HTTPDate
 ifModifiedSince = lookupAndParseDate fkIfModifiedSince
 
-ifUnmodifiedSince :: Request -> Maybe UnixTime
+ifUnmodifiedSince :: Request -> Maybe HTTPDate
 ifUnmodifiedSince = lookupAndParseDate fkIfUnmodifiedSince
 
-ifRange :: Request -> Maybe UnixTime
+ifRange :: Request -> Maybe HTTPDate
 ifRange = lookupAndParseDate fkIfRange
 
-lookupAndParseDate :: ByteString -> Request -> Maybe UnixTime
-lookupAndParseDate key req = lookupRequestField key req >>= fromWebDate
+lookupAndParseDate :: ByteString -> Request -> Maybe HTTPDate
+lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 
 ----------------------------------------------------------------
 
 textPlain :: ResponseHeaders
 textPlain = [("Content-Type", "text/plain")]
 
-newHeader :: Bool -> ByteString -> UnixTime -> ResponseHeaders
+newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
 newHeader ishtml file mtime = [
     ("Content-Type", if ishtml then "text/html" else mimeType file)
-  , ("Last-Modified", toWebDate mtime)
+  , ("Last-Modified", formatHTTPDate mtime)
   ]
 
 mimeType :: ByteString -> MimeType

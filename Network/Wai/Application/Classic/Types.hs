@@ -52,5 +52,3 @@ data Range =
     Entire Integer
     -- | A part of a file taking offset and length
   | Part Integer Integer
-
-data UnixTime = UnixTime Int Int deriving (Eq,Show)
