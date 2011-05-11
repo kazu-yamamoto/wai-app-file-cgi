@@ -8,10 +8,9 @@ module Test where
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Enumerator (run_)
+import Network.HTTP.Date
 import Network.HTTP.Enumerator
 import qualified Network.HTTP.Types as W
-import qualified Network.Wai as W
-import Network.Wai.Application.Classic.Date
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Range
@@ -54,8 +53,8 @@ test_lang = do
 
 test_date :: Assertion
 test_date = do
-    let Just x = parseDate date
-        res = utcToDate x
+    let Just x = parseHTTPDate date
+        res = formatHTTPDate x
     res @?= date
   where
     date = "Tue, 15 Nov 1994 08:12:31 GMT"
