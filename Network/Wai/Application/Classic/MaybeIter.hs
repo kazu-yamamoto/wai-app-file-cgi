@@ -32,12 +32,14 @@ runAnyMaybe (a:as) = do
 
 ----------------------------------------------------------------
 
+infixr 5 >>|, |>|, |||
+
 (>>|) :: Maybe a -> (a -> MaybeIter b) -> MaybeIter b
 v >>| act =
     case v of
       Nothing -> nothing
       Just x  -> act x
-
+      
 (|>|) :: MaybeIter a -> (a -> MaybeIter b) -> MaybeIter b
 a |>| act = do
     v <- a
