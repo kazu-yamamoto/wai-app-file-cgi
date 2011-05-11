@@ -12,7 +12,6 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
-import Prelude hiding (catch)
 import System.Posix.Files
 import System.Posix.Types
 
@@ -21,7 +20,7 @@ import System.Posix.Types
 -- This function is slow.
 -- So, let's avoid using doesFileExist which uses getFilesStatus.
 fileInfo :: ByteString -> IO (Maybe (Integer, UnixTime))
-fileInfo file = flip catch nothing $ do
+fileInfo file = handle nothing $ do
     fs <- getFileStatus (BS.unpack file)
     if doesExist fs
        then return $ Just (size fs, mtime fs)
@@ -76,7 +75,6 @@ range :: Integer -> ByteString -> Maybe StatusAux
 range size rng = case skipAndSize rng size of
   Nothing         -> Just (Full statusRequestedRangeNotSatisfiable)
   Just (skip,len) -> Just (Partial skip len)
-
 
 ----------------------------------------------------------------
 
