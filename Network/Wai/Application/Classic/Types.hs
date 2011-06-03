@@ -13,7 +13,7 @@ data AppSpec = AppSpec {
     -- | Whether this is an HTML or not.
   , isHTML :: ByteString -> Bool
     -- | A function for logging.
-  , logger :: Request -> Status -> RspBody -> IO ()
+  , logger :: Request -> Status -> Maybe Integer -> IO ()
   }
 
 data FileRoute = FileRoute {

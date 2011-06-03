@@ -17,16 +17,16 @@ library
   else
     GHC-Options:        -Wall
   Exposed-Modules:      Network.Wai.Application.Classic
-                        Network.Wai.Application.Classic.CGI
-                        Network.Wai.Application.Classic.File
-                        Network.Wai.Application.Classic.Types
-                        Network.Wai.Application.Classic.Header
-  Other-Modules:        Network.Wai.Application.Classic.EnumLine
+  Other-Modules:        Network.Wai.Application.Classic.CGI
+                        Network.Wai.Application.Classic.EnumLine
                         Network.Wai.Application.Classic.Field
+                        Network.Wai.Application.Classic.File
                         Network.Wai.Application.Classic.FileInfo
+                        Network.Wai.Application.Classic.Header
                         Network.Wai.Application.Classic.Lang
                         Network.Wai.Application.Classic.MaybeIter
                         Network.Wai.Application.Classic.Range
+                        Network.Wai.Application.Classic.Types
                         Network.Wai.Application.Classic.Utils
   Build-Depends:        base >= 4 && < 5, process, haskell98,
                         network, transformers,

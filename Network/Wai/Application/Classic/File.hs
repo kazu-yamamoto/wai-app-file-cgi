@@ -8,7 +8,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack, pack)
 import qualified Data.ByteString.Char8 as BS (unpack, pack)
-import qualified Data.ByteString.Lazy.Char8 as BL ()
+import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
@@ -44,17 +44,21 @@ fileApp spec filei req = do
         "GET"  -> processGET  req file ishtml rfile
         "HEAD" -> processHEAD req file ishtml rfile
         _      -> return notAllowed
-    liftIO $ logger spec req st body
-    let hdr' = addServer hdr
-    case body of
-        NoBody     -> return $ responseLBS st hdr' ""
-        BodyLBS bd -> return $ responseLBS st hdr' bd
-        BodyFile afile (Entire len) -> do
-            let hdr'' = addLength hdr' len
-            return $ ResponseFile st hdr'' (BS.unpack afile) Nothing
-        BodyFile afile (Part skip len) -> do
-            let hdr'' = addLength hdr' len
-            return $ ResponseFile st hdr'' (BS.unpack afile) (Just (FilePart skip len))
+    let hdr'= addServer hdr
+        (response, mlen) = case body of
+            NoBody     -> (responseLBS st hdr' "", Nothing)
+            BodyLBS bd ->
+                let len = fromIntegral $ BL.length bd
+                in (responseLBS st hdr' bd, Just len)
+            BodyFile afile rng ->
+                let (len, mfp) = case rng of
+                        Entire bytes    -> (bytes, Nothing)
+                        Part skip bytes -> (bytes, Just (FilePart skip bytes))
+                    hdr''  = addLength hdr' len
+                    afile' = BS.unpack afile
+                in (ResponseFile st hdr'' afile' mfp, Just len)
+    liftIO $ logger spec req st mlen
+    return response
   where
     method = requestMethod req
     path = pathinfoToFilePath req filei
