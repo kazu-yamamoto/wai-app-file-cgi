@@ -53,10 +53,4 @@ data RspBody =
     -- | Body as Lazy ByteString.
   | BodyLBS BL.ByteString
     -- | Body as a file.
-  | BodyFile String Range
-
-data Range =
-    -- | Entire file showing its file size
-    Entire Integer
-    -- | A part of a file taking offset and length
-  | Part Integer Integer
+  | BodyFile String Integer Integer
