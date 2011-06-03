@@ -4,15 +4,17 @@ module SendFile where
 
 import Data.Int
 import Data.Word
-import Foreign.Marshal (alloca)
+--import Foreign.Marshal (alloca)
 import Foreign.Ptr (Ptr,nullPtr)
-import Foreign.Storable (poke)
+--import Foreign.Storable (poke)
 import Network.Socket
 import System.Posix.IO
 import System.Posix.Types (Fd(..))
 import Foreign.C.Error
 import Control.Concurrent
 
+-- FIXME: this is for Linux only
+-- FIXME: use offset
 sendfile :: Socket -> FilePath -> Integer -> Integer -> IO ()
 sendfile sock path off len = do
     fd <- openFd path ReadOnly Nothing defaultFileFlags
