@@ -2,6 +2,7 @@ module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
+import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
 
@@ -14,6 +15,13 @@ data AppSpec = AppSpec {
   , isHTML :: ByteString -> Bool
     -- | A function for logging. The third argument is a body size.
   , logger :: Request -> Status -> Maybe Integer -> IO ()
+  , getFileInfo :: ByteString -> IO (Maybe FileInfo)
+  }
+
+data FileInfo = FileInfo {
+    fileInfoName :: FilePath
+  , fileInfoSize :: Integer
+  , fileInfoTime :: HTTPDate
   }
 
 data FileRoute = FileRoute {
@@ -45,7 +53,7 @@ data RspBody =
     -- | Body as Lazy ByteString.
   | BodyLBS BL.ByteString
     -- | Body as a file.
-  | BodyFile ByteString Range
+  | BodyFile String Range
 
 data Range =
     -- | Entire file showing its file size

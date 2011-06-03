@@ -1,9 +1,7 @@
 module Network.Wai.Application.Classic.FileInfo where
 
-import Control.Exception
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
-import qualified Data.ByteString.Char8 as BS (unpack)
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
@@ -12,24 +10,6 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
-import System.Posix.Files
-
-----------------------------------------------------------------
-
--- This function is slow.
--- So, let's avoid using doesFileExist which uses getFilesStatus.
-fileInfo :: ByteString -> IO (Maybe (Integer, HTTPDate))
-fileInfo file = handle nothing $ do
-    fs <- getFileStatus (BS.unpack file)
-    if doesExist fs
-       then return $ Just (size fs, mtime fs)
-       else return Nothing
-  where
-    nothing :: IOException -> IO (Maybe (Integer, HTTPDate))
-    nothing _ = return Nothing
-    size = fromIntegral . fileSize
-    mtime = epochTimeToHTTPDate . modificationTime
-    doesExist = not . isDirectory
 
 ----------------------------------------------------------------
 

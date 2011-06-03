@@ -7,7 +7,7 @@ module Network.Wai.Application.Classic.File (
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack, pack)
-import qualified Data.ByteString.Char8 as BS (unpack, pack)
+import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
 import Network.Wai
@@ -41,8 +41,8 @@ If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 fileApp :: AppSpec -> FileRoute -> Application
 fileApp spec filei req = do
     RspSpec st hdr body <- case method of
-        "GET"  -> processGET  req file ishtml rfile
-        "HEAD" -> processHEAD req file ishtml rfile
+        "GET"  -> processGET  spec req file ishtml rfile
+        "HEAD" -> processHEAD spec req file ishtml rfile
         _      -> return notAllowed
     let hdr'= addServer hdr
         (response, mlen) = case body of
@@ -55,8 +55,7 @@ fileApp spec filei req = do
                         Entire bytes    -> (bytes, Nothing)
                         Part skip bytes -> (bytes, Just (FilePart skip bytes))
                     hdr''  = addLength hdr' len
-                    afile' = BS.unpack afile
-                in (ResponseFile st hdr'' afile' mfp, Just len)
+                in (ResponseFile st hdr'' afile mfp, Just len)
     liftIO $ logger spec req st mlen
     return response
   where
@@ -77,55 +76,60 @@ langSuffixes req = map (Just . BS.cons 46) (languages req) ++ [Nothing, Just ".e
 
 ----------------------------------------------------------------
 
-processGET :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
-processGET req file ishtml rfile = runAny [
-    tryGet req file ishtml
-  , tryRedirect req rfile
+processGET :: AppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
+processGET spec req file ishtml rfile = runAny [
+    tryGet spec req file ishtml
+  , tryRedirect spec req rfile
   , just notFound
   ]
 
-tryGet :: Request -> ByteString -> Bool -> MRsp
-tryGet req file True  = runAnyMaybe $ map (tryGetFile req file True) langs
+tryGet :: AppSpec -> Request -> ByteString -> Bool -> MRsp
+tryGet spec req file True  = runAnyMaybe $ map (tryGetFile spec req file True) langs
   where
     langs = langSuffixes req
-tryGet req file False = tryGetFile req file False Nothing
+tryGet spec req file False = tryGetFile spec req file False Nothing
 
-tryGetFile :: Request -> ByteString -> Bool -> Lang -> MRsp
-tryGetFile req file ishtml mlang = do
+tryGetFile :: AppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
+tryGetFile spec req file ishtml mlang = do
     let file' = maybe file (file +++) mlang
-    liftIO (fileInfo file') |>| \(size, mtime) -> do
-      let hdr = newHeader ishtml file mtime
+    liftIO (getFileInfo spec file') |>| \finfo -> do
+      let mtime = fileInfoTime finfo
+          size = fileInfoSize finfo
+          sfile = fileInfoName finfo
+          hdr = newHeader ishtml file mtime
           Just pst = ifmodified req size mtime -- never Nothing
                  ||| ifunmodified req size mtime
                  ||| ifrange req size mtime
                  ||| unconditional req size mtime
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile file' (Entire size))
+            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile sfile (Entire size))
             | otherwise      -> just $ RspSpec st hdr NoBody
 
-          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile file' (Part skip len))
+          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile sfile (Part skip len))
 
 ----------------------------------------------------------------
 
-processHEAD :: Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
-processHEAD req file ishtml rfile = runAny [
-    tryHead req file ishtml
-  , tryRedirect req rfile
+processHEAD :: AppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
+processHEAD spec req file ishtml rfile = runAny [
+    tryHead spec req file ishtml
+  , tryRedirect spec req rfile
   , just notFound
   ]
 
-tryHead :: Request -> ByteString -> Bool -> MRsp
-tryHead req file True  = runAnyMaybe $ map (tryHeadFile req file True) langs
+tryHead :: AppSpec -> Request -> ByteString -> Bool -> MRsp
+tryHead spec req file True  = runAnyMaybe $ map (tryHeadFile spec req file True) langs
   where
     langs = langSuffixes req
-tryHead req file False= tryHeadFile req file False Nothing
+tryHead spec req file False= tryHeadFile spec req file False Nothing
 
-tryHeadFile :: Request -> ByteString -> Bool -> Lang -> MRsp
-tryHeadFile req file ishtml mlang = do
+tryHeadFile :: AppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
+tryHeadFile spec req file ishtml mlang = do
     let file' = maybe file (file +++) mlang
-    liftIO (fileInfo file') |>| \(size, mtime) -> do
-      let hdr = newHeader ishtml file mtime
+    liftIO (getFileInfo spec file') |>| \finfo -> do
+      let mtime = fileInfoTime finfo
+          size = fileInfoSize finfo
+          hdr = newHeader ishtml file mtime
           Just pst = ifmodified req size mtime -- never Nothing
                  ||| Just (Full statusOK)
       case pst of
@@ -134,17 +138,17 @@ tryHeadFile req file ishtml mlang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: Request -> Maybe ByteString -> MRsp
-tryRedirect _   Nothing     = nothing
-tryRedirect req (Just file) =
-    runAnyMaybe $ map (tryRedirectFile req file) langs
+tryRedirect  :: AppSpec -> Request -> Maybe ByteString -> MRsp
+tryRedirect _ _ Nothing = nothing
+tryRedirect spec req (Just file) =
+    runAnyMaybe $ map (tryRedirectFile spec req file) langs
   where
     langs = langSuffixes req
 
-tryRedirectFile :: Request -> ByteString -> Lang -> MRsp
-tryRedirectFile req file mlang = do
+tryRedirectFile :: AppSpec -> Request -> ByteString -> Lang -> MRsp
+tryRedirectFile spec req file mlang = do
     let file' = maybe file (file +++) mlang
-    minfo <- liftIO $ fileInfo file'
+    minfo <- liftIO $ getFileInfo spec file'
     case minfo of
       Nothing -> nothing
       Just _  -> just $ RspSpec statusMovedPermanently hdr NoBody

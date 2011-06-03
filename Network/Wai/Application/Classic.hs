@@ -5,6 +5,7 @@
 module Network.Wai.Application.Classic (
   -- * Types
     AppSpec(..)
+  , FileInfo(..)
   -- * Files
   , FileRoute(..), fileApp
   -- * CGI
