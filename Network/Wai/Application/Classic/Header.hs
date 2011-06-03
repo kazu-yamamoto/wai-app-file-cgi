@@ -11,6 +11,7 @@ import Network.Wai
 
 ----------------------------------------------------------------
 
+-- | Header field key. This must be lower case.
 type FieldKey = ByteString
 
 -- | A type for look-up key.

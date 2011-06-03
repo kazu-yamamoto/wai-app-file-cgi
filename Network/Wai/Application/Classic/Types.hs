@@ -12,7 +12,7 @@ data AppSpec = AppSpec {
   , indexFile :: ByteString
     -- | Whether this is an HTML or not.
   , isHTML :: ByteString -> Bool
-    -- | A function for logging.
+    -- | A function for logging. The third argument is a body size.
   , logger :: Request -> Status -> Maybe Integer -> IO ()
   }
 

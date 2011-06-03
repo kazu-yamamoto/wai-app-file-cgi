@@ -37,7 +37,7 @@ gatewayInterface = "CGI/1.1"
 {-|
   Handle GET and POST for CGI.
 
-The program to link this library must ignore SIGCHLD as follow:
+The program to link this library must ignore SIGCHLD as follows:
 
 >   installHandler sigCHLD Ignore Nothing
 -}
