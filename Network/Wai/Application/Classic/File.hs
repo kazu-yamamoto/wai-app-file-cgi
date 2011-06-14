@@ -10,6 +10,7 @@ import qualified Data.ByteString as BS hiding (unpack, pack)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
+import Network.Socket (Socket)
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo

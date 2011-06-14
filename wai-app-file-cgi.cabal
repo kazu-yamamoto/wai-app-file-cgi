@@ -28,7 +28,6 @@ library
                         Network.Wai.Application.Classic.Range
                         Network.Wai.Application.Classic.Types
                         Network.Wai.Application.Classic.Utils
-                        SendFile
   Build-Depends:        base >= 4 && < 5, process, haskell98,
                         network, transformers,
                         filepath, directory, unix,
