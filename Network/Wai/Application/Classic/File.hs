@@ -10,15 +10,12 @@ import qualified Data.ByteString as BS hiding (unpack, pack)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
-import Network.Socket (Socket)
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
 import Network.Wai.Application.Classic.MaybeIter
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
-
-import SendFile
 
 ----------------------------------------------------------------
 
@@ -53,10 +50,12 @@ fileApp spec filei req = do
             BodyLBS bd ->
                 let len = fromIntegral $ BL.length bd
                 in (responseLBS st hdr' bd, Just len)
-            BodyFile afile offset len ->
-                let hdr''= addLength hdr' len
-                    filesender = \s -> sendfile s afile offset len >> return True
-                in (ResponseIO st hdr'' filesender, Just len)
+            BodyFile afile rng ->
+                let (len, mfp) = case rng of
+                        Entire bytes    -> (bytes, Nothing)
+                        Part skip bytes -> (bytes, Just (FilePart skip bytes))
+                    hdr''  = addLength hdr' len
+                in (ResponseFile st hdr'' afile mfp, Just len)
     liftIO $ logger spec req st mlen
     return response
   where
@@ -104,10 +103,10 @@ tryGetFile spec req file ishtml mlang = do
                  ||| unconditional req size mtime
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile sfile 0 size)
+            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile sfile (Entire size))
             | otherwise      -> just $ RspSpec st hdr NoBody
 
-          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile sfile skip len)
+          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile sfile (Part skip len))
 
 ----------------------------------------------------------------
 
