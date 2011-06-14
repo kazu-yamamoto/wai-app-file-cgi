@@ -52,7 +52,8 @@ fileApp spec filei req = do
                 in (responseLBS st hdr' bd, Just len)
             BodyFile afile rng ->
                 let (len, mfp) = case rng of
-                        Entire bytes    -> (bytes, Nothing)
+                        -- sendfile of Linux does not support the entire file
+                        Entire bytes    -> (bytes, Just (FilePart 0 bytes))
                         Part skip bytes -> (bytes, Just (FilePart skip bytes))
                     hdr''  = addLength hdr' len
                 in (ResponseFile st hdr'' afile mfp, Just len)
