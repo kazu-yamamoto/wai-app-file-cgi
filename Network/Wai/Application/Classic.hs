@@ -5,6 +5,7 @@
 module Network.Wai.Application.Classic (
   -- * Types
     AppSpec(..)
+  , Logger
   , FileInfo(..)
   -- * Files
   , FileRoute(..), fileApp
