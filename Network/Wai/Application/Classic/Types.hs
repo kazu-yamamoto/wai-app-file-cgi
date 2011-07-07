@@ -15,6 +15,7 @@ data AppSpec = AppSpec {
   , isHTML :: ByteString -> Bool
     -- | A function for logging. The third argument is a body size.
   , logger :: Logger
+    -- | A function to obtain information about a file.
   , getFileInfo :: ByteString -> IO (Maybe FileInfo)
   }
 
