@@ -12,7 +12,7 @@ module Network.Wai.Application.Classic (
   -- * CGI
   , CgiRoute(..), cgiApp
   -- * Utilities for logging
-  , NumericAddress, getPeerAddr
+  , NumericAddress, showSockAddr
   , FieldKey
   , lookupRequestField, lookupRequestField'
   ) where

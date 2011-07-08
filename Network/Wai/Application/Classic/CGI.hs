@@ -51,7 +51,7 @@ cgiApp spec cgii req = case method of
 
 cgiApp' :: Bool -> AppSpec -> CgiRoute -> Application
 cgiApp' body spec cgii req = do
-    let naddr = getPeerAddr . remoteHost $ req
+    let naddr = showSockAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,_) <- liftIO . createProcess . proSpec $ naddr
     liftIO $ do
         hSetEncoding rhdl latin1
