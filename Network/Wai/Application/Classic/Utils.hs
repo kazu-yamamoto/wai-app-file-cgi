@@ -12,6 +12,7 @@ import qualified Data.ByteString as BS
 import Data.ByteString.Char8 ()
 import Data.Word
 import Network.Socket (SockAddr(..))
+import System.ByteOrder
 import Text.Printf
 
 {-|
@@ -19,9 +20,10 @@ import Text.Printf
 -}
 type NumericAddress = String
 
--- SockAddr is host byte order thanks to peek32 in Network.Socket.Internal.
-showIPv4 :: Word32 -> NumericAddress
-showIPv4 w32 = show b4 ++ "." ++ show b3 ++ "." ++ show b2 ++ "." ++ show b1
+showIPv4 :: Word32 -> Bool -> NumericAddress
+showIPv4 w32 little
+    | little    = show b1 ++ "." ++ show b2 ++ "." ++ show b3 ++ "." ++ show b4
+    | otherwise = show b4 ++ "." ++ show b3 ++ "." ++ show b2 ++ "." ++ show b1
   where
     t1 = w32
     t2 = shift t1 (-8)
@@ -48,10 +50,11 @@ showIPv6 (w1,w2,w3,w4) =
   Convert 'SockAddr' to 'NumericAddress'. If the address is
   an IPv4-embedded IPv6 address, the IPv4 is extracted.
 -}
--- SockAddr is host byte order thanks to peek32 in Network.Socket.Internal.
+-- HostAddr is network byte order.
+-- HostAddr6 is host byte order.
 showSockAddr :: SockAddr -> NumericAddress
-showSockAddr (SockAddrInet _ addr4)                       = showIPv4 addr4
-showSockAddr (SockAddrInet6 _ _ (0,0,0x0000ffff,addr4) _) = showIPv4 addr4
+showSockAddr (SockAddrInet _ addr4)                       = showIPv4 addr4 (byteOrder == LittleEndian)
+showSockAddr (SockAddrInet6 _ _ (0,0,0x0000ffff,addr4) _) = showIPv4 addr4 False
 showSockAddr (SockAddrInet6 _ _ (0,0,0,1) _)              = "::1"
 showSockAddr (SockAddrInet6 _ _ addr6 _)                  = showIPv6 addr6
 showSockAddr _                                            = "unknownSocket"
