@@ -45,7 +45,7 @@ showIPv6 (w1,w2,w3,w4) =
     foo w = (h1,h2)
       where
         h1 = w .&. 0x0000ffff
-        h2 = (shift w (-16)) .&. 0x0000ffff
+        h2 = shift w (-16) .&. 0x0000ffff
 {-|
   Convert 'SockAddr' to 'NumericAddress'. If the address is
   an IPv4-embedded IPv6 address, the IPv4 is extracted.
