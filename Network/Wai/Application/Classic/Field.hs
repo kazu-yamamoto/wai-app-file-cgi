@@ -16,7 +16,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
-import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType)
+import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
 
 ----------------------------------------------------------------
 
@@ -61,4 +61,4 @@ extensions file = exts
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
-defaultMimeTypes' = SH.fromList $ map (first BS.pack) $ Map.toList defaultMimeTypes
+defaultMimeTypes' = SH.fromList $ map (first (BS.pack.fromFilePath)) $ Map.toList defaultMimeTypes
