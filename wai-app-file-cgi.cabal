@@ -34,7 +34,7 @@ library
                         containers, attoparsec,
                         wai, enumerator >= 0.4.9,
                         bytestring, blaze-builder,
-                        wai-app-static, http-types, http-date,
+                        wai-app-static >= 0.3, http-types, http-date,
                         case-insensitive, static-hash, byteorder
 Source-Repository head
   Type:                 git
