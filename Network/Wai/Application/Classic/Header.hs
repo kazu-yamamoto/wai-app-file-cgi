@@ -2,8 +2,6 @@
 
 module Network.Wai.Application.Classic.Header where
 
-import Data.ByteString (ByteString)
-import Data.ByteString.Char8 ()
 import Data.CaseInsensitive
 import Data.Maybe
 import Network.HTTP.Types
@@ -12,10 +10,10 @@ import Network.Wai
 ----------------------------------------------------------------
 
 -- | Header field key. This must be lower case.
-type FieldKey = ByteString
+type FieldKey = CI Ascii
 
 -- | A type for look-up key.
-fkAcceptLanguage :: ByteString
+fkAcceptLanguage :: FieldKey
 fkAcceptLanguage = "accept-language"
 
 -- | Look-up key for Range:.
@@ -63,25 +61,16 @@ fkReferer = "referer"
 {-|
   Looking up a header in 'Request'.
 -}
-lookupRequestField :: FieldKey -> Request -> Maybe ByteString
-lookupRequestField x req = lookupField x hdrs
+lookupRequestField :: FieldKey -> Request -> Maybe Ascii
+lookupRequestField x req = lookup x hdrs
   where
     hdrs = requestHeaders req
 
 {-|
   Looking up a header in 'Request'. If the header does not exist,
-  empty 'ByteString' is returned.
+  empty 'Ascii' is returned.
 -}
-lookupRequestField' :: FieldKey -> Request -> ByteString
-lookupRequestField' x req = fromMaybe "" $ lookupField x hdrs
+lookupRequestField' :: FieldKey -> Request -> Ascii
+lookupRequestField' x req = fromMaybe "" $ lookup x hdrs
   where
     hdrs = requestHeaders req
-
-{-|
-  Looking up a header in 'RequestHeaders'.
--}
-lookupField :: FieldKey -> RequestHeaders -> Maybe ByteString
-lookupField x ((key, val):kvs)
-  | x == foldedCase key = Just val
-  | otherwise           = lookupField x kvs
-lookupField _ []        = Nothing

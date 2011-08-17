@@ -85,7 +85,7 @@ cgiApp' body spec cgii req = do
     toBuilder = EL.map fromByteString
     emptyBody = EB.isolate 0
     response build status hs = toBuilder =$ build status hs
-    check hs = lookupField fkContentType hs >> case lookupField "status" hs of
+    check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
@@ -111,9 +111,9 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
-    addLength = addEnv "CONTENT_LENGTH" $ lookupField fkContentLength headers
-    addType   = addEnv "CONTENT_TYPE" $ lookupField fkContentType headers
-    addCookie = addEnv "HTTP_COOKIE" $ lookupField fkCookie headers
+    addLength = addEnv "CONTENT_LENGTH" $ lookup fkContentLength headers
+    addType   = addEnv "CONTENT_TYPE" $ lookup fkContentType headers
+    addCookie = addEnv "HTTP_COOKIE" $ lookup fkCookie headers
     query = BS.unpack . safeTail . rawQueryString
       where
         safeTail "" = ""

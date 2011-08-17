@@ -20,7 +20,7 @@ import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeTy
 
 ----------------------------------------------------------------
 
-languages :: Request -> [ByteString]
+languages :: Request -> [Ascii]
 languages req = maybe [] parseLang $ lookupRequestField fkAcceptLanguage req
 
 ifModifiedSince :: Request -> Maybe HTTPDate
@@ -32,7 +32,7 @@ ifUnmodifiedSince = lookupAndParseDate fkIfUnmodifiedSince
 ifRange :: Request -> Maybe HTTPDate
 ifRange = lookupAndParseDate fkIfRange
 
-lookupAndParseDate :: ByteString -> Request -> Maybe HTTPDate
+lookupAndParseDate :: FieldKey -> Request -> Maybe HTTPDate
 lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 
 ----------------------------------------------------------------
