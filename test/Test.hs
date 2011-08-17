@@ -141,7 +141,8 @@ test_get_ja = do
 test_get_modified :: Assertion
 test_get_modified = do
     Response _ hdr _ <- sendGET url []
-    let Just lm = lookupField fkLastModified hdr
+    let Just lm = lookup fkLastModified hdr
+    print lm
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
     sc @?= 304
   where
@@ -200,7 +201,7 @@ test_head_ja = do
 test_head_modified :: Assertion
 test_head_modified = do
     Response _ hdr _ <- sendHEAD url []
-    let Just lm = lookupField fkLastModified hdr
+    let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
     sc @?= 304
   where
