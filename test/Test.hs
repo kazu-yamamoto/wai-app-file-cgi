@@ -142,7 +142,6 @@ test_get_modified :: Assertion
 test_get_modified = do
     Response _ hdr _ <- sendGET url []
     let Just lm = lookup fkLastModified hdr
-    print lm
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
     sc @?= 304
   where
