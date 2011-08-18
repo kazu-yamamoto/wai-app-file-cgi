@@ -35,7 +35,7 @@ library
                         wai, enumerator >= 0.4.9,
                         bytestring, blaze-builder,
                         wai-app-static >= 0.3, http-types, http-date,
-                        case-insensitive, static-hash, byteorder
+                        case-insensitive, static-hash, wai-logger
 Source-Repository head
   Type:                 git
   Location:             git://github.com/kazu-yamamoto/wai-app-file-cgi.git

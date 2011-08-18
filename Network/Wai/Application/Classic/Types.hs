@@ -4,7 +4,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import Network.HTTP.Date
 import Network.HTTP.Types
-import Network.Wai
+import Network.Wai.Logger.Prefork
 
 data AppSpec = AppSpec {
     -- | Name specified to Server: in HTTP response.
@@ -14,12 +14,10 @@ data AppSpec = AppSpec {
     -- | Whether this is an HTML or not.
   , isHTML :: ByteString -> Bool
     -- | A function for logging. The third argument is a body size.
-  , logger :: Logger
+  , logger :: ApacheLogger
     -- | A function to obtain information about a file.
   , getFileInfo :: ByteString -> IO (Maybe FileInfo)
   }
-
-type Logger = Request -> Status -> Maybe Integer -> IO ()
 
 data FileInfo = FileInfo {
     fileInfoName :: FilePath

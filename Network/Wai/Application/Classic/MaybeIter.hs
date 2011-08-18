@@ -39,7 +39,7 @@ v >>| act =
     case v of
       Nothing -> nothing
       Just x  -> act x
-      
+
 (|>|) :: MaybeIter a -> (a -> MaybeIter b) -> MaybeIter b
 a |>| act = do
     v <- a

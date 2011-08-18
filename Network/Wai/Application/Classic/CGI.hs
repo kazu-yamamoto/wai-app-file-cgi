@@ -22,6 +22,7 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
+import Network.Wai.Logger.Utils
 import System.IO
 import System.Process
 
