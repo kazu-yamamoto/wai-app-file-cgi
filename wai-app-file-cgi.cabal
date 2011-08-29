@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.3.2
+Version:                0.3.3
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -28,7 +28,7 @@ library
                         Network.Wai.Application.Classic.Range
                         Network.Wai.Application.Classic.Types
                         Network.Wai.Application.Classic.Utils
-  Build-Depends:        base >= 4 && < 5, process, haskell98,
+  Build-Depends:        base >= 4 && < 5, process,
                         network, transformers,
                         filepath, directory, unix,
                         containers, attoparsec,
