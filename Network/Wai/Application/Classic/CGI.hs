@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, CPP #-}
 
 module Network.Wai.Application.Classic.CGI (
     cgiApp
@@ -79,6 +79,9 @@ cgiApp' body spec cgii req = do
       , std_out = CreatePipe
       , std_err = Inherit
       , close_fds = True
+#if __GLASGOW_HASKELL__ >= 702
+      , create_group = True
+#endif
       }
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)

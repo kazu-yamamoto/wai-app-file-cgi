@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.3.3
+Version:                0.3.4
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -38,4 +38,4 @@ library
                         case-insensitive, static-hash, wai-logger
 Source-Repository head
   Type:                 git
-  Location:             git://github.com/kazu-yamamoto/wai-app-file-cgi.git
+  Location:             https://github.com/kazu-yamamoto/wai-app-file-cgi
