@@ -54,16 +54,16 @@ cgiApp spec cgii req = case method of
 cgiApp' :: Bool -> AppSpec -> CgiRoute -> Application
 cgiApp' body spec cgii req = do
     (rhdl,whdl,pid) <- liftIO $ execProcess spec cgii req
+    let cleanup = do
+            hClose whdl
+            hClose rhdl
+            terminateProcess pid -- SIGTERM
     -- HTTP body can be obtained in this Iteratee level only
-    toCGI whdl body
-    -- Sending EOF
+    toCGI whdl body `catchError` const (liftIO cleanup)
     liftIO $ hClose whdl
     respEnumerator $ \hdrMaker ->
         -- this is IO
-        fromCGI rhdl spec req hdrMaker `finally` do
-            hClose rhdl
-            hClose whdl
-            terminateProcess pid -- SIGTERM
+        fromCGI rhdl spec req hdrMaker `finally` do cleanup
   where
     respEnumerator = return . ResponseEnumerator
 
