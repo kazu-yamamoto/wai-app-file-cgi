@@ -6,6 +6,7 @@ module Network.Wai.Application.Classic.CGI (
 
 import Blaze.ByteString.Builder.ByteString
 import Control.Applicative
+import Control.Exception
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
@@ -52,25 +53,79 @@ cgiApp spec cgii req = case method of
 
 cgiApp' :: Bool -> AppSpec -> CgiRoute -> Application
 cgiApp' body spec cgii req = do
-    let naddr = showSockAddr . remoteHost $ req
-    (Just whdl,Just rhdl,_,_) <- liftIO . createProcess . proSpec $ naddr
-    liftIO $ do
-        hSetEncoding rhdl latin1
-        hSetEncoding whdl latin1
-    when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
-    liftIO . hClose $ whdl
-    (return . ResponseEnumerator) (\build ->
-        run_ $ EB.enumHandle 4096 rhdl $$ do
-            m <- (>>= check) <$> parseHeader
-            let (st, hdr, emp) = case m of
-                    Nothing    -> (status500,[],True)
-                    Just (s,h) -> (s,h,False)
-                hdr' = addHeader hdr
-            liftIO $ logger spec req st Nothing -- cannot know body length
-            if emp
-               then emptyBody =$ response build st hdr'
-               else              response build st hdr')
+    (rhdl,whdl,pid) <- liftIO $ execProcess spec cgii req
+    -- HTTP body can be obtained in this Iteratee level only
+    toCGI whdl body
+    -- Sending EOF
+    liftIO $ hClose whdl
+    respEnumerator $ \hdrMaker ->
+        -- this is IO
+        fromCGI rhdl spec req hdrMaker `finally` do
+            hClose rhdl
+            hClose whdl
+            terminateProcess pid -- SIGTERM
   where
+    respEnumerator = return . ResponseEnumerator
+
+----------------------------------------------------------------
+
+toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
+toCGI whdl body = when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
+
+fromCGI :: Handle -> AppSpec -> Request -> ResponseEnumerator a
+fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
+    -- consuming the header part of CGI output
+    m <- (>>= check) <$> parseHeader
+    let (st, hdr, hasBody) = case m of
+            Nothing    -> (status500,[],False)
+            Just (s,h) -> (s,h,True)
+        hdr' = addHeader hdr
+    -- logging
+    liftIO $ logger spec req st Nothing -- cannot know body length
+    -- building HTTP header and optionally HTTP body
+    if hasBody
+        then {- Body -}   response st hdr'
+        else emptyBody $$ response st hdr'
+  where
+    toBuilder = EL.map fromByteString
+    emptyBody = enumEOF
+    response status hs = toBuilder =$ hdrMaker status hs
+    check hs = lookup fkContentType hs >> case lookup "status" hs of
+        Nothing -> Just (status200, hs)
+        Just l  -> toStatus l >>= \s -> Just (s,hs')
+      where
+        hs' = filter (\(k,_) -> k /= "status") hs
+    toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
+    addHeader hdr = ("Server", softwareName spec) : hdr
+
+----------------------------------------------------------------
+
+parseHeader :: Iteratee ByteString IO (Maybe RequestHeaders)
+parseHeader = takeHeader >>= maybe (return Nothing)
+                                   (return . Just . map parseField)
+  where
+    parseField bs = (mk key, val)
+      where
+        (key,val) = case BS.breakByte 58 bs of -- ':'
+            kv@(_,"") -> kv
+            (k,v) -> let v' = BS.dropWhile (==32) $ BS.tail v in (k,v') -- ' '
+
+takeHeader :: Iteratee ByteString IO (Maybe [ByteString])
+takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
+    if l == ""
+       then return (Just [])
+       else takeHeader >>= maybe (return Nothing) (return . Just . (l:))
+
+----------------------------------------------------------------
+
+execProcess :: AppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
+execProcess spec cgii req = do
+    let naddr = showSockAddr . remoteHost $ req
+    (Just whdl,Just rhdl,_,pid) <- createProcess . proSpec $ naddr
+    hSetEncoding rhdl latin1
+    hSetEncoding whdl latin1
+    return (rhdl, whdl, pid)
+ where
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
@@ -86,18 +141,6 @@ cgiApp' body spec cgii req = do
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)
                                                  (rawPathInfo req)
-    toBuilder = EL.map fromByteString
-    emptyBody = EB.isolate 0
-    response build status hs = toBuilder =$ build status hs
-    check hs = lookup fkContentType hs >> case lookup "status" hs of
-        Nothing -> Just (status200, hs)
-        Just l  -> toStatus l >>= \s -> Just (s,hs')
-      where
-        hs' = filter (\(k,_) -> foldedCase k /= "status") hs
-    toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-    addHeader hdr = ("Server", softwareName spec) : hdr
-
-----------------------------------------------------------------
 
 makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
 makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ baseEnv
@@ -126,24 +169,6 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
-
-----------------------------------------------------------------
-
-parseHeader :: Iteratee ByteString IO (Maybe RequestHeaders)
-parseHeader = takeHeader >>= maybe (return Nothing)
-                                   (return . Just . map parseField)
-  where
-    parseField bs = (mk key, val)
-      where
-        (key,val) = case BS.breakByte 58 bs of -- ':'
-            kv@(_,"") -> kv
-            (k,v) -> let v' = BS.dropWhile (==32) $ BS.tail v in (k,v') -- ' '
-
-takeHeader :: Iteratee ByteString IO (Maybe [ByteString])
-takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
-    if l == ""
-       then return (Just [])
-       else takeHeader >>= maybe (return Nothing) (return . Just . (l:))
 
 pathinfoToCGI :: ByteString -> ByteString -> ByteString -> (FilePath, String, String)
 pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
