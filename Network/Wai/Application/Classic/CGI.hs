@@ -63,7 +63,7 @@ cgiApp' body spec cgii req = do
     liftIO $ hClose whdl
     respEnumerator $ \hdrMaker ->
         -- this is IO
-        fromCGI rhdl spec req hdrMaker `finally` do cleanup
+        fromCGI rhdl spec req hdrMaker `finally` cleanup
   where
     respEnumerator = return . ResponseEnumerator
 
