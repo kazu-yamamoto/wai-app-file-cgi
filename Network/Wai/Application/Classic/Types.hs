@@ -3,10 +3,13 @@ module Network.Wai.Application.Classic.Types where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import Network.HTTP.Date
+import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
 import Network.Wai.Logger.Prefork
 
-data AppSpec = AppSpec {
+----------------------------------------------------------------
+
+data FileAppSpec = FileAppSpec {
     -- | Name specified to Server: in HTTP response.
     softwareName :: ByteString
     -- | A file name of an index file.
@@ -32,12 +35,36 @@ data FileRoute = FileRoute {
   , fileDst :: ByteString
   }
 
+----------------------------------------------------------------
+
+data CgiAppSpec = CgiAppSpec {
+    -- | Name specified to Server: in HTTP response.
+    cgiSoftwareName :: ByteString
+    -- | A file name of an index file.
+  , cgiLogger :: ApacheLogger
+  }
+
 data CgiRoute = CgiRoute {
     -- | Path prefix to be matched to 'pathInfo'.
     cgiSrc :: ByteString
     -- | Path prefix to an actual file system.
   , cgiDst :: ByteString
   }
+
+----------------------------------------------------------------
+
+data RevProxyAppSpec = RevProxyAppSpec {
+    revProxyManager :: H.Manager
+  }
+
+data RevProxyRoute = RevProxyRoute {
+    revProxySrc :: ByteString
+  , revProxyDst :: ByteString
+  , revProxyDomain :: ByteString
+  , revProxyPort :: Int
+  }
+
+----------------------------------------------------------------
 
 data RspSpec = RspSpec {
     -- | Response status.

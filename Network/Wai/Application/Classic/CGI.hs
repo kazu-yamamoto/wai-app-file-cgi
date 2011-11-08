@@ -43,7 +43,7 @@ The program to link this library must ignore SIGCHLD as follows:
 
 >   installHandler sigCHLD Ignore Nothing
 -}
-cgiApp :: AppSpec -> CgiRoute -> Application
+cgiApp :: CgiAppSpec -> CgiRoute -> Application
 cgiApp spec cgii req = case method of
     "GET"  -> cgiApp' False spec cgii req
     "POST" -> cgiApp' True  spec cgii req
@@ -51,7 +51,7 @@ cgiApp spec cgii req = case method of
   where
     method = requestMethod req
 
-cgiApp' :: Bool -> AppSpec -> CgiRoute -> Application
+cgiApp' :: Bool -> CgiAppSpec -> CgiRoute -> Application
 cgiApp' body spec cgii req = do
     (rhdl,whdl,pid) <- liftIO $ execProcess spec cgii req
     let cleanup = do
@@ -72,7 +72,7 @@ cgiApp' body spec cgii req = do
 toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
 toCGI whdl body = when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
 
-fromCGI :: Handle -> AppSpec -> Request -> ResponseEnumerator a
+fromCGI :: Handle -> CgiAppSpec -> Request -> ResponseEnumerator a
 fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
     -- consuming the header part of CGI output
     m <- (>>= check) <$> parseHeader
@@ -81,7 +81,7 @@ fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
             Just (s,h) -> (s,h,True)
         hdr' = addHeader hdr
     -- logging
-    liftIO $ logger spec req st Nothing -- cannot know body length
+    liftIO $ cgiLogger spec req st Nothing -- cannot know body length
     -- building HTTP header and optionally HTTP body
     if hasBody
         then {- Body -}   response st hdr'
@@ -96,7 +96,7 @@ fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-    addHeader hdr = ("Server", softwareName spec) : hdr
+    addHeader hdr = ("Server", cgiSoftwareName spec) : hdr
 
 ----------------------------------------------------------------
 
@@ -118,7 +118,7 @@ takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
 
 ----------------------------------------------------------------
 
-execProcess :: AppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
+execProcess :: CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
 execProcess spec cgii req = do
     let naddr = showSockAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,pid) <- createProcess . proSpec $ naddr
@@ -129,7 +129,7 @@ execProcess spec cgii req = do
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
-      , env = Just (makeEnv req naddr scriptName pathinfo (softwareName spec))
+      , env = Just (makeEnv req naddr scriptName pathinfo (cgiSoftwareName spec))
       , std_in = CreatePipe
       , std_out = CreatePipe
       , std_err = Inherit

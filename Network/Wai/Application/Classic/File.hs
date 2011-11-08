@@ -38,7 +38,7 @@ The following HTTP headers are handled: Acceptable-Language:,
 If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 -}
 
-fileApp :: AppSpec -> FileRoute -> Application
+fileApp :: FileAppSpec -> FileRoute -> Application
 fileApp spec filei req = do
     RspSpec st hdr body <- case method of
         "GET"  -> processGET  spec req file ishtml rfile
@@ -77,20 +77,20 @@ langSuffixes req = map (Just . BS.cons 46) (languages req) ++ [Nothing, Just ".e
 
 ----------------------------------------------------------------
 
-processGET :: AppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
+processGET :: FileAppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processGET spec req file ishtml rfile = runAny [
     tryGet spec req file ishtml
   , tryRedirect spec req rfile
   , just notFound
   ]
 
-tryGet :: AppSpec -> Request -> ByteString -> Bool -> MRsp
+tryGet :: FileAppSpec -> Request -> ByteString -> Bool -> MRsp
 tryGet spec req file True  = runAnyMaybe $ map (tryGetFile spec req file True) langs
   where
     langs = langSuffixes req
 tryGet spec req file False = tryGetFile spec req file False Nothing
 
-tryGetFile :: AppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
+tryGetFile :: FileAppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
 tryGetFile spec req file ishtml mlang = do
     let file' = maybe file (file +++) mlang
     liftIO (getFileInfo spec file') |>| \finfo -> do
@@ -111,20 +111,20 @@ tryGetFile spec req file ishtml mlang = do
 
 ----------------------------------------------------------------
 
-processHEAD :: AppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
+processHEAD :: FileAppSpec -> Request -> ByteString -> Bool -> Maybe ByteString -> Rsp
 processHEAD spec req file ishtml rfile = runAny [
     tryHead spec req file ishtml
   , tryRedirect spec req rfile
   , just notFound
   ]
 
-tryHead :: AppSpec -> Request -> ByteString -> Bool -> MRsp
+tryHead :: FileAppSpec -> Request -> ByteString -> Bool -> MRsp
 tryHead spec req file True  = runAnyMaybe $ map (tryHeadFile spec req file True) langs
   where
     langs = langSuffixes req
 tryHead spec req file False= tryHeadFile spec req file False Nothing
 
-tryHeadFile :: AppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
+tryHeadFile :: FileAppSpec -> Request -> ByteString -> Bool -> Lang -> MRsp
 tryHeadFile spec req file ishtml mlang = do
     let file' = maybe file (file +++) mlang
     liftIO (getFileInfo spec file') |>| \finfo -> do
@@ -139,14 +139,14 @@ tryHeadFile spec req file ishtml mlang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: AppSpec -> Request -> Maybe ByteString -> MRsp
+tryRedirect  :: FileAppSpec -> Request -> Maybe ByteString -> MRsp
 tryRedirect _ _ Nothing = nothing
 tryRedirect spec req (Just file) =
     runAnyMaybe $ map (tryRedirectFile spec req file) langs
   where
     langs = langSuffixes req
 
-tryRedirectFile :: AppSpec -> Request -> ByteString -> Lang -> MRsp
+tryRedirectFile :: FileAppSpec -> Request -> ByteString -> Lang -> MRsp
 tryRedirectFile spec req file mlang = do
     let file' = maybe file (file +++) mlang
     minfo <- liftIO $ getFileInfo spec file'

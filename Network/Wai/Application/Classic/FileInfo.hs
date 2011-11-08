@@ -56,12 +56,12 @@ pathinfoToFilePath req filei = path'
     dst = fileDst filei
     path' = dst </> BS.drop (BS.length src) path
 
-addIndex :: AppSpec -> ByteString -> ByteString
+addIndex :: FileAppSpec -> ByteString -> ByteString
 addIndex spec path
   | hasTrailingPathSeparator path = path </> indexFile spec
   | otherwise                     = path
 
-redirectPath :: AppSpec -> ByteString -> Maybe ByteString
+redirectPath :: FileAppSpec -> ByteString -> Maybe ByteString
 redirectPath spec path
   | hasTrailingPathSeparator path = Nothing
   | otherwise                     = Just (path </> indexFile spec)
