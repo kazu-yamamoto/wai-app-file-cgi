@@ -12,6 +12,7 @@ import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Utils
 
 {- TODO
  - incremental boy (persist connection)
@@ -33,9 +34,9 @@ toHTTPRequest req route = H.def {
   , H.decompress = H.alwaysDecompress
   }
   where
+    src = revProxySrc route
     dst = revProxyDst route
-    path' = BS.drop (BS.length (revProxySrc route)) $ rawPathInfo req
-    path = dst `BS.append` path'
+    path = dst +++ BS.drop (BS.length src) (rawPathInfo req)
 
 revProxyApp :: RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp spec route req = return $ ResponseEnumerator $ \buildHeader ->
