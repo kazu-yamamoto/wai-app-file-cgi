@@ -29,7 +29,7 @@ data FileInfo = FileInfo {
   }
 
 data FileRoute = FileRoute {
-    -- | Path prefix to be matched to 'pathInfo'.
+    -- | Path prefix to be matched to 'rawPathInfo'.
     fileSrc :: ByteString
     -- | Path prefix to an actual file system.
   , fileDst :: ByteString
@@ -45,7 +45,7 @@ data CgiAppSpec = CgiAppSpec {
   }
 
 data CgiRoute = CgiRoute {
-    -- | Path prefix to be matched to 'pathInfo'.
+    -- | Path prefix to be matched to 'rawPathInfo'.
     cgiSrc :: ByteString
     -- | Path prefix to an actual file system.
   , cgiDst :: ByteString
@@ -56,13 +56,18 @@ data CgiRoute = CgiRoute {
 data RevProxyAppSpec = RevProxyAppSpec {
     -- | Name specified to Server: in HTTP response.
     revProxySoftwareName :: ByteString
+    -- | Connection manager
   , revProxyManager :: H.Manager
   }
 
 data RevProxyRoute = RevProxyRoute {
+    -- | Path prefix to be matched to 'rawPathInfo'.
     revProxySrc :: ByteString
+    -- | Destination path prefix.
   , revProxyDst :: ByteString
+    -- | Destination domain name.
   , revProxyDomain :: ByteString
+    -- | Destination port number.
   , revProxyPort :: Int
   }
 

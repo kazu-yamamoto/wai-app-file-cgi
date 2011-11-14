@@ -19,6 +19,7 @@ import Prelude hiding (catch)
 
 {- TODO
  - incremental boy (persist connection)
+ - Body
 -}
 
 toHTTPRequest :: Request -> RevProxyRoute -> H.Request m
@@ -40,6 +41,11 @@ toHTTPRequest req route = H.def {
     src = revProxySrc route
     dst = revProxyDst route
     path = dst +++ BS.drop (BS.length src) (rawPathInfo req)
+
+{-|
+  Relaying any requests as reverse proxy.
+  Relaying HTTP body is not implemented yet.
+-}
 
 revProxyApp :: RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp spec route req = return $ ResponseEnumerator $ \respBuilder ->
