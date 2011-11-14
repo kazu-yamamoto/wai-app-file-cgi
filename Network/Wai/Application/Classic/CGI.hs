@@ -61,9 +61,9 @@ cgiApp' body spec cgii req = do
     -- HTTP body can be obtained in this Iteratee level only
     toCGI whdl body `catchError` const (liftIO cleanup)
     liftIO $ hClose whdl
-    respEnumerator $ \hdrMaker ->
+    respEnumerator $ \respBuilder ->
         -- this is IO
-        fromCGI rhdl spec req hdrMaker `finally` cleanup
+        fromCGI rhdl spec req respBuilder `finally` cleanup
   where
     respEnumerator = return . ResponseEnumerator
 
@@ -73,7 +73,7 @@ toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
 toCGI whdl body = when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
 
 fromCGI :: Handle -> CgiAppSpec -> Request -> ResponseEnumerator a
-fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
+fromCGI rhdl spec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
     -- consuming the header part of CGI output
     m <- (>>= check) <$> parseHeader
     let (st, hdr, hasBody) = case m of
@@ -87,9 +87,9 @@ fromCGI rhdl spec req hdrMaker = run_ $ EB.enumHandle 4096 rhdl $$ do
         then {- Body -}   response st hdr'
         else emptyBody $$ response st hdr'
   where
-    toBuilder = EL.map fromByteString
+    enumBody = EL.map fromByteString
     emptyBody = enumEOF
-    response status hs = toBuilder =$ hdrMaker status hs
+    response status hs = enumBody =$ respBuilder status hs
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
