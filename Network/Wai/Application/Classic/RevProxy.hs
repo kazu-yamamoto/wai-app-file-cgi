@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
@@ -7,11 +7,12 @@ import Control.Exception
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as L
-import Data.Enumerator (Iteratee, run_, (=$))
+import Data.Enumerator (Iteratee, run_, (=$), ($$), ($=), enumList)
 import qualified Data.Enumerator.List as EL
 import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
 import Network.Wai
+import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
@@ -42,19 +43,25 @@ toHTTPRequest req route = H.def {
 
 revProxyApp :: RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp spec route req = return $ ResponseEnumerator $ \respBuilder ->
-    run_ (H.http (toHTTPRequest req route) (fromBS respBuilder) mgr)
-    `catch` badGateway respBuilder
+    run_ (H.http (toHTTPRequest req route) (fromBS spec respBuilder) mgr)
+    `catch` badGateway spec respBuilder
   where
     mgr = revProxyManager spec
 
-fromBS :: (Status -> ResponseHeaders -> Iteratee Builder IO a)
+fromBS :: RevProxyAppSpec
+       -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS f s h = EL.map fromByteString -- body: from BS to Builder
+fromBS spec f s h = EL.map fromByteString -- body: from BS to Builder
             =$ f s h'                -- hedr: removing CE:
   where
-    h' = filter p h
+    h' = ("Server", revProxySoftwareName spec):filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
-badGateway :: (Status -> ResponseHeaders -> Iteratee Builder IO a) -> SomeException -> IO a
-badGateway builder _ = run_ $ builder status502 []
+badGateway :: RevProxyAppSpec 
+           -> (Status -> ResponseHeaders -> Iteratee Builder IO a) 
+           -> SomeException -> IO a
+badGateway spec builder _ = run_ $ bdy $$ builder status502 hdr
+  where
+    hdr = ("Server", revProxySoftwareName spec):textPlain
+    bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map fromByteString

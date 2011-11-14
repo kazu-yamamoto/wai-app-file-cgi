@@ -54,7 +54,9 @@ data CgiRoute = CgiRoute {
 ----------------------------------------------------------------
 
 data RevProxyAppSpec = RevProxyAppSpec {
-    revProxyManager :: H.Manager
+    -- | Name specified to Server: in HTTP response.
+    revProxySoftwareName :: ByteString
+  , revProxyManager :: H.Manager
   }
 
 data RevProxyRoute = RevProxyRoute {
