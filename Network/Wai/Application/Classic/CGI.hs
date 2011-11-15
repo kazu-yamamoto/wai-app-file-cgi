@@ -43,17 +43,17 @@ The program to link this library must ignore SIGCHLD as follows:
 
 >   installHandler sigCHLD Ignore Nothing
 -}
-cgiApp :: CgiAppSpec -> CgiRoute -> Application
-cgiApp spec cgii req = case method of
-    "GET"  -> cgiApp' False spec cgii req
-    "POST" -> cgiApp' True  spec cgii req
+cgiApp :: ClassicAppSpec -> CgiRoute -> Application
+cgiApp cspec cgii req = case method of
+    "GET"  -> cgiApp' False cspec cgii req
+    "POST" -> cgiApp' True  cspec cgii req
     _      -> return $ responseLBS statusNotAllowed textPlain "Method Not Allowed\r\n"
   where
     method = requestMethod req
 
-cgiApp' :: Bool -> CgiAppSpec -> CgiRoute -> Application
-cgiApp' body spec cgii req = do
-    (rhdl,whdl,pid) <- liftIO $ execProcess spec cgii req
+cgiApp' :: Bool -> ClassicAppSpec -> CgiRoute -> Application
+cgiApp' body cspec cgii req = do
+    (rhdl,whdl,pid) <- liftIO $ execProcess cspec cgii req
     let cleanup = do
             hClose whdl
             hClose rhdl
@@ -63,7 +63,7 @@ cgiApp' body spec cgii req = do
     liftIO $ hClose whdl
     respEnumerator $ \respBuilder ->
         -- this is IO
-        fromCGI rhdl spec req respBuilder `finally` cleanup
+        fromCGI rhdl cspec req respBuilder `finally` cleanup
   where
     respEnumerator = return . ResponseEnumerator
 
@@ -72,8 +72,8 @@ cgiApp' body spec cgii req = do
 toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
 toCGI whdl body = when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
 
-fromCGI :: Handle -> CgiAppSpec -> Request -> ResponseEnumerator a
-fromCGI rhdl spec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
+fromCGI :: Handle -> ClassicAppSpec -> Request -> ResponseEnumerator a
+fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
     -- consuming the header part of CGI output
     m <- (>>= check) <$> parseHeader
     let (st, hdr, hasBody) = case m of
@@ -81,7 +81,7 @@ fromCGI rhdl spec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
             Just (s,h) -> (s,h,True)
         hdr' = addHeader hdr
     -- logging
-    liftIO $ cgiLogger spec req st Nothing -- cannot know body length
+    liftIO $ logger cspec req st Nothing -- cannot know body length
     -- building HTTP header and optionally HTTP body
     if hasBody
         then {- Body -}   response st hdr'
@@ -96,7 +96,7 @@ fromCGI rhdl spec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-    addHeader hdr = ("Server", cgiSoftwareName spec) : hdr
+    addHeader hdr = ("Server", softwareName cspec) : hdr
 
 ----------------------------------------------------------------
 
@@ -118,8 +118,8 @@ takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
 
 ----------------------------------------------------------------
 
-execProcess :: CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
-execProcess spec cgii req = do
+execProcess :: ClassicAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
+execProcess cspec cgii req = do
     let naddr = showSockAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,pid) <- createProcess . proSpec $ naddr
     hSetEncoding rhdl latin1
@@ -129,7 +129,7 @@ execProcess spec cgii req = do
     proSpec naddr = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
-      , env = Just (makeEnv req naddr scriptName pathinfo (cgiSoftwareName spec))
+      , env = Just (makeEnv req naddr scriptName pathinfo (softwareName cspec))
       , std_in = CreatePipe
       , std_out = CreatePipe
       , std_err = Inherit

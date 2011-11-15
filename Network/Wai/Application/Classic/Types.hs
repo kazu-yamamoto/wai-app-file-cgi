@@ -9,15 +9,20 @@ import Network.Wai.Logger.Prefork
 
 ----------------------------------------------------------------
 
-data FileAppSpec = FileAppSpec {
+data ClassicAppSpec = ClassicAppSpec {
     -- | Name specified to Server: in HTTP response.
     softwareName :: ByteString
-    -- | A file name of an index file.
-  , indexFile :: ByteString
-    -- | Whether this is an HTML or not.
-  , isHTML :: ByteString -> Bool
     -- | A function for logging. The third argument is a body size.
   , logger :: ApacheLogger
+  }
+
+----------------------------------------------------------------
+
+data FileAppSpec = FileAppSpec {
+    -- | A file name of an index file.
+    indexFile :: ByteString
+    -- | Whether this is an HTML or not.
+  , isHTML :: ByteString -> Bool
     -- | A function to obtain information about a file.
   , getFileInfo :: ByteString -> IO (Maybe FileInfo)
   }
@@ -37,13 +42,6 @@ data FileRoute = FileRoute {
 
 ----------------------------------------------------------------
 
-data CgiAppSpec = CgiAppSpec {
-    -- | Name specified to Server: in HTTP response.
-    cgiSoftwareName :: ByteString
-    -- | A file name of an index file.
-  , cgiLogger :: ApacheLogger
-  }
-
 data CgiRoute = CgiRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
     cgiSrc :: ByteString
@@ -54,10 +52,8 @@ data CgiRoute = CgiRoute {
 ----------------------------------------------------------------
 
 data RevProxyAppSpec = RevProxyAppSpec {
-    -- | Name specified to Server: in HTTP response.
-    revProxySoftwareName :: ByteString
     -- | Connection manager
-  , revProxyManager :: H.Manager
+    revProxyManager :: H.Manager
   }
 
 data RevProxyRoute = RevProxyRoute {

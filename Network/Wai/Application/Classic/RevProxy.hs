@@ -47,27 +47,27 @@ toHTTPRequest req route = H.def {
   Relaying HTTP body is not implemented yet.
 -}
 
-revProxyApp :: RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp spec route req = return $ ResponseEnumerator $ \respBuilder ->
-    run_ (H.http (toHTTPRequest req route) (fromBS spec respBuilder) mgr)
-    `catch` badGateway spec respBuilder
+revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
+revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder ->
+    run_ (H.http (toHTTPRequest req route) (fromBS cspec respBuilder) mgr)
+    `catch` badGateway cspec respBuilder
   where
     mgr = revProxyManager spec
 
-fromBS :: RevProxyAppSpec
+fromBS :: ClassicAppSpec
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS spec f s h = EL.map fromByteString -- body: from BS to Builder
+fromBS cspec f s h = EL.map fromByteString -- body: from BS to Builder
             =$ f s h'                -- hedr: removing CE:
   where
-    h' = ("Server", revProxySoftwareName spec):filter p h
+    h' = ("Server", softwareName cspec):filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
-badGateway :: RevProxyAppSpec 
+badGateway :: ClassicAppSpec
            -> (Status -> ResponseHeaders -> Iteratee Builder IO a) 
            -> SomeException -> IO a
-badGateway spec builder _ = run_ $ bdy $$ builder status502 hdr
+badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where
-    hdr = ("Server", revProxySoftwareName spec):textPlain
+    hdr = ("Server", softwareName cspec):textPlain
     bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map fromByteString

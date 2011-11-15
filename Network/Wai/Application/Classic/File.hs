@@ -38,8 +38,8 @@ The following HTTP headers are handled: Acceptable-Language:,
 If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 -}
 
-fileApp :: FileAppSpec -> FileRoute -> Application
-fileApp spec filei req = do
+fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
+fileApp cspec spec filei req = do
     RspSpec st hdr body <- case method of
         "GET"  -> processGET  spec req file ishtml rfile
         "HEAD" -> processHEAD spec req file ishtml rfile
@@ -57,7 +57,7 @@ fileApp spec filei req = do
                         Part skip bytes -> (bytes, Just (FilePart skip bytes))
                     hdr''  = addLength hdr' len
                 in (ResponseFile st hdr'' afile mfp, Just len)
-    liftIO $ logger spec req st mlen
+    liftIO $ logger cspec req st mlen
     return response
   where
     method = requestMethod req
@@ -65,7 +65,7 @@ fileApp spec filei req = do
     file = addIndex spec path
     ishtml = isHTML spec file
     rfile = redirectPath spec path
-    addServer hdr = ("Server", softwareName spec) : hdr
+    addServer hdr = ("Server", softwareName cspec) : hdr
     addLength hdr len = ("Content-Length", BS.pack . show $ len) : hdr
 
 ----------------------------------------------------------------

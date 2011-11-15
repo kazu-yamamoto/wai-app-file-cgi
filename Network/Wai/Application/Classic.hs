@@ -3,12 +3,13 @@
 -}
 
 module Network.Wai.Application.Classic (
+  -- * Common
+    ClassicAppSpec(..)
   -- * Files
-    FileAppSpec(..)
+  , FileAppSpec(..)
   , FileInfo(..)
   , FileRoute(..), fileApp
   -- * CGI
-  , CgiAppSpec(..)
   , CgiRoute(..), cgiApp
   -- * Reverse Proxy
   , RevProxyAppSpec(..)
