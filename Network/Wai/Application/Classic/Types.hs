@@ -14,8 +14,15 @@ data ClassicAppSpec = ClassicAppSpec {
     softwareName :: ByteString
     -- | A function for logging. The third argument is a body size.
   , logger :: ApacheLogger
-  , statusManager :: Status -> Maybe BL.ByteString
+    -- | A function to get the HTTP body of status.
+  , statusManager :: Status -> Maybe StatusInfo
   }
+
+data StatusInfo =
+  -- | HTTP status body is created from 'LB.ByteString'.
+    StatusByteString BL.ByteString
+  -- | HTTP status body is created from 'FilePath'.
+  | StatusFile FilePath Integer
 
 ----------------------------------------------------------------
 

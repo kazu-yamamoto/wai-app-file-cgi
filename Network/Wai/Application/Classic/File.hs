@@ -48,7 +48,7 @@ fileApp cspec spec filei req = do
             NoBody     -> noBody st
             BodyStatus -> case statusManager cspec st of
                 Nothing -> noBody st
-                Just bd -> statusBody st bd
+                Just si -> statusBody st si
             BodyFileNoBody hdr -> bodyFileNoBody st hdr
             BodyFile hdr afile rng -> bodyFile st hdr afile rng
     liftIO $ logger cspec req st mlen
@@ -62,10 +62,14 @@ fileApp cspec spec filei req = do
     noBody st = (responseLBS st hdr "", Nothing)
       where
         hdr = addServer cspec []
-    statusBody st bd = (responseLBS st hdr bd, Just len)
+    statusBody st (StatusByteString bd) = (responseLBS st hdr bd, Just (len bd))
       where
-        len = fromIntegral $ BL.length bd
-        hdr = addServer cspec textPlainHeader -- xxx need to fix
+        len = fromIntegral . BL.length
+        hdr = addServer cspec textPlainHeader
+    statusBody st (StatusFile afile len) = (ResponseFile st hdr afile mfp, Just len)
+      where
+        hdr = addServer cspec textHtmlHeader
+        mfp = Just (FilePart 0 len)
     bodyFileNoBody st hdr = (responseLBS st hdr' "", Nothing)
       where
         hdr' = addServer cspec hdr

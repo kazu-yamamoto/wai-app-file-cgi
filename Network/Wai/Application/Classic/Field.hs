@@ -41,6 +41,9 @@ lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 textPlainHeader :: ResponseHeaders
 textPlainHeader = [("Content-Type", "text/plain")]
 
+textHtmlHeader :: ResponseHeaders
+textHtmlHeader = [("Content-Type", "text/html")]
+
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [("Location", url)]
 
@@ -51,10 +54,11 @@ addLength :: Integer -> ResponseHeaders -> ResponseHeaders
 addLength len hdr = ("Content-Length", BS.pack . show $ len) : hdr
 
 newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
-newHeader ishtml file mtime = [
-    ("Content-Type", if ishtml then "text/html" else mimeType file)
-  , ("Last-Modified", formatHTTPDate mtime)
-  ]
+newHeader ishtml file mtime
+  | ishtml    = lastMod : textHtmlHeader
+  | otherwise = lastMod : [("Content-Type", mimeType file)]
+  where
+    lastMod = ("Last-Modified", formatHTTPDate mtime)
 
 mimeType :: ByteString -> MimeType
 mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets

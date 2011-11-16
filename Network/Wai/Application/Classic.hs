@@ -6,6 +6,7 @@ module Network.Wai.Application.Classic (
   -- * Common
     ClassicAppSpec(..)
   , defaultSatusManager
+  , StatusInfo(..)
   -- * Files
   , FileAppSpec(..)
   , FileInfo(..)
