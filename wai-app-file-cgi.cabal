@@ -27,6 +27,7 @@ library
                         Network.Wai.Application.Classic.MaybeIter
                         Network.Wai.Application.Classic.Range
                         Network.Wai.Application.Classic.RevProxy
+                        Network.Wai.Application.Classic.Status
                         Network.Wai.Application.Classic.Types
                         Network.Wai.Application.Classic.Utils
   Build-Depends:        base >= 4 && < 5, process,
