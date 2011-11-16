@@ -14,6 +14,7 @@ data ClassicAppSpec = ClassicAppSpec {
     softwareName :: ByteString
     -- | A function for logging. The third argument is a body size.
   , logger :: ApacheLogger
+  , statusManager :: Status -> Maybe BL.ByteString
   }
 
 ----------------------------------------------------------------
@@ -72,19 +73,15 @@ data RevProxyRoute = RevProxyRoute {
 data RspSpec = RspSpec {
     -- | Response status.
     rspStatus :: Status
-    -- | Response headers.
-  , rspHeaders :: ResponseHeaders
     -- | Response body.
   , rspBody :: RspBody
   }
 
 data RspBody =
-    -- | Body does not exist.
     NoBody
-    -- | Body as Lazy ByteString.
-  | BodyLBS BL.ByteString
-    -- | Body as a file.
-  | BodyFile String Range
+  | BodyStatus
+  | BodyFileNoBody ResponseHeaders
+  | BodyFile ResponseHeaders String Range
 
 data Range =
     -- | Entire file showing its file size

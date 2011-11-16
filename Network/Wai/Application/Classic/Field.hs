@@ -16,6 +16,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
+import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
 
 ----------------------------------------------------------------
@@ -37,8 +38,17 @@ lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 
 ----------------------------------------------------------------
 
-textPlain :: ResponseHeaders
-textPlain = [("Content-Type", "text/plain")]
+textPlainHeader :: ResponseHeaders
+textPlainHeader = [("Content-Type", "text/plain")]
+
+locationHeader :: ByteString -> ResponseHeaders
+locationHeader url = [("Location", url)]
+
+addServer :: ClassicAppSpec -> ResponseHeaders -> ResponseHeaders
+addServer cspec hdr = ("Server", softwareName cspec) : hdr
+
+addLength :: Integer -> ResponseHeaders -> ResponseHeaders
+addLength len hdr = ("Content-Length", BS.pack . show $ len) : hdr
 
 newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
 newHeader ishtml file mtime = [

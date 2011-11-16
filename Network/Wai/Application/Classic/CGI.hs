@@ -47,7 +47,7 @@ cgiApp :: ClassicAppSpec -> CgiRoute -> Application
 cgiApp cspec cgii req = case method of
     "GET"  -> cgiApp' False cspec cgii req
     "POST" -> cgiApp' True  cspec cgii req
-    _      -> return $ responseLBS statusNotAllowed textPlain "Method Not Allowed\r\n"
+    _      -> return $ responseLBS statusNotAllowed textPlainHeader "Method Not Allowed\r\n" -- xxx
   where
     method = requestMethod req
 
@@ -79,7 +79,7 @@ fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
     let (st, hdr, hasBody) = case m of
             Nothing    -> (status500,[],False)
             Just (s,h) -> (s,h,True)
-        hdr' = addHeader hdr
+        hdr' = addServer cspec hdr
     -- logging
     liftIO $ logger cspec req st Nothing -- cannot know body length
     -- building HTTP header and optionally HTTP body
@@ -96,7 +96,6 @@ fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-    addHeader hdr = ("Server", softwareName cspec) : hdr
 
 ----------------------------------------------------------------
 
@@ -143,7 +142,7 @@ execProcess cspec cgii req = do
                                                  (rawPathInfo req)
 
 makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
-makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ baseEnv
+makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ baseEnv
   where
     baseEnv = [
         ("GATEWAY_INTERFACE", gatewayInterface)
@@ -158,7 +157,7 @@ makeEnv req naddr scriptName pathinfo sname = addLength . addType . addCookie $ 
       , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
-    addLength = addEnv "CONTENT_LENGTH" $ lookup fkContentLength headers
+    addLen = addEnv "CONTENT_LENGTH" $ lookup fkContentLength headers
     addType   = addEnv "CONTENT_TYPE" $ lookup fkContentType headers
     addCookie = addEnv "HTTP_COOKIE" $ lookup fkCookie headers
     query = BS.unpack . safeTail . rawQueryString

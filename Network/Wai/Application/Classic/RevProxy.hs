@@ -69,5 +69,5 @@ badGateway :: ClassicAppSpec
            -> SomeException -> IO a
 badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where
-    hdr = ("Server", softwareName cspec):textPlain
+    hdr = addServer cspec textPlainHeader
     bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map fromByteString

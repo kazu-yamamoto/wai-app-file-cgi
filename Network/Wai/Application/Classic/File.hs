@@ -40,23 +40,17 @@ If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req = do
-    RspSpec st hdr body <- case method of
+    RspSpec st body <- case method of
         "GET"  -> processGET  spec req file ishtml rfile
         "HEAD" -> processHEAD spec req file ishtml rfile
         _      -> return notAllowed
-    let hdr'= addServer hdr
-        (response, mlen) = case body of
-            NoBody     -> (responseLBS st hdr' "", Nothing)
-            BodyLBS bd ->
-                let len = fromIntegral $ BL.length bd
-                in (responseLBS st hdr' bd, Just len)
-            BodyFile afile rng ->
-                let (len, mfp) = case rng of
-                        -- sendfile of Linux does not support the entire file
-                        Entire bytes    -> (bytes, Just (FilePart 0 bytes))
-                        Part skip bytes -> (bytes, Just (FilePart skip bytes))
-                    hdr''  = addLength hdr' len
-                in (ResponseFile st hdr'' afile mfp, Just len)
+    let (response, mlen) = case body of
+            NoBody     -> noBody st
+            BodyStatus -> case statusManager cspec st of
+                Nothing -> noBody st
+                Just bd -> statusBody st bd
+            BodyFileNoBody hdr -> bodyFileNoBody st hdr
+            BodyFile hdr afile rng -> bodyFile st hdr afile rng
     liftIO $ logger cspec req st mlen
     return response
   where
@@ -65,8 +59,23 @@ fileApp cspec spec filei req = do
     file = addIndex spec path
     ishtml = isHTML spec file
     rfile = redirectPath spec path
-    addServer hdr = ("Server", softwareName cspec) : hdr
-    addLength hdr len = ("Content-Length", BS.pack . show $ len) : hdr
+    noBody st = (responseLBS st hdr "", Nothing)
+      where
+        hdr = addServer cspec []
+    statusBody st bd = (responseLBS st hdr bd, Just len)
+      where
+        len = fromIntegral $ BL.length bd
+        hdr = addServer cspec textPlainHeader -- xxx need to fix
+    bodyFileNoBody st hdr = (responseLBS st hdr' "", Nothing)
+      where
+        hdr' = addServer cspec hdr
+    bodyFile st hdr afile rng = (ResponseFile st hdr' afile mfp, Just len)
+      where
+        (len, mfp) = case rng of
+            -- sendfile of Linux does not support the entire file
+            Entire bytes    -> (bytes, Just (FilePart 0 bytes))
+            Part skip bytes -> (bytes, Just (FilePart skip bytes))
+        hdr' = addLength len $ addServer cspec hdr
 
 ----------------------------------------------------------------
 
@@ -104,10 +113,10 @@ tryGetFile spec req file ishtml mlang = do
                  ||| unconditional req size mtime
       case pst of
           Full st
-            | st == statusOK -> just $ RspSpec statusOK hdr (BodyFile sfile (Entire size))
-            | otherwise      -> just $ RspSpec st hdr NoBody
+            | st == statusOK -> just $ RspSpec statusOK (BodyFile hdr sfile (Entire size))
+            | otherwise      -> just $ RspSpec st (BodyFileNoBody hdr)
 
-          Partial skip len   -> just $ RspSpec statusPartialContent hdr (BodyFile sfile (Part skip len))
+          Partial skip len   -> just $ RspSpec statusPartialContent (BodyFile hdr sfile (Part skip len))
 
 ----------------------------------------------------------------
 
@@ -134,7 +143,7 @@ tryHeadFile spec req file ishtml mlang = do
           Just pst = ifmodified req size mtime -- never Nothing
                  ||| Just (Full statusOK)
       case pst of
-          Full st -> just $ RspSpec st hdr NoBody
+          Full st -> just $ RspSpec st (BodyFileNoBody hdr)
           _       -> nothing -- never reached
 
 ----------------------------------------------------------------
@@ -152,9 +161,9 @@ tryRedirectFile spec req file mlang = do
     minfo <- liftIO $ getFileInfo spec file'
     case minfo of
       Nothing -> nothing
-      Just _  -> just $ RspSpec statusMovedPermanently hdr NoBody
+      Just _  -> just $ RspSpec statusMovedPermanently (BodyFileNoBody hdr)
   where
-    hdr = [("Location", redirectURL)]
+    hdr = locationHeader redirectURL
     redirectURL = "http://"
               +++ serverName req
               +++ ":"
@@ -165,7 +174,7 @@ tryRedirectFile spec req file mlang = do
 ----------------------------------------------------------------
 
 notFound :: RspSpec
-notFound = RspSpec statusNotFound textPlain (BodyLBS "Not Found\r\n")
+notFound = RspSpec statusNotFound BodyStatus
 
 notAllowed :: RspSpec
-notAllowed = RspSpec statusNotAllowed textPlain (BodyLBS "Method Not Allowed\r\n")
+notAllowed = RspSpec statusNotAllowed BodyStatus
