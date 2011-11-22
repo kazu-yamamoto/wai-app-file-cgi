@@ -66,7 +66,7 @@ fromBS cspec f s h = EL.map BB.fromByteString -- body: from BS to Builder
     p _ = True
 
 badGateway :: ClassicAppSpec
-           -> (Status -> ResponseHeaders -> Iteratee Builder IO a) 
+           -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
            -> SomeException -> IO a
 badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where

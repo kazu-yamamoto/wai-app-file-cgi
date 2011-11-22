@@ -92,7 +92,7 @@ p1 <.> p2 = Path {
   where
     p1' = pathByteString p1
     p2' = pathByteString p2
-    p = BB.toByteString (BB.fromByteString p1' 
+    p = BB.toByteString (BB.fromByteString p1'
                        `mappend` BB.fromWord8 pathDot
                        `mappend` BB.fromByteString p2')
 
@@ -103,6 +103,6 @@ breakSep p = (fromByteString r1, fromByteString r2)
     (r1,r2) = BS.breakByte pathSep p'
 
 concatByteString :: [ByteString] -> ByteString
-concatByteString = BB.toByteString 
-                 . foldr mappend mempty 
+concatByteString = BB.toByteString
+                 . foldr mappend mempty
                  . map BB.fromByteString
