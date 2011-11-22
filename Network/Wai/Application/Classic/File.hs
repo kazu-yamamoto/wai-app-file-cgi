@@ -6,7 +6,7 @@ module Network.Wai.Application.Classic.File (
 
 import Control.Applicative
 import Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as BS (pack)
+import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
 import Network.Wai
@@ -55,7 +55,7 @@ fileApp cspec spec filei req = do
         _      -> return notAllowed
     (response, mlen) <- case body of
             NoBody                 -> return $ noBody st
-            BodyStatus -> statusBody st <$> (liftIO $ getStatusInfo cspec spec langs st)
+            BodyStatus -> statusBody st <$> liftIO (getStatusInfo cspec spec langs st)
             BodyFileNoBody hdr     -> return $ bodyFileNoBody st hdr
             BodyFile hdr afile rng -> return $ bodyFile st hdr afile rng
     liftIO $ logger cspec req st mlen
@@ -171,13 +171,13 @@ tryRedirectFile (HandlerInfo spec req file _) lang = do
       Just _  -> just $ RspSpec statusMovedPermanently (BodyFileNoBody hdr)
   where
     hdr = locationHeader redirectURL
-    redirectURL = concatByteString [ "http://"
-                                   , serverName req
-                                   , ":"
-                                   , (BS.pack . show . serverPort) req
-                                   , rawPathInfo req
-                                   , "/"
-                                   ]
+    redirectURL = BS.concat [ "http://"
+                          , serverName req
+                          , ":"
+                          , (BS.pack . show . serverPort) req
+                          , rawPathInfo req
+                          , "/"
+                          ]
 
 ----------------------------------------------------------------
 

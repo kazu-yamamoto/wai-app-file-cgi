@@ -173,7 +173,7 @@ pathinfoToCGI :: Path -> Path -> Path -> (FilePath, String, String)
 pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
   where
     path' = path <\> src
-    (prog',pathinfo') = breakSep path'
+    (prog',pathinfo') = breakAtSeparator path'
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'

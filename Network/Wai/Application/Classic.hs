@@ -16,8 +16,7 @@ module Network.Wai.Application.Classic (
   , RevProxyAppSpec(..)
   , RevProxyRoute(..), revProxyApp
   -- * Path
-  , Path(..)
-  , fromString, fromByteString
+  , module Network.Wai.Application.Classic.Utils
   ) where
 
 import Network.Wai.Application.Classic.CGI

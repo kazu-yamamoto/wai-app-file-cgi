@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.Utils (
     Path(..)
   , fromString, fromByteString
   , (+++), (</>), (<\>), (<.>)
-  , breakSep, concatByteString, hasTrailingPathSeparator
+  , breakAtSeparator, hasTrailingPathSeparator
   ) where
 
 import qualified Blaze.ByteString.Builder as BB
@@ -40,6 +40,9 @@ pathDot = 46
 pathSep :: Word8
 pathSep = 47
 
+{-|
+  Checking if the path ends with the path separator.
+-}
 hasTrailingPathSeparator :: Path -> Bool
 hasTrailingPathSeparator path
   | BS.null bs            = False
@@ -50,6 +53,10 @@ hasTrailingPathSeparator path
 
 infixr +++
 
+{-|
+  Appending.
+-}
+
 (+++) :: Path -> Path -> Path
 p1 +++ p2 = Path {
     pathString = BS.unpack p
@@ -57,6 +64,10 @@ p1 +++ p2 = Path {
   }
   where
     p = pathByteString p1 `BS.append` pathByteString p2
+
+{-|
+  Appending with the file separator.
+-}
 
 (</>) :: Path -> Path -> Path
 p1 </> p2
@@ -72,7 +83,10 @@ p1 </> p2
                        `mappend` BB.fromWord8 pathSep
                        `mappend` BB.fromByteString p2')
 
--- removing prefix
+{-|
+  Removing prefix. The prefix of the second argument is removed
+  from the first argument.
+-}
 (<\>) :: Path -> Path -> Path
 p1 <\> p2 = Path {
     pathString = BS.unpack p
@@ -83,7 +97,9 @@ p1 <\> p2 = Path {
     p2' = pathByteString p2
     p = BS.drop (BS.length p2') p1'
 
--- adding suffix
+{-|
+  Adding suffix.
+-}
 (<.>) :: Path -> Path -> Path
 p1 <.> p2 = Path {
     pathString = BS.unpack p
@@ -96,13 +112,11 @@ p1 <.> p2 = Path {
                        `mappend` BB.fromWord8 pathDot
                        `mappend` BB.fromByteString p2')
 
-breakSep :: Path -> (Path,Path)
-breakSep p = (fromByteString r1, fromByteString r2)
+{-|
+  Breaking at the first path separator.
+-}
+breakAtSeparator :: Path -> (Path,Path)
+breakAtSeparator p = (fromByteString r1, fromByteString r2)
   where
     p' = pathByteString p
     (r1,r2) = BS.breakByte pathSep p'
-
-concatByteString :: [ByteString] -> ByteString
-concatByteString = BB.toByteString
-                 . foldr mappend mempty
-                 . map BB.fromByteString

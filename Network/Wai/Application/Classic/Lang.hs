@@ -5,7 +5,7 @@ module Network.Wai.Application.Classic.Lang (parseLang) where
 import Control.Applicative hiding (many, optional)
 import Data.Attoparsec (Parser, takeWhile, parse, feed, Result(..))
 import Data.Attoparsec.Char8 (char, string, count, many, space, digit, option, sepBy1)
-import Data.ByteString.Char8 hiding (map, count, take, takeWhile)
+import Data.ByteString.Char8 hiding (map, count, take, takeWhile, notElem)
 import Data.List (sortBy)
 import Data.Ord
 import Prelude hiding (takeWhile)
@@ -26,7 +26,7 @@ rangeQvalue :: Parser (ByteString,Int)
 rangeQvalue = (,) <$> languageRange <*> quality
 
 languageRange :: Parser ByteString
-languageRange = takeWhile (\w -> w /= 32 && w /= 44 && w /= 59)
+languageRange = takeWhile (`notElem` [32, 44, 59])
 
 quality :: Parser Int
 quality = option 1000 (string ";q=" *> qvalue)
