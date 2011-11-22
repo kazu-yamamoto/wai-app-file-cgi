@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Blaze.ByteString.Builder.ByteString
+import qualified Blaze.ByteString.Builder as BB
 import Control.Applicative
 import Control.Exception
 import Control.Monad (when)
@@ -87,7 +87,7 @@ fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
         then {- Body -}   response st hdr'
         else emptyBody $$ response st hdr'
   where
-    enumBody = EL.map fromByteString
+    enumBody = EL.map BB.fromByteString
     emptyBody = enumEOF
     response status hs = enumBody =$ respBuilder status hs
     check hs = lookup fkContentType hs >> case lookup "status" hs of
@@ -139,7 +139,7 @@ execProcess cspec cgii req = do
       }
     (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
                                                  (cgiDst cgii)
-                                                 (rawPathInfo req)
+                                                 (fromByteString (rawPathInfo req))
 
 makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
 makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ baseEnv
@@ -169,14 +169,14 @@ addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
 
-pathinfoToCGI :: ByteString -> ByteString -> ByteString -> (FilePath, String, String)
+pathinfoToCGI :: Path -> Path -> Path -> (FilePath, String, String)
 pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
   where
-    path' = BS.drop (BS.length src) path
-    (prog',pathinfo') = BS.breakByte pathSep path'
-    prog = BS.unpack (dst </> prog')
-    scriptName = BS.unpack (src </> prog')
-    pathinfo = BS.unpack pathinfo'
+    path' = path <\> src
+    (prog',pathinfo') = breakSep path'
+    prog = pathString (dst </> prog')
+    scriptName = pathString (src </> prog')
+    pathinfo = pathString pathinfo'
 
 ----------------------------------------------------------------
 

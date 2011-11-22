@@ -2,10 +2,10 @@
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
-import Blaze.ByteString.Builder (Builder, fromByteString)
+import Blaze.ByteString.Builder (Builder)
+import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Exception
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as L
 import Data.Enumerator (Iteratee, run_, (=$), ($$), ($=), enumList)
 import qualified Data.Enumerator.List as EL
@@ -29,7 +29,7 @@ toHTTPRequest req route = H.def {
   , H.secure = isSecure req
   , H.checkCerts = H.defaultCheckCerts
   , H.requestHeaders = []
-  , H.path = path
+  , H.path = pathByteString path'
   , H.queryString = queryString req
   , H.requestBody = H.RequestBodyLBS L.empty -- xxx Ah Ha!
   , H.method = requestMethod req
@@ -38,9 +38,10 @@ toHTTPRequest req route = H.def {
   , H.decompress = H.alwaysDecompress
   }
   where
+    path = fromByteString $ rawPathInfo req
     src = revProxySrc route
     dst = revProxyDst route
-    path = dst +++ BS.drop (BS.length src) (rawPathInfo req)
+    path' = dst </> (path <\> src)
 
 {-|
   Relaying any requests as reverse proxy.
@@ -57,7 +58,7 @@ revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder ->
 fromBS :: ClassicAppSpec
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS cspec f s h = EL.map fromByteString -- body: from BS to Builder
+fromBS cspec f s h = EL.map BB.fromByteString -- body: from BS to Builder
             =$ f s h'                -- hedr: removing CE:
   where
     h' = ("Server", softwareName cspec):filter p h
@@ -70,4 +71,4 @@ badGateway :: ClassicAppSpec
 badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where
     hdr = addServer cspec textPlainHeader
-    bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map fromByteString
+    bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map BB.fromByteString

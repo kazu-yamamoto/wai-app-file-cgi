@@ -5,6 +5,7 @@ import qualified Data.ByteString.Lazy as BL (ByteString)
 import Network.HTTP.Date
 import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
+import Network.Wai.Application.Classic.Utils
 import Network.Wai.Logger.Prefork
 
 ----------------------------------------------------------------
@@ -15,46 +16,48 @@ data ClassicAppSpec = ClassicAppSpec {
     -- | A function for logging. The third argument is a body size.
   , logger :: ApacheLogger
     -- | A function to get the HTTP body of status.
-  , statusManager :: Status -> Maybe StatusInfo
+  , statusFileDir :: Path
   }
 
 data StatusInfo =
   -- | HTTP status body is created from 'LB.ByteString'.
     StatusByteString BL.ByteString
   -- | HTTP status body is created from 'FilePath'.
-  | StatusFile FilePath Integer
+  | StatusFile Path Integer
+  -- | No HTTP status body.
+  | StatusNone
 
 ----------------------------------------------------------------
 
 data FileAppSpec = FileAppSpec {
     -- | A file name of an index file.
-    indexFile :: ByteString
+    indexFile :: Path
     -- | Whether this is an HTML or not.
-  , isHTML :: ByteString -> Bool
-    -- | A function to obtain information about a file.
-  , getFileInfo :: ByteString -> IO (Maybe FileInfo)
+  , isHTML :: Path -> Bool
+    -- | A function to obtain information about a file
+  , getFileInfo :: Path -> IO (Maybe FileInfo)
   }
 
 data FileInfo = FileInfo {
-    fileInfoName :: FilePath
+    fileInfoName :: Path
   , fileInfoSize :: Integer
   , fileInfoTime :: HTTPDate
   }
 
 data FileRoute = FileRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
-    fileSrc :: ByteString
+    fileSrc :: Path
     -- | Path prefix to an actual file system.
-  , fileDst :: ByteString
+  , fileDst :: Path
   }
 
 ----------------------------------------------------------------
 
 data CgiRoute = CgiRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
-    cgiSrc :: ByteString
+    cgiSrc :: Path
     -- | Path prefix to an actual file system.
-  , cgiDst :: ByteString
+  , cgiDst :: Path
   }
 
 ----------------------------------------------------------------
@@ -66,9 +69,9 @@ data RevProxyAppSpec = RevProxyAppSpec {
 
 data RevProxyRoute = RevProxyRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
-    revProxySrc :: ByteString
+    revProxySrc :: Path
     -- | Destination path prefix.
-  , revProxyDst :: ByteString
+  , revProxyDst :: Path
     -- | Destination domain name.
   , revProxyDomain :: ByteString
     -- | Destination port number.
@@ -88,10 +91,14 @@ data RspBody =
     NoBody
   | BodyStatus
   | BodyFileNoBody ResponseHeaders
-  | BodyFile ResponseHeaders String Range
+  | BodyFile ResponseHeaders Path Range
 
 data Range =
     -- | Entire file showing its file size
     Entire Integer
     -- | A part of a file taking offset and length
   | Part Integer Integer
+
+----------------------------------------------------------------
+
+type Lang = Path -> Path

@@ -14,15 +14,15 @@ type Rsp = Iteratee ByteString IO RspSpec
 
 ----------------------------------------------------------------
 
-runAny :: [MRsp] -> Iteratee ByteString IO RspSpec
+runAny :: Monad m => [m (Maybe a)] -> m a
 runAny [] = error "runAny"
 runAny (a:as) = do
-    mrsp <- a
-    case mrsp of
+    mres <- a
+    case mres of
       Nothing  -> runAny as
-      Just rsp -> return rsp
+      Just res -> return res
 
-runAnyMaybe :: [MRsp] -> MRsp
+runAnyMaybe :: Monad m => [m (Maybe a)] -> m (Maybe a)
 runAnyMaybe []     = nothing
 runAnyMaybe (a:as) = do
     mx <- a

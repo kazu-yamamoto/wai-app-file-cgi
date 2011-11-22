@@ -5,7 +5,6 @@
 module Network.Wai.Application.Classic (
   -- * Common
     ClassicAppSpec(..)
-  , defaultSatusManager
   , StatusInfo(..)
   -- * Files
   , FileAppSpec(..)
@@ -16,10 +15,13 @@ module Network.Wai.Application.Classic (
   -- * Reverse Proxy
   , RevProxyAppSpec(..)
   , RevProxyRoute(..), revProxyApp
+  -- * Path
+  , Path(..)
+  , fromString, fromByteString
   ) where
 
 import Network.Wai.Application.Classic.CGI
 import Network.Wai.Application.Classic.File
-import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.RevProxy
-import Network.Wai.Application.Classic.Status
+import Network.Wai.Application.Classic.Types
+import Network.Wai.Application.Classic.Utils

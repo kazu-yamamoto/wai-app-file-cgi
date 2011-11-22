@@ -1,7 +1,6 @@
 module Network.Wai.Application.Classic.FileInfo where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS hiding (unpack)
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
@@ -48,20 +47,20 @@ range size rng = case skipAndSize rng size of
 
 ----------------------------------------------------------------
 
-pathinfoToFilePath :: Request -> FileRoute -> ByteString
+pathinfoToFilePath :: Request -> FileRoute -> Path
 pathinfoToFilePath req filei = path'
   where
-    path = rawPathInfo req
+    path = fromByteString $ rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    path' = dst </> BS.drop (BS.length src) path
+    path' = dst </> (path <\> src)
 
-addIndex :: FileAppSpec -> ByteString -> ByteString
+addIndex :: FileAppSpec -> Path -> Path
 addIndex spec path
   | hasTrailingPathSeparator path = path </> indexFile spec
   | otherwise                     = path
 
-redirectPath :: FileAppSpec -> ByteString -> Maybe ByteString
+redirectPath :: FileAppSpec -> Path -> Maybe Path
 redirectPath spec path
   | hasTrailingPathSeparator path = Nothing
   | otherwise                     = Just (path </> indexFile spec)
