@@ -56,7 +56,7 @@ getStatusFile getF dir code langs = try mfiles
   where
     mfiles = case M.lookup code statusFileMap of
         Nothing   -> []
-        Just file -> map (\f -> f (dir </> file)) langs
+        Just file -> map ($ (dir </> file)) langs
     try [] = return Nothing
     try (f:fs) = do
         mfi <- getF f
