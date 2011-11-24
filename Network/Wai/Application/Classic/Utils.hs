@@ -5,11 +5,12 @@ module Network.Wai.Application.Classic.Utils (
   , fromString, fromByteString
   , (+++), (</>), (<\>), (<.>)
   , breakAtSeparator, hasTrailingPathSeparator
+  , isSuffixOf
   ) where
 
 import qualified Blaze.ByteString.Builder as BB
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS (null, last, append, drop, length, breakByte)
+import qualified Data.ByteString as BS (null, last, append, drop, length, breakByte, isSuffixOf)
 import qualified Data.ByteString.Char8 as BS (pack, unpack)
 import Data.Monoid
 import Data.String
@@ -120,3 +121,9 @@ breakAtSeparator p = (fromByteString r1, fromByteString r2)
   where
     p' = pathByteString p
     (r1,r2) = BS.breakByte pathSep p'
+
+isSuffixOf :: Path -> Path -> Bool
+isSuffixOf p1 p2 = p1' `BS.isSuffixOf` p2'
+  where
+    p1' = pathByteString p1
+    p2' = pathByteString p2
