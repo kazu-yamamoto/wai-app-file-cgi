@@ -28,10 +28,10 @@ getStatusInfo cspec spec langs st = runAny [
 
 statusList :: [Status]
 statusList = [
-    statusNotAllowed  -- File
-  , statusNotFound    -- File
-  , statusServerError -- CGI
-  , statusBadGateway  -- RevProxy
+    statusNotAllowed  -- 405 File
+  , statusNotFound    -- 404 File
+  , statusServerError -- 500 CGI
+  , statusBadGateway  -- 502 RevProxy
   ]
 
 ----------------------------------------------------------------
