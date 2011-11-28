@@ -19,11 +19,6 @@ import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 
-{- TODO
- - incremental boy (persist connection)
- - Body
--}
-
 toHTTPRequest :: Request -> RevProxyRoute -> BL.ByteString -> H.Request m
 toHTTPRequest req route lbs = H.def {
     H.host = revProxyDomain route
@@ -47,7 +42,6 @@ toHTTPRequest req route lbs = H.def {
 
 {-|
   Relaying any requests as reverse proxy.
-  Relaying HTTP body is not implemented yet.
 -}
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
