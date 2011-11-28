@@ -132,7 +132,7 @@ processHEAD :: HandlerInfo -> Bool -> Maybe Path -> Rsp
 processHEAD hinfo ishtml rfile = runAny [
     tryHead     hinfo ishtml
   , tryRedirect hinfo rfile
-  , just notFound
+  , just notFoundNoBody
   ]
 
 tryHead :: HandlerInfo -> Bool -> MRsp
@@ -183,6 +183,9 @@ tryRedirectFile (HandlerInfo spec req file _) lang = do
 
 notFound :: RspSpec
 notFound = RspSpec statusNotFound BodyStatus
+
+notFoundNoBody :: RspSpec
+notFoundNoBody = RspSpec statusNotFound NoBody
 
 notAllowed :: RspSpec
 notAllowed = RspSpec statusNotAllowed BodyStatus
