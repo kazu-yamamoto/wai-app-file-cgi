@@ -22,7 +22,7 @@ import Network.Wai.Application.Classic.Utils
 data HandlerInfo = HandlerInfo FileAppSpec Request Path [Lang]
 
 langSuffixes :: Request -> [Lang]
-langSuffixes req = map (\x -> (<.> x)) langs ++ [id, (<.> ".en")]
+langSuffixes req = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
   where
     langs = map fromByteString $ languages req
 
