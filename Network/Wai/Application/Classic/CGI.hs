@@ -77,7 +77,7 @@ fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
     -- consuming the header part of CGI output
     m <- (>>= check) <$> parseHeader
     let (st, hdr, hasBody) = case m of
-            Nothing    -> (status500,[],False)
+            Nothing    -> (statusServerError,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     -- logging

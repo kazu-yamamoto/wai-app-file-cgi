@@ -18,6 +18,7 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
+import Network.Wai.Logger.Utils
 
 ----------------------------------------------------------------
 
@@ -66,6 +67,11 @@ addVia cspec req hdr = ("Via", val) : hdr
       , softwareName cspec
       , ")"
       ]
+
+addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
+addForwardedFor req hdr = ("X-Forwarded-For", addr) : hdr
+  where
+    addr = BS.pack . showSockAddr . remoteHost $ req
 
 addLength :: Integer -> ResponseHeaders -> ResponseHeaders
 addLength len hdr = ("Content-Length", BS.pack . show $ len) : hdr

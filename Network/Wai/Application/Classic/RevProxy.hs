@@ -4,7 +4,9 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
+import Control.Applicative
 import Control.Exception
+import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Enumerator (Iteratee, run_, (=$), ($$), ($=), enumList)
@@ -51,27 +53,29 @@ toHTTPRequest req route lbs = H.def {
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder -> do
     -- FIXME: is this stored-and-forward?
-    bss <- run_ EL.consume
-    let lbs = BL.fromChunks bss
+    lbs <- BL.fromChunks <$> run_ EL.consume
     run_ (H.http (toHTTPRequest req route lbs) (fromBS cspec req respBuilder) mgr)
-    `catch` badGateway cspec respBuilder
+    `catch` badGateway cspec req respBuilder
   where
     mgr = revProxyManager spec
 
 fromBS :: ClassicAppSpec -> Request
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS cspec req f s h = EL.map BB.fromByteString -- body: from BS to Builder
-                      =$ f s h'                   -- hedr: removing CE:
+fromBS cspec req f s h = do
+    liftIO $ logger cspec req statusBadGateway Nothing -- FIXME body length
+    EL.map BB.fromByteString =$ f s h'
   where
-    h' = addVia cspec req $ filter p h
+    h' = addForwardedFor req $ addVia cspec req $ filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
-badGateway :: ClassicAppSpec
+badGateway :: ClassicAppSpec -> Request
            -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
            -> SomeException -> IO a
-badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
+badGateway cspec req builder _ = do
+    liftIO $ logger cspec req statusBadGateway Nothing -- FIXME body length
+    run_ $ bdy $$ builder statusBadGateway hdr
   where
     hdr = addServer cspec textPlainHeader
     bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map BB.fromByteString
