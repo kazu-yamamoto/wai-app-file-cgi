@@ -54,8 +54,12 @@ addServer cspec hdr = ("Server", softwareName cspec) : hdr
 addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
 addVia cspec req hdr = ("Via", val) : hdr
   where
+    ver = httpVersion req
+    showBS = BS.pack . show
     val = BS.concat [
-        (BS.pack . show) (httpVersion req)
+        showBS (httpMajor ver)
+      , "."
+      , showBS (httpMinor ver)
       , " "
       , serverName req
       , " ("
