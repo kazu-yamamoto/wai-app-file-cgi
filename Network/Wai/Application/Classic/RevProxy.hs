@@ -63,7 +63,7 @@ fromBS :: ClassicAppSpec -> Request
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
 fromBS cspec req f s h = do
-    liftIO $ logger cspec req statusBadGateway Nothing -- FIXME body length
+    liftIO $ logger cspec req s Nothing -- FIXME body length
     EL.map BB.fromByteString =$ f s h'
   where
     h' = addForwardedFor req $ addVia cspec req $ filter p h
