@@ -30,7 +30,7 @@ toHTTPRequest req route lbs = H.def {
   , H.port = revProxyPort route
   , H.secure = isSecure req
   , H.checkCerts = H.defaultCheckCerts
-  , H.requestHeaders = requestHeaders req
+  , H.requestHeaders = addForwardedFor req $ requestHeaders req
   , H.path = pathByteString path'
   , H.queryString = queryString req
   , H.requestBody = H.RequestBodyLBS lbs
@@ -66,7 +66,7 @@ fromBS cspec req f s h = do
     liftIO $ logger cspec req s Nothing -- FIXME body length
     EL.map BB.fromByteString =$ f s h'
   where
-    h' = addForwardedFor req $ addVia cspec req $ filter p h
+    h' = addVia cspec req $ filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
