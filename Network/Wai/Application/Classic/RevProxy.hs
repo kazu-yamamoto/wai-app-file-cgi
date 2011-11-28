@@ -63,7 +63,7 @@ fromBS :: ClassicAppSpec
 fromBS cspec f s h = EL.map BB.fromByteString -- body: from BS to Builder
             =$ f s h'                -- hedr: removing CE:
   where
-    h' = ("Server", softwareName cspec):filter p h
+    h' = addRevProxyServer cspec $ filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
@@ -72,5 +72,5 @@ badGateway :: ClassicAppSpec
            -> SomeException -> IO a
 badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where
-    hdr = addServer cspec textPlainHeader
+    hdr = addRevProxyServer cspec textPlainHeader
     bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map BB.fromByteString

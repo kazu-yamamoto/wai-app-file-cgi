@@ -50,6 +50,9 @@ locationHeader url = [("Location", url)]
 addServer :: ClassicAppSpec -> ResponseHeaders -> ResponseHeaders
 addServer cspec hdr = ("Server", softwareName cspec) : hdr
 
+addRevProxyServer :: ClassicAppSpec -> ResponseHeaders -> ResponseHeaders
+addRevProxyServer cspec hdr = ("X-Reverse-Proxy-Server", softwareName cspec) : hdr
+
 addLength :: Integer -> ResponseHeaders -> ResponseHeaders
 addLength len hdr = ("Content-Length", BS.pack . show $ len) : hdr
 
