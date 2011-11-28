@@ -6,7 +6,8 @@ import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Exception
 import Data.ByteString (ByteString)
-import Data.Enumerator (Enumerator, Iteratee, run_, (=$), ($$), ($=), enumList)
+import qualified Data.ByteString.Lazy as BL
+import Data.Enumerator (Iteratee, run_, (=$), ($$), ($=), enumList)
 import qualified Data.Enumerator.List as EL
 import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
@@ -21,8 +22,8 @@ import Prelude hiding (catch)
  - Body
 -}
 
-toHTTPRequest :: Request -> RevProxyRoute -> (Enumerator Builder m ())-> H.Request m
-toHTTPRequest req route inp = H.def {
+toHTTPRequest :: Request -> RevProxyRoute -> BL.ByteString -> H.Request m
+toHTTPRequest req route lbs = H.def {
     H.host = revProxyDomain route
   , H.port = revProxyPort route
   , H.secure = isSecure req
@@ -30,7 +31,7 @@ toHTTPRequest req route inp = H.def {
   , H.requestHeaders = requestHeaders req
   , H.path = pathByteString path'
   , H.queryString = queryString req
-  , H.requestBody = H.RequestBodyEnumChunked inp
+  , H.requestBody = H.RequestBodyLBS lbs
   , H.method = requestMethod req
   , H.proxy = Nothing
   , H.rawBody = False
@@ -51,8 +52,8 @@ revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder -> do
     -- FIXME: is this stored-and-forward?
     bss <- run_ EL.consume
-    let inp = enumList 1 bss $= EL.map BB.fromByteString
-    run_ (H.http (toHTTPRequest req route inp) (fromBS cspec req respBuilder) mgr)
+    let lbs = BL.fromChunks bss
+    run_ (H.http (toHTTPRequest req route lbs) (fromBS cspec req respBuilder) mgr)
     `catch` badGateway cspec respBuilder
   where
     mgr = revProxyManager spec
