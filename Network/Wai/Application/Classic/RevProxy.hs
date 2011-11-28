@@ -52,18 +52,18 @@ revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder ->
     -- FIXME: is this stored-and-forward?
     bss <- run_ EL.consume
     let inp = enumList 1 bss $= EL.map BB.fromByteString
-    run_ (H.http (toHTTPRequest req route inp) (fromBS cspec respBuilder) mgr)
+    run_ (H.http (toHTTPRequest req route inp) (fromBS cspec req respBuilder) mgr)
     `catch` badGateway cspec respBuilder
   where
     mgr = revProxyManager spec
 
-fromBS :: ClassicAppSpec
+fromBS :: ClassicAppSpec -> Request
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS cspec f s h = EL.map BB.fromByteString -- body: from BS to Builder
-            =$ f s h'                -- hedr: removing CE:
+fromBS cspec req f s h = EL.map BB.fromByteString -- body: from BS to Builder
+                      =$ f s h'                   -- hedr: removing CE:
   where
-    h' = addRevProxyServer cspec $ filter p h
+    h' = addVia cspec req $ filter p h
     p ("Content-Encoding", _) = False
     p _ = True
 
@@ -72,5 +72,5 @@ badGateway :: ClassicAppSpec
            -> SomeException -> IO a
 badGateway cspec builder _ = run_ $ bdy $$ builder status502 hdr
   where
-    hdr = addRevProxyServer cspec textPlainHeader
+    hdr = addServer cspec textPlainHeader
     bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map BB.fromByteString
