@@ -2,9 +2,9 @@
 
 module Network.Wai.Application.Classic.Lang (parseLang) where
 
-import Control.Applicative hiding (many, optional)
-import Data.Attoparsec (Parser, takeWhile, parse, feed, Result(..))
-import Data.Attoparsec.Char8 (char, string, count, many, space, digit, option, sepBy1)
+import Control.Applicative hiding (optional)
+import Data.Attoparsec.ByteString (Parser, takeWhile, parse, feed, IResult(..))
+import Data.Attoparsec.ByteString.Char8 (char, string, count, space, digit, option, sepBy1)
 import Data.ByteString.Char8 hiding (map, count, take, takeWhile, notElem)
 import Data.List (sortBy)
 import Data.Ord
