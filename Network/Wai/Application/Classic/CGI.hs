@@ -70,10 +70,16 @@ cgiApp' body cspec cgii req = do
 ----------------------------------------------------------------
 
 toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
-toCGI whdl body = when body $ EL.consume >>= liftIO . mapM_ (BS.hPutStr whdl)
+toCGI whdl body = when body tocgi
+  where
+    tocgi = do
+        m <- EL.head
+        case m of
+            Nothing -> return ()
+            Just b  -> liftIO (BS.hPutStr whdl b) >> tocgi
 
 fromCGI :: Handle -> ClassicAppSpec -> Request -> ResponseEnumerator a
-fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
+fromCGI rhdl cspec req respIter = run_ $ enumOutput $$ do
     -- consuming the header part of CGI output
     m <- (>>= check) <$> parseHeader
     let (st, hdr, hasBody) = case m of
@@ -82,14 +88,13 @@ fromCGI rhdl cspec req respBuilder = run_ $ EB.enumHandle 4096 rhdl $$ do
         hdr' = addServer cspec hdr
     -- logging
     liftIO $ logger cspec req st Nothing -- cannot know body length
-    -- building HTTP header and optionally HTTP body
+    -- iteratee to build HTTP header and optionally HTTP body
     if hasBody
-        then {- Body -}   response st hdr'
-        else emptyBody $$ response st hdr'
+        then            bodyAsBuilder =$ respIter st hdr'
+        else enumEOF $$ bodyAsBuilder =$ respIter st hdr'
   where
-    enumBody = EL.map BB.fromByteString
-    emptyBody = enumEOF
-    response status hs = enumBody =$ respBuilder status hs
+    enumOutput = EB.enumHandle 4096 rhdl
+    bodyAsBuilder = EL.map BB.fromByteString
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
