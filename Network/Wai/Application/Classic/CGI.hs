@@ -61,9 +61,9 @@ cgiApp' body cspec cgii req = do
     -- HTTP body can be obtained in this Iteratee level only
     toCGI whdl body `catchError` const (liftIO cleanup)
     liftIO $ hClose whdl
-    respEnumerator $ \respBuilder ->
+    respEnumerator $ \respIter ->
         -- this is IO
-        fromCGI rhdl cspec req respBuilder `finally` cleanup
+        fromCGI rhdl cspec req respIter `finally` cleanup
   where
     respEnumerator = return . ResponseEnumerator
 

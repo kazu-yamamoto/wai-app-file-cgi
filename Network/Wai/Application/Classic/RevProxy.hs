@@ -9,7 +9,7 @@ import Control.Exception
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
-import Data.Enumerator (Iteratee, run_, (=$), ($$), ($=), enumList)
+import Data.Enumerator (Iteratee, Enumeratee, run_, (=$), ($$), enumList)
 import qualified Data.Enumerator.List as EL
 import qualified Network.HTTP.Enumerator as H
 import Network.HTTP.Types
@@ -45,31 +45,36 @@ toHTTPRequest req route lbs = H.def {
 -}
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req = return $ ResponseEnumerator $ \respBuilder -> do
-    -- FIXME: is this stored-and-forward?
+revProxyApp cspec spec route req = respEnumerator $ \respIter -> do
+    -- FIXME: stored-and-forward -> streaming
     lbs <- BL.fromChunks <$> run_ EL.consume
-    run_ (H.http (toHTTPRequest req route lbs) (fromBS cspec req respBuilder) mgr)
-    `catch` badGateway cspec req respBuilder
+    run_ (H.http (toHTTPRequest req route lbs) (fromBS cspec req respIter) mgr)
+      `catch` badGateway cspec req respIter
   where
+    respEnumerator = return . ResponseEnumerator
     mgr = revProxyManager spec
 
 fromBS :: ClassicAppSpec -> Request
        -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
        -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS cspec req f s h = do
-    liftIO $ logger cspec req s Nothing -- FIXME body length
-    EL.map BB.fromByteString =$ f s h'
+fromBS cspec req respIter st hdr = do
+    liftIO $ logger cspec req st Nothing -- FIXME body length
+    bodyAsBuilder =$ respIter st hdr'
   where
-    h' = addVia cspec req $ filter p h
+    hdr' = addVia cspec req $ filter p hdr
     p ("Content-Encoding", _) = False
     p _ = True
 
 badGateway :: ClassicAppSpec -> Request
            -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
            -> SomeException -> IO a
-badGateway cspec req builder _ = do
-    liftIO $ logger cspec req statusBadGateway Nothing -- FIXME body length
-    run_ $ bdy $$ builder statusBadGateway hdr
+badGateway cspec req respIter _ = do
+    liftIO $ logger cspec req st Nothing -- FIXME body length
+    run_ $ bdy $$ bodyAsBuilder =$ respIter st hdr
   where
     hdr = addServer cspec textPlainHeader
-    bdy = enumList 1 ["Bad Gateway\r\n"] $= EL.map BB.fromByteString
+    bdy = enumList 1 ["Bad Gateway\r\n"]
+    st = statusBadGateway
+
+bodyAsBuilder :: Enumeratee ByteString Builder IO a
+bodyAsBuilder = EL.map BB.fromByteString
