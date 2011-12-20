@@ -27,9 +27,9 @@ adjust Nothing    Nothing    _   = Nothing
 type Range = (Maybe Integer, Maybe Integer)
 
 parseRange :: ByteString -> Maybe [Range]
-parseRange bs = case feed (parse byteRange bs) "" of
-    Done _ x -> Just x
-    _        -> Nothing
+parseRange bs = case parseOnly byteRange bs of
+    Right x -> Just x
+    _       -> Nothing
 
 byteRange :: Parser [Range]
 byteRange = string "bytes=" *> (ranges <* endOfInput)

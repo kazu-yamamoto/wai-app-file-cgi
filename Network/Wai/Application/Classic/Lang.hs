@@ -3,7 +3,7 @@
 module Network.Wai.Application.Classic.Lang (parseLang) where
 
 import Control.Applicative hiding (optional)
-import Data.Attoparsec.ByteString (Parser, takeWhile, parse, feed, IResult(..))
+import Data.Attoparsec.ByteString (Parser, takeWhile, parseOnly)
 import Data.Attoparsec.ByteString.Char8 (char, string, count, space, digit, option, sepBy1)
 import Data.ByteString.Char8 hiding (map, count, take, takeWhile, notElem)
 import Data.List (sortBy)
@@ -11,9 +11,9 @@ import Data.Ord
 import Prelude hiding (takeWhile)
 
 parseLang :: ByteString -> [ByteString]
-parseLang bs = case feed (parse acceptLanguage bs) "" of
-    Done _ ls -> map fst $ sortBy detrimental ls
-    _         -> []
+parseLang bs = case parseOnly acceptLanguage bs of
+    Right ls -> map fst $ sortBy detrimental ls
+    _        -> []
   where
     detrimental = flip (comparing snd)
 
