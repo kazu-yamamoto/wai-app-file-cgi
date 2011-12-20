@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
 -- % mighty mighty.conf mighty.route
 -- % runghc -i.. Test.hs
@@ -14,36 +14,19 @@ import qualified Network.HTTP.Types as W
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Range
-import Test.Framework (defaultMain, testGroup, Test)
+import Test.Framework.TH
 import Test.Framework.Providers.HUnit
-import Test.HUnit hiding (Test)
-
-tests :: [Test]
-tests = [
-    testGroup "default" [
-         testCase "lang" test_lang
-       , testCase "date" test_date
-       , testCase "range" test_range
-       ]
-  , testGroup "mighty" [
-         testCase "post" test_post
-       , testCase "get" test_get
-       , testCase "get2" test_get2
-       , testCase "get_ja" test_get_ja
-       , testCase "get_modified" test_get_modified
-       , testCase "get_partial" test_get_partial
-       , testCase "head" test_head
-       , testCase "head2" test_head2
-       , testCase "head_ja" test_head_ja
-       , testCase "head_modified" test_head_modified
-       , testCase "redirect" test_redirect
-       ]
-  ]
+import Test.HUnit
 
 ----------------------------------------------------------------
 
-test_lang :: Assertion
-test_lang = do
+main :: IO ()
+main = $(defaultMainGenerator)
+
+----------------------------------------------------------------
+
+case_lang :: Assertion
+case_lang = do
     let res = parseLang "en-gb;q=0.8, en;q=0.7, da"
     res @?= ans
   where
@@ -51,8 +34,8 @@ test_lang = do
 
 ----------------------------------------------------------------
 
-test_date :: Assertion
-test_date = do
+case_date :: Assertion
+case_date = do
     let Just x = parseHTTPDate date
         res = formatHTTPDate x
     res @?= date
@@ -61,8 +44,8 @@ test_date = do
 
 ----------------------------------------------------------------
 
-test_range :: Assertion
-test_range = do
+case_range :: Assertion
+case_range = do
     let res1 = skipAndSize range1 size
         res2 = skipAndSize range2 size
         res3 = skipAndSize range3 size
@@ -84,8 +67,8 @@ test_range = do
 
 ----------------------------------------------------------------
 
-test_post :: Assertion
-test_post = do
+case_post :: Assertion
+case_post = do
     rsp <- sendPOST url "foo bar.\nbaz!\n"
     ans <- BL.readFile "data/post"
     rsp @?= ans
@@ -106,8 +89,8 @@ sendPOST url body = do
 
 ----------------------------------------------------------------
 
-test_get :: Assertion
-test_get = do
+case_get :: Assertion
+case_get = do
     rsp <- simpleHttp url
     ans <- BL.readFile "html/index.html"
     rsp @?= ans
@@ -116,8 +99,8 @@ test_get = do
 
 ----------------------------------------------------------------
 
-test_get2 :: Assertion
-test_get2 = do
+case_get2 :: Assertion
+case_get2 = do
     Response rc _ _ <- withManager $ \mgr -> do
         purl <- liftIO $ parseUrl url
         httpLbs purl mgr
@@ -128,8 +111,8 @@ test_get2 = do
 
 ----------------------------------------------------------------
 
-test_get_ja :: Assertion
-test_get_ja = do
+case_get_ja :: Assertion
+case_get_ja = do
     Response _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
     ans <- BL.readFile "html/ja/index.html.ja"
     bdy @?= ans
@@ -138,8 +121,8 @@ test_get_ja = do
 
 ----------------------------------------------------------------
 
-test_get_modified :: Assertion
-test_get_modified = do
+case_get_modified :: Assertion
+case_get_modified = do
     Response _ hdr _ <- sendGET url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
@@ -149,8 +132,8 @@ test_get_modified = do
 
 ----------------------------------------------------------------
 
-test_get_partial :: Assertion
-test_get_partial = do
+case_get_partial :: Assertion
+case_get_partial = do
     Response _ _ bdy <- sendGET url [("Range", "bytes=10-20")]
     bdy @?= ans
   where
@@ -167,8 +150,8 @@ sendGET url hdr = do
 
 ----------------------------------------------------------------
 
-test_head :: Assertion
-test_head = do
+case_head :: Assertion
+case_head = do
     Response rc _ _ <- sendHEAD url []
     rc @?= ok
   where
@@ -177,8 +160,8 @@ test_head = do
 
 ----------------------------------------------------------------
 
-test_head2 :: Assertion
-test_head2 = do
+case_head2 :: Assertion
+case_head2 = do
     Response rc _ _ <- sendHEAD url []
     rc @?= notfound
   where
@@ -187,8 +170,8 @@ test_head2 = do
 
 ----------------------------------------------------------------
 
-test_head_ja :: Assertion
-test_head_ja = do
+case_head_ja :: Assertion
+case_head_ja = do
     Response rc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
     rc @?= ok
   where
@@ -197,8 +180,8 @@ test_head_ja = do
 
 ----------------------------------------------------------------
 
-test_head_modified :: Assertion
-test_head_modified = do
+case_head_modified :: Assertion
+case_head_modified = do
     Response _ hdr _ <- sendHEAD url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
@@ -221,8 +204,8 @@ sendHEAD url hdr = do
 
 ----------------------------------------------------------------
 
-test_redirect :: Assertion
-test_redirect = do
+case_redirect :: Assertion
+case_redirect = do
     rsp <- simpleHttp url
     ans <- BL.readFile "html/redirect/index.html"
     rsp @?= ans
@@ -230,6 +213,3 @@ test_redirect = do
     url = "http://localhost:8080/redirect"
 
 ----------------------------------------------------------------
-
-main :: Assertion
-main = defaultMain tests
