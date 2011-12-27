@@ -8,7 +8,6 @@ import qualified Blaze.ByteString.Builder as BB
 import Control.Applicative
 import Control.Exception
 import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
@@ -53,14 +52,14 @@ cgiApp cspec cgii req = case method of
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiRoute -> Application
 cgiApp' body cspec cgii req = do
-    (rhdl,whdl,pid) <- liftIO $ execProcess cspec cgii req
+    (rhdl,whdl,pid) <- tryIO $ execProcess cspec cgii req
     let cleanup = do
             hClose whdl
             hClose rhdl
             terminateProcess pid -- SIGTERM
     -- HTTP body can be obtained in this Iteratee level only
-    toCGI whdl body `catchError` const (liftIO cleanup)
-    liftIO $ hClose whdl
+    toCGI whdl body `catchError` const (tryIO cleanup)
+    tryIO $ hClose whdl
     respEnumerator $ \respIter ->
         -- this is IO
         fromCGI rhdl cspec req respIter `finally` cleanup
@@ -76,7 +75,7 @@ toCGI whdl body = when body tocgi
         m <- EL.head
         case m of
             Nothing -> return ()
-            Just b  -> liftIO (BS.hPutStr whdl b) >> tocgi
+            Just b  -> tryIO (BS.hPutStr whdl b) >> tocgi
 
 fromCGI :: Handle -> ClassicAppSpec -> Request -> ResponseEnumerator a
 fromCGI rhdl cspec req respIter = run_ $ enumOutput $$ do
@@ -87,7 +86,7 @@ fromCGI rhdl cspec req respIter = run_ $ enumOutput $$ do
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     -- logging
-    liftIO $ logger cspec req st Nothing -- cannot know body length
+    tryIO $ logger cspec req st Nothing -- cannot know body length
     -- iteratee to build HTTP header and optionally HTTP body
     if hasBody
         then            bodyAsBuilder =$ respIter st hdr'
