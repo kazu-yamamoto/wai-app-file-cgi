@@ -1,24 +1,33 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Network.Wai.Application.Classic.Status (getStatusInfo) where
 
+import Control.Applicative
 import Control.Arrow
+import Control.Exception
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
+import Data.Maybe
 import qualified Data.StaticHash as M
 import Network.HTTP.Types
-import Network.Wai.Application.Classic.MaybeIter
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
+import Prelude hiding (catch)
+
+instance Alternative IO where
+  empty = goNext
+  x <|> y = x `catch` (\ (_ :: SomeException) -> y)
+
+goNext :: IO a
+goNext = undefined
 
 ----------------------------------------------------------------
 
 getStatusInfo :: ClassicAppSpec -> FileAppSpec -> [Lang] -> Status -> IO StatusInfo
-getStatusInfo cspec spec langs st = runAny [
-    getStatusFile getF dir code langs
-  , return (getStatusBS code)
-  , return (Just StatusNone)
-  ]
+getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
+                                <|> (return $ getStatusBS code)
+                                <|> return StatusNone
   where
     dir = statusFileDir cspec
     getF = getFileInfo spec
@@ -41,8 +50,10 @@ statusBSMap = M.fromList $ map (statusCode &&& toRspBody) statusList
   where
     toRspBody s = StatusByteString $ BL.fromChunks [statusMessage s, "\r\n"]
 
-getStatusBS :: Int -> Maybe StatusInfo
-getStatusBS code = M.lookup code statusBSMap
+getStatusBS :: Int -> StatusInfo
+getStatusBS code = case M.lookup code statusBSMap of
+    Nothing -> error "getStatusBS"
+    Just x  -> x
 
 ----------------------------------------------------------------
 
@@ -51,17 +62,13 @@ statusFileMap = M.fromList $ map (statusCode &&& toPath) statusList
   where
     toPath s = fromString $ show (statusCode s) ++ ".html"
 
-getStatusFile :: (Path -> IO (Maybe FileInfo)) -> Path -> Int -> [Lang] -> IO (Maybe StatusInfo)
-getStatusFile getF dir code langs = try mfiles
+getStatusFile :: (Path -> IO FileInfo) -> Path -> Int -> [Lang] -> IO StatusInfo
+getStatusFile getF dir code langs = tryFile mfiles
   where
     mfiles = case M.lookup code statusFileMap of
         Nothing   -> []
         Just file -> map ($ (dir </> file)) langs
-    try [] = return Nothing
-    try (f:fs) = do
-        mfi <- getF f
-        case mfi of
-            Nothing -> try fs
-            Just fi -> return . Just $ StatusFile f (fileInfoSize fi)
+    tryFile = foldr func goNext
+    func f io = StatusFile f . fileInfoSize <$> getF f <|> io
 
 ----------------------------------------------------------------

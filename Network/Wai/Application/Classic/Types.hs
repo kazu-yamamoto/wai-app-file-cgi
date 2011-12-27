@@ -34,15 +34,16 @@ data FileAppSpec = FileAppSpec {
     indexFile :: Path
     -- | Whether this is an HTML or not.
   , isHTML :: Path -> Bool
-    -- | A function to obtain information about a file
-  , getFileInfo :: Path -> IO (Maybe FileInfo)
+    -- | A function to obtain information about a file.
+    -- | If information is not obtained, an error should be raised.
+  , getFileInfo :: Path -> IO FileInfo
   }
 
 data FileInfo = FileInfo {
     fileInfoName :: Path
   , fileInfoSize :: Integer
   , fileInfoTime :: HTTPDate
-  }
+  } deriving Show
 
 data FileRoute = FileRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.

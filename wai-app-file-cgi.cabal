@@ -24,7 +24,6 @@ library
                         Network.Wai.Application.Classic.FileInfo
                         Network.Wai.Application.Classic.Header
                         Network.Wai.Application.Classic.Lang
-                        Network.Wai.Application.Classic.MaybeIter
                         Network.Wai.Application.Classic.Range
                         Network.Wai.Application.Classic.RevProxy
                         Network.Wai.Application.Classic.Status

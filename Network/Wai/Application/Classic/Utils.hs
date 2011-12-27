@@ -21,7 +21,7 @@ import Data.Word
 data Path = Path {
     pathString :: FilePath
   , pathByteString :: ByteString
-  }
+  } deriving Show
 
 instance IsString Path where
     fromString path = Path {
