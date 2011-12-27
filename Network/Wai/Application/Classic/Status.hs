@@ -17,7 +17,7 @@ import Prelude hiding (catch)
 
 instance Alternative IO where
   empty = goNext
-  x <|> y = x `catch` (\ (_ :: SomeException) -> y)
+  x <|> y = x `catch` (\(_ :: SomeException) -> y)
 
 goNext :: IO a
 goNext = undefined

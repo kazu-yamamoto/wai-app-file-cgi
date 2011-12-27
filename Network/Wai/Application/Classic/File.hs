@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, ScopedTypeVariables, DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, DeriveDataTypeable #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Network.Wai.Application.Classic.File (
@@ -28,7 +28,7 @@ type Rsp = Iter RspSpec
 
 instance Alternative Iter where
   empty = goNext
-  x <|> y = x `catchError` (\(_ :: SomeException) -> y)
+  x <|> y = x `catchError` const y
 
 data AltIterErr = AltIterErr deriving (Show, Typeable)
 
