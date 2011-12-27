@@ -26,7 +26,7 @@ goNext = undefined
 
 getStatusInfo :: ClassicAppSpec -> FileAppSpec -> [Lang] -> Status -> IO StatusInfo
 getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
-                                <|> (return $ getStatusBS code)
+                                <|> return (getStatusBS code)
                                 <|> return StatusNone
   where
     dir = statusFileDir cspec
