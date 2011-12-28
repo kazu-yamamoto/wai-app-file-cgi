@@ -35,7 +35,7 @@ data FileAppSpec = FileAppSpec {
     -- | Whether this is an HTML or not.
   , isHTML :: Path -> Bool
     -- | A function to obtain information about a file.
-    -- | If information is not obtained, an error should be raised.
+    -- | If information is not obtained, an IO exception should be raised.
   , getFileInfo :: Path -> IO FileInfo
   }
 

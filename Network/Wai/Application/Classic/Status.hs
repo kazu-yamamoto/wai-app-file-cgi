@@ -20,13 +20,13 @@ instance Alternative IO where
   x <|> y = x `catch` (\(_ :: SomeException) -> y)
 
 goNext :: IO a
-goNext = undefined
+goNext = throwIO $ userError "goNext for IO"
 
 ----------------------------------------------------------------
 
 getStatusInfo :: ClassicAppSpec -> FileAppSpec -> [Lang] -> Status -> IO StatusInfo
 getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
-                                <|> return (getStatusBS code)
+                                <|> getStatusBS code
                                 <|> return StatusNone
   where
     dir = statusFileDir cspec
@@ -50,10 +50,10 @@ statusBSMap = M.fromList $ map (statusCode &&& toRspBody) statusList
   where
     toRspBody s = StatusByteString $ BL.fromChunks [statusMessage s, "\r\n"]
 
-getStatusBS :: Int -> StatusInfo
+getStatusBS :: Int -> IO StatusInfo
 getStatusBS code = case M.lookup code statusBSMap of
-    Nothing -> error "getStatusBS"
-    Just x  -> x
+    Nothing -> throwIO $ userError "getStatusBS"
+    Just x  -> return x
 
 ----------------------------------------------------------------
 

@@ -5,6 +5,7 @@
 
 module Test where
 
+import Control.Exception
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Enumerator (run_)
@@ -85,7 +86,7 @@ sendPOST url body = do
     Response sc _ b <- withManager $ httpLbs req
     if 200 <= sc && sc < 300
         then return b
-        else error "sendPOST"
+        else throwIO (userError "sendPOST")
 
 ----------------------------------------------------------------
 
