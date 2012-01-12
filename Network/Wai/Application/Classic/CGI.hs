@@ -4,17 +4,18 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import qualified Blaze.ByteString.Builder as BB
+import Blaze.ByteString.Builder (Builder)
+import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
-import Control.Exception
-import Control.Monad (when)
+import Control.Monad (when, unless)
+import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
 import Data.CaseInsensitive hiding (map)
-import Data.Enumerator hiding (map, filter, drop, break)
-import qualified Data.Enumerator.Binary as EB
-import qualified Data.Enumerator.List as EL
+import Data.Conduit
+import qualified Data.Conduit.Binary as CB
+import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.EnumLine as ENL
@@ -23,8 +24,10 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import Network.Wai.Logger.Utils
+import Prelude hiding (catch)
 import System.IO
 import System.Process
+import Control.Monad.Trans.Resource
 
 ----------------------------------------------------------------
 
@@ -52,48 +55,38 @@ cgiApp cspec cgii req = case method of
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiRoute -> Application
 cgiApp' body cspec cgii req = do
-    (rhdl,whdl,pid) <- tryIO $ execProcess cspec cgii req
-    let cleanup = do
-            hClose whdl
-            hClose rhdl
-            terminateProcess pid -- SIGTERM
-    -- HTTP body can be obtained in this Iteratee level only
-    toCGI whdl body `catchError` const (tryIO cleanup)
-    tryIO $ hClose whdl
-    respEnumerator $ \respIter ->
-        -- this is IO
-        fromCGI rhdl cspec req respIter `finally` cleanup
-  where
-    respEnumerator = return . ResponseEnumerator
+    (rhdl,whdl,pid) <- liftIO $ execProcess cspec cgii req
+    register $ do
+        hClose whdl
+        hClose rhdl
+        terminateProcess pid -- SIGTERM
+    liftIO $ runResourceT $ requestBody req $$ toCGI whdl body
+    liftIO $ hClose whdl
+    fromCGI rhdl cspec req
 
 ----------------------------------------------------------------
 
-toCGI :: Handle -> Bool -> Iteratee ByteString IO ()
+toCGI :: Handle -> Bool -> Sink ByteString IO ()
 toCGI whdl body = when body tocgi
   where
     tocgi = do
-        m <- EL.head
+        m <- CL.head
         case m of
             Nothing -> return ()
-            Just b  -> tryIO (BS.hPutStr whdl b) >> tocgi
+            Just b  -> liftIO (BS.hPutStr whdl b) >> tocgi
 
-fromCGI :: Handle -> ClassicAppSpec -> Request -> ResponseEnumerator a
-fromCGI rhdl cspec req respIter = run_ $ enumOutput $$ do
-    -- consuming the header part of CGI output
-    m <- (>>= check) <$> parseHeader
+fromCGI :: Handle -> ClassicAppSpec -> Application
+fromCGI rhdl cspec req = do
+    bsrc <- bufferSource $ CB.sourceHandle rhdl
+    m <- (>>= check) <$> (bsrc $$ parseHeader)
     let (st, hdr, hasBody) = case m of
             Nothing    -> (statusServerError,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
-    -- logging
-    tryIO $ logger cspec req st Nothing -- cannot know body length
-    -- iteratee to build HTTP header and optionally HTTP body
-    if hasBody
-        then            bodyAsBuilder =$ respIter st hdr'
-        else enumEOF $$ bodyAsBuilder =$ respIter st hdr'
+    liftIO $ logger cspec req st Nothing
+    -- XXX hasBody
+    return $ ResponseSource st hdr' (toSource bsrc)
   where
-    enumOutput = EB.enumHandle 4096 rhdl
-    bodyAsBuilder = EL.map BB.fromByteString
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
@@ -101,9 +94,12 @@ fromCGI rhdl cspec req respIter = run_ $ enumOutput $$ do
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
 
+toSource :: BufferedSource IO ByteString -> Source IO Builder
+toSource = fmap BB.fromByteString . unbufferSource
+
 ----------------------------------------------------------------
 
-parseHeader :: Iteratee ByteString IO (Maybe RequestHeaders)
+parseHeader :: Sink ByteString IO (Maybe RequestHeaders)
 parseHeader = takeHeader >>= maybe (return Nothing)
                                    (return . Just . map parseField)
   where
@@ -113,7 +109,7 @@ parseHeader = takeHeader >>= maybe (return Nothing)
             kv@(_,"") -> kv
             (k,v) -> let v' = BS.dropWhile (==32) $ BS.tail v in (k,v') -- ' '
 
-takeHeader :: Iteratee ByteString IO (Maybe [ByteString])
+takeHeader :: Sink ByteString IO (Maybe [ByteString])
 takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
     if l == ""
        then return (Just [])

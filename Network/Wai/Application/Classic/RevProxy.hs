@@ -5,30 +5,29 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
-import Control.Exception
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as BL
-import Data.Enumerator (Iteratee, Enumeratee, run_, (=$), ($$), enumList)
-import qualified Data.Enumerator.List as EL
-import qualified Network.HTTP.Enumerator as H
-import Network.HTTP.Types
+import qualified Data.ByteString.Char8 as BS
+import Data.Conduit
+import Data.Int
+import Data.Maybe
+import qualified Network.HTTP.Conduit as H
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 
-toHTTPRequest :: Request -> RevProxyRoute -> BL.ByteString -> H.Request m
-toHTTPRequest req route lbs = H.def {
+toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request IO
+toHTTPRequest req route len = H.def {
     H.host = revProxyDomain route
   , H.port = revProxyPort route
   , H.secure = isSecure req
   , H.checkCerts = H.defaultCheckCerts
   , H.requestHeaders = addForwardedFor req $ requestHeaders req
   , H.path = pathByteString path'
-  , H.queryString = queryString req
-  , H.requestBody = H.RequestBodyLBS lbs
+  , H.queryString = rawQueryString req
+  , H.requestBody = getBody req len
   , H.method = requestMethod req
   , H.proxy = Nothing
   , H.rawBody = False
@@ -40,31 +39,40 @@ toHTTPRequest req route lbs = H.def {
     dst = revProxyDst route
     path' = dst </> (path <\> src)
 
+toSource :: BufferedSource IO ByteString -> Source IO Builder
+toSource = fmap BB.fromByteString . unbufferSource
+
+getBody :: Request -> Int64 -> H.RequestBody IO
+getBody req len = H.RequestBodySource len (toSource . requestBody $ req)
+
+getLen :: Request -> Maybe Int64
+getLen req = do
+    len' <- lookup "content-length" $ requestHeaders req
+    case reads $ BS.unpack len' of
+        [] -> Nothing
+        (i, _):_ -> Just i
+
 {-|
   Relaying any requests as reverse proxy.
 -}
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req = respEnumerator $ \respIter -> do
-    -- FIXME: stored-and-forward -> streaming
-    lbs <- BL.fromChunks <$> run_ EL.consume
-    run_ (H.http (toHTTPRequest req route lbs) (fromBS cspec req respIter) mgr)
-      `catch` badGateway cspec req respIter
+revProxyApp cspec spec route req = do
+    let mlen = getLen req
+        len = fromMaybe 0 mlen
+        httpReq = toHTTPRequest req route len
+    H.Response status hdr downbody <- H.http httpReq mgr
+    let hdr' = fixHeader hdr
+    liftIO $ logger cspec req status (fromIntegral <$> mlen)
+    return $ ResponseSource status hdr' (toSource downbody)
   where
-    respEnumerator = return . ResponseEnumerator
     mgr = revProxyManager spec
-
-fromBS :: ClassicAppSpec -> Request
-       -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
-       -> (Status -> ResponseHeaders -> Iteratee ByteString IO a)
-fromBS cspec req respIter st hdr = do
-    liftIO $ logger cspec req st Nothing -- FIXME body length
-    bodyAsBuilder =$ respIter st hdr'
-  where
-    hdr' = addVia cspec req $ filter p hdr
+    fixHeader = addVia cspec req . filter p
     p ("Content-Encoding", _) = False
     p _ = True
 
+{-
+XXX
 badGateway :: ClassicAppSpec -> Request
            -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
            -> SomeException -> IO a
@@ -78,3 +86,4 @@ badGateway cspec req respIter _ = do
 
 bodyAsBuilder :: Enumeratee ByteString Builder IO a
 bodyAsBuilder = EL.map BB.fromByteString
+-}

@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings, TypeSynonymInstances #-}
+{-# LANGUAGE ScopedTypeVariables, DeriveDataTypeable #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Network.Wai.Application.Classic.File (
@@ -6,11 +7,12 @@ module Network.Wai.Application.Classic.File (
   ) where
 
 import Control.Applicative
-import Control.Exception
-import Data.ByteString (ByteString)
+import Control.Exception (Exception, SomeException)
+import Control.Exception.Lifted (catch, throwIO)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
-import Data.Enumerator (Iteratee(..), tryIO, catchError, throwError)
+import Data.Conduit
 import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
@@ -23,21 +25,21 @@ import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 
-type Iter = Iteratee ByteString IO
-type Rsp = Iter RspSpec
+type RIO = ResourceT IO
+type Rsp = ResourceT IO RspSpec
 
-instance Alternative Iter where
+instance Alternative RIO where
   empty = goNext
-  x <|> y = x `catchError` const y
+  x <|> y = x `catch`  (\(_ :: SomeException) -> y)
 
-data AltIterErr = AltIterErr deriving (Show, Typeable)
+data RIOErr = RIOErr deriving (Show, Typeable)
 
-instance Exception AltIterErr
+instance Exception RIOErr
 
-goNext :: Iter a
-goNext = throwError AltIterErr
+goNext :: RIO a
+goNext = throwIO RIOErr
 
-runAlt :: [Iter a] -> Iter a
+runAlt :: [RIO a] -> RIO a
 runAlt = foldr (<|>) goNext
 
 ----------------------------------------------------------------
@@ -78,10 +80,10 @@ fileApp cspec spec filei req = do
         _      -> return notAllowed
     (response, mlen) <- case body of
             NoBody                 -> return $ noBody st
-            BodyStatus -> statusBody st <$> (tryIO $ getStatusInfo cspec spec langs st)
+            BodyStatus -> statusBody st <$> (liftIO $ getStatusInfo cspec spec langs st)
             BodyFileNoBody hdr     -> return $ bodyFileNoBody st hdr
             BodyFile hdr afile rng -> return $ bodyFile st hdr afile rng
-    tryIO $ logger cspec req st mlen
+    liftIO $ logger cspec req st mlen
     return response
   where
     hinfo = HandlerInfo spec req file langs
@@ -130,7 +132,7 @@ tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
 tryGetFile (HandlerInfo spec req file _) ishtml lang = do
-    finfo <- tryIO (getFileInfo spec (lang file))
+    finfo <- liftIO (getFileInfo spec (lang file))
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
         sfile = fileInfoName finfo
@@ -159,7 +161,7 @@ tryHead hinfo False= tryHeadFile hinfo False id
 
 tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
 tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
-    finfo <- tryIO (getFileInfo spec (lang file))
+    finfo <- liftIO (getFileInfo spec (lang file))
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
         hdr = newHeader ishtml (pathByteString file) mtime
@@ -180,7 +182,7 @@ tryRedirect (HandlerInfo spec req _ langs) (Just file) =
 
 tryRedirectFile :: HandlerInfo -> Lang -> Rsp
 tryRedirectFile (HandlerInfo spec req file _) lang = do
-    _ <- tryIO $ getFileInfo spec (lang file)
+    _ <- liftIO $ getFileInfo spec (lang file)
     return $ RspSpec statusMovedPermanently (BodyFileNoBody hdr)
   where
     hdr = locationHeader redirectURL

@@ -3,17 +3,19 @@
 module Network.Wai.Application.Classic.EnumLine (head) where
 
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as S () -- for OverloadedStrings
+import qualified Data.ByteString.Char8 () -- for OverloadedStrings
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Char8 as L () -- for OverloadedStrings
-import Data.Enumerator (Iteratee, Stream(..), yield, continue)
+import qualified Data.ByteString.Lazy.Char8 () -- for OverloadedStrings
+import Data.Conduit
 import Prelude hiding (head)
 
-head :: Iteratee BS.ByteString IO (Maybe BS.ByteString)
+head :: Sink BS.ByteString IO (Maybe BS.ByteString)
 head = line id False
 
 line :: Builder -> Bool
-     -> Iteratee BS.ByteString IO (Maybe BS.ByteString)
+     -> Sink BS.ByteString IO (Maybe BS.ByteString)
+line = undefined
+{-
 line build dropLF = continue go
   where
     go (Chunks cnk) = breakLine (BL.fromChunks cnk)
@@ -49,6 +51,7 @@ line build dropLF = continue go
     lf = 10
     cr = 13
     eol = (`elem` [lf, cr])
+-}
 
 type Builder = BL.ByteString -> BL.ByteString
 
