@@ -5,6 +5,8 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
+import Control.Exception (SomeException)
+import Control.Exception.Lifted (catch)
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
@@ -12,6 +14,7 @@ import Data.Conduit
 import Data.Int
 import Data.Maybe
 import qualified Network.HTTP.Conduit as H
+import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Types
@@ -57,7 +60,12 @@ getLen req = do
 -}
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req = do
+revProxyApp cspec spec route req =
+    revProxyApp' cspec spec route req
+    `catch` badGateway cspec req
+
+revProxyApp' :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
+revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
@@ -71,19 +79,11 @@ revProxyApp cspec spec route req = do
     p ("Content-Encoding", _) = False
     p _ = True
 
-{-
-XXX
-badGateway :: ClassicAppSpec -> Request
-           -> (Status -> ResponseHeaders -> Iteratee Builder IO a)
-           -> SomeException -> IO a
-badGateway cspec req respIter _ = do
+badGateway :: ClassicAppSpec -> Request-> SomeException -> ResourceT IO Response
+badGateway cspec req _ = do
     liftIO $ logger cspec req st Nothing -- FIXME body length
-    run_ $ bdy $$ bodyAsBuilder =$ respIter st hdr
+    return $ ResponseBuilder st hdr bdy
   where
     hdr = addServer cspec textPlainHeader
-    bdy = enumList 1 ["Bad Gateway\r\n"]
+    bdy = BB.fromByteString "Bad Gateway\r\n"
     st = statusBadGateway
-
-bodyAsBuilder :: Enumeratee ByteString Builder IO a
-bodyAsBuilder = EL.map BB.fromByteString
--}

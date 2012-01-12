@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE OverloadedStrings, CPP, DoAndIfThenElse #-}
 
 module Network.Wai.Application.Classic.CGI (
     cgiApp
@@ -7,8 +7,9 @@ module Network.Wai.Application.Classic.CGI (
 import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
-import Control.Monad (when, unless)
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Resource
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
@@ -27,7 +28,6 @@ import Network.Wai.Logger.Utils
 import Prelude hiding (catch)
 import System.IO
 import System.Process
-import Control.Monad.Trans.Resource
 
 ----------------------------------------------------------------
 
@@ -84,8 +84,10 @@ fromCGI rhdl cspec req = do
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
-    -- XXX hasBody
-    return $ ResponseSource st hdr' (toSource bsrc)
+    if hasBody then
+        return $ ResponseSource st hdr' (toSource bsrc)
+    else
+        return $ ResponseSource st hdr' (nullSource bsrc)
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
@@ -96,6 +98,9 @@ fromCGI rhdl cspec req = do
 
 toSource :: BufferedSource IO ByteString -> Source IO Builder
 toSource = fmap BB.fromByteString . unbufferSource
+
+nullSource :: BufferedSource IO ByteString -> Source IO Builder
+nullSource bsrc = fmap BB.fromByteString $ bsrc $= CB.isolate 0
 
 ----------------------------------------------------------------
 
