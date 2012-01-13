@@ -2,10 +2,10 @@ module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
-import Network.HTTP.Date
 import qualified Network.HTTP.Conduit as H
+import Network.HTTP.Date
 import Network.HTTP.Types
-import Network.Wai.Application.Classic.Utils
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Logger.Prefork
 
 ----------------------------------------------------------------

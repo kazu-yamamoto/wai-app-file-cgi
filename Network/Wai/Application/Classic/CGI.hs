@@ -4,8 +4,6 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Blaze.ByteString.Builder (Builder)
-import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
@@ -13,17 +11,16 @@ import Control.Monad.Trans.Resource
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
-import Data.CaseInsensitive hiding (map)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.Wai
-import Network.Wai.Application.Classic.EnumLine as ENL
+import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Utils
 import Network.Wai.Logger.Utils
 import Prelude hiding (catch)
 import System.IO
@@ -60,12 +57,13 @@ cgiApp' body cspec cgii req = do
         hClose whdl
         hClose rhdl
         terminateProcess pid -- SIGTERM
-    liftIO $ runResourceT $ requestBody req $$ toCGI whdl body
+    requestBody req $$ toCGI whdl body
     liftIO $ hClose whdl
     fromCGI rhdl cspec req
 
 ----------------------------------------------------------------
 
+-- FIXME sinkHandle
 toCGI :: Handle -> Bool -> Sink ByteString IO ()
 toCGI whdl body = when body tocgi
   where
@@ -78,11 +76,12 @@ toCGI whdl body = when body tocgi
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
     bsrc <- bufferSource $ CB.sourceHandle rhdl
-    m <- (>>= check) <$> (bsrc $$ parseHeader)
+    m <- check <$> (bsrc $$ parseHeader)
     let (st, hdr, hasBody) = case m of
             Nothing    -> (statusServerError,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
+    liftIO $ print (st, hdr, hasBody)
     liftIO $ logger cspec req st Nothing
     if hasBody then
         return $ ResponseSource st hdr' (toSource bsrc)
@@ -95,30 +94,6 @@ fromCGI rhdl cspec req = do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-
-toSource :: BufferedSource IO ByteString -> Source IO Builder
-toSource = fmap BB.fromByteString . unbufferSource
-
-nullSource :: BufferedSource IO ByteString -> Source IO Builder
-nullSource bsrc = fmap BB.fromByteString $ bsrc $= CB.isolate 0
-
-----------------------------------------------------------------
-
-parseHeader :: Sink ByteString IO (Maybe RequestHeaders)
-parseHeader = takeHeader >>= maybe (return Nothing)
-                                   (return . Just . map parseField)
-  where
-    parseField bs = (mk key, val)
-      where
-        (key,val) = case BS.breakByte 58 bs of -- ':'
-            kv@(_,"") -> kv
-            (k,v) -> let v' = BS.dropWhile (==32) $ BS.tail v in (k,v') -- ' '
-
-takeHeader :: Sink ByteString IO (Maybe [ByteString])
-takeHeader = ENL.head >>= maybe (return Nothing) $. \l ->
-    if l == ""
-       then return (Just [])
-       else takeHeader >>= maybe (return Nothing) (return . Just . (l:))
 
 ----------------------------------------------------------------
 
@@ -182,10 +157,3 @@ pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'
-
-----------------------------------------------------------------
-
-infixr 6 $.
-
-($.) :: (a -> b) -> a -> b
-($.) = ($)

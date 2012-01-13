@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Network.Wai.Application.Classic.Utils (
+module Network.Wai.Application.Classic.Path (
     Path(..)
   , fromString, fromByteString
   , (+++), (</>), (<\>), (<.>)

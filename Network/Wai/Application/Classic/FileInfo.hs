@@ -6,9 +6,9 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Range
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Utils
 
 ----------------------------------------------------------------
 

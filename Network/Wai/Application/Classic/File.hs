@@ -18,9 +18,9 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 
 ----------------------------------------------------------------

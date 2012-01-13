@@ -2,13 +2,10 @@
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
-import Blaze.ByteString.Builder (Builder)
-import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
 import Control.Exception (SomeException)
 import Control.Exception.Lifted (catch)
 import Control.Monad.IO.Class (liftIO)
-import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Conduit
 import Data.Int
@@ -16,9 +13,10 @@ import Data.Maybe
 import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Types
 import Network.Wai
+import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 
 toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request IO
@@ -41,9 +39,6 @@ toHTTPRequest req route len = H.def {
     src = revProxySrc route
     dst = revProxyDst route
     path' = dst </> (path <\> src)
-
-toSource :: BufferedSource IO ByteString -> Source IO Builder
-toSource = fmap BB.fromByteString . unbufferSource
 
 getBody :: Request -> Int64 -> H.RequestBody IO
 getBody req len = H.RequestBodySource len (toSource . requestBody $ req)
@@ -85,5 +80,5 @@ badGateway cspec req _ = do
     return $ ResponseBuilder st hdr bdy
   where
     hdr = addServer cspec textPlainHeader
-    bdy = BB.fromByteString "Bad Gateway\r\n"
+    bdy = byteStringToBuilder "Bad Gateway\r\n"
     st = statusBadGateway

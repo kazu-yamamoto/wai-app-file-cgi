@@ -11,8 +11,8 @@ import Data.ByteString.Lazy.Char8 ()
 import Data.Maybe
 import qualified Data.StaticHash as M
 import Network.HTTP.Types
+import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Classic.Utils
 import Prelude hiding (catch)
 
 instance Alternative IO where
