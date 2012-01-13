@@ -13,7 +13,6 @@ import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
-import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
@@ -57,21 +56,14 @@ cgiApp' body cspec cgii req = do
         hClose whdl
         hClose rhdl
         terminateProcess pid -- SIGTERM
-    requestBody req $$ toCGI whdl body
+    when body $ toCGI whdl req
     liftIO $ hClose whdl
     fromCGI rhdl cspec req
 
 ----------------------------------------------------------------
 
--- FIXME sinkHandle
-toCGI :: Handle -> Bool -> Sink ByteString IO ()
-toCGI whdl body = when body tocgi
-  where
-    tocgi = do
-        m <- CL.head
-        case m of
-            Nothing -> return ()
-            Just b  -> liftIO (BS.hPutStr whdl b) >> tocgi
+toCGI :: Handle -> Request -> ResourceT IO ()
+toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
@@ -81,7 +73,6 @@ fromCGI rhdl cspec req = do
             Nothing    -> (statusServerError,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
-    liftIO $ print (st, hdr, hasBody)
     liftIO $ logger cspec req st Nothing
     if hasBody then
         return $ ResponseSource st hdr' (toSource bsrc)
