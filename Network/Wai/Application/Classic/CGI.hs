@@ -1,10 +1,12 @@
-{-# LANGUAGE OverloadedStrings, CPP, DoAndIfThenElse #-}
+{-# LANGUAGE OverloadedStrings, CPP, DoAndIfThenElse, ScopedTypeVariables #-}
 
 module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
 import Control.Applicative
+import Control.Exception (SomeException)
+import Control.Exception.Lifted (catch)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Resource
@@ -68,16 +70,14 @@ toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
     bsrc <- bufferSource $ CB.sourceHandle rhdl
-    m <- check <$> (bsrc $$ parseHeader)
+    m <- (check <$> (bsrc $$ parseHeader)) `catch` recover
     let (st, hdr, hasBody) = case m of
             Nothing    -> (statusServerError,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
-    if hasBody then
-        return $ ResponseSource st hdr' (toSource bsrc)
-    else
-        return $ ResponseSource st hdr' (nullSource bsrc)
+    let src = if hasBody then (toSource bsrc) else nullSource
+    return $ ResponseSource st hdr' src
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (status200, hs)
@@ -85,6 +85,7 @@ fromCGI rhdl cspec req = do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
+    recover (_ :: SomeException) = return Nothing
 
 ----------------------------------------------------------------
 

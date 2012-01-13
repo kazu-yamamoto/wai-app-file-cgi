@@ -88,6 +88,24 @@ sendPOST url body = do
         then return b
         else throwIO (userError "sendPOST")
 
+case_post2 :: Assertion
+case_post2 = do
+    rsp <- sendPOST2 url "foo bar.\nbaz!\n"
+    rsp @?= 500
+  where
+    url = "http://localhost:8080/cgi-bin/broken"
+
+sendPOST2 :: String -> BL.ByteString -> IO Int
+sendPOST2 url body = do
+    req' <- parseUrl url
+    let req = req' {
+            method = "POST"
+          , requestBody = RequestBodyLBS body
+          }
+    withManager $ httpLbs req
+    Response sc _ _ <- withManager $ httpLbs req
+    return sc
+
 ----------------------------------------------------------------
 
 case_get :: Assertion

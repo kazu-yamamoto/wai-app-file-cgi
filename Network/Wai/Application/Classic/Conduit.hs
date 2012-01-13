@@ -15,7 +15,6 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
-import qualified Data.Conduit.Binary as CB
 import Data.Word
 import Network.HTTP.Types
 
@@ -29,9 +28,14 @@ byteStringToBuilder = BB.fromByteString
 toSource :: BufferedSource IO ByteString -> Source IO Builder
 toSource = fmap byteStringToBuilder . unbufferSource
 
--- FIXME
-nullSource :: BufferedSource IO ByteString -> Source IO Builder
-nullSource bsrc = fmap byteStringToBuilder $ bsrc $= CB.isolate 0
+eof :: PreparedSource IO Builder
+eof = PreparedSource
+    { sourcePull = return Closed
+    , sourceClose = return ()
+    }
+
+nullSource :: Source IO Builder
+nullSource = Source (return eof)
 
 ----------------------------------------------------------------
 
