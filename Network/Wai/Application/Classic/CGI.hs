@@ -76,7 +76,7 @@ fromCGI rhdl cspec req = do
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
-    let src = if hasBody then (toSource bsrc) else nullSource
+    let src = if hasBody then (toSource bsrc) else sourceNull
     return $ ResponseSource st hdr' src
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of

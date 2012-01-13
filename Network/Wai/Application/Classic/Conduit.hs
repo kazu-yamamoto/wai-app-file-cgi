@@ -3,7 +3,7 @@
 module Network.Wai.Application.Classic.Conduit (
     byteStringToBuilder
   , toSource
-  , nullSource
+  , sourceNull
   , parseHeader
   ) where
 
@@ -15,6 +15,7 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
+import Data.Monoid
 import Data.Word
 import Network.HTTP.Types
 
@@ -28,14 +29,8 @@ byteStringToBuilder = BB.fromByteString
 toSource :: BufferedSource IO ByteString -> Source IO Builder
 toSource = fmap byteStringToBuilder . unbufferSource
 
-eof :: PreparedSource IO Builder
-eof = PreparedSource
-    { sourcePull = return Closed
-    , sourceClose = return ()
-    }
-
-nullSource :: Source IO Builder
-nullSource = Source (return eof)
+sourceNull :: Source IO Builder
+sourceNull = mempty
 
 ----------------------------------------------------------------
 
