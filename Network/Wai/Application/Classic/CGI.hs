@@ -53,14 +53,16 @@ cgiApp cspec cgii req = case method of
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiRoute -> Application
 cgiApp' body cspec cgii req = do
-    (rhdl,whdl,pid) <- liftIO $ execProcess cspec cgii req
-    register $ do
-        hClose whdl
-        hClose rhdl
-        terminateProcess pid -- SIGTERM
+    (rhdl,whdl,tellEOF) <- liftIO (execProcess cspec cgii req) >>= register3
     when body $ toCGI whdl req
-    liftIO $ hClose whdl
+    tellEOF
     fromCGI rhdl cspec req
+  where
+    register3 (rhdl,whdl,pid) = do
+        register $ terminateProcess pid -- SIGTERM
+        register $ hClose rhdl
+        keyw <- register $ hClose whdl
+        return (rhdl,whdl,release keyw)
 
 ----------------------------------------------------------------
 
