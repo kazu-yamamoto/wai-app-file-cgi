@@ -5,19 +5,18 @@
 
 module Test where
 
-import Control.Exception
-import Control.Monad.IO.Class (liftIO)
+import Control.Exception.Lifted
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.Enumerator (run_)
+import Network.HTTP.Conduit
 import Network.HTTP.Date
-import Network.HTTP.Enumerator
-import qualified Network.HTTP.Types as W
+import qualified Network.HTTP.Types as H
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Range
 import Test.Framework.Providers.HUnit
 import Test.Framework.TH
 import Test.HUnit
+import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 
@@ -70,41 +69,18 @@ case_range = do
 
 case_post :: Assertion
 case_post = do
-    rsp <- sendPOST url "foo bar.\nbaz!\n"
+    Response _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
     ans <- BL.readFile "data/post"
-    rsp @?= ans
+    bdy @?= ans
   where
     url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query=foo"
 
-sendPOST :: String -> BL.ByteString -> IO BL.ByteString
-sendPOST url body = do
-    req' <- parseUrl url
-    let req = req' {
-            method = "POST"
-          , requestBody = RequestBodyLBS body
-          }
-    Response sc _ b <- withManager $ httpLbs req
-    if 200 <= sc && sc < 300
-        then return b
-        else throwIO (userError "sendPOST")
-
 case_post2 :: Assertion
 case_post2 = do
-    rsp <- sendPOST2 url "foo bar.\nbaz!\n"
-    rsp @?= 500
+    Response sc _ _ <- sendPOST url "foo bar.\nbaz!\n"
+    sc @?= H.statusServerError
   where
     url = "http://localhost:8080/cgi-bin/broken"
-
-sendPOST2 :: String -> BL.ByteString -> IO Int
-sendPOST2 url body = do
-    req' <- parseUrl url
-    let req = req' {
-            method = "POST"
-          , requestBody = RequestBodyLBS body
-          }
-    withManager $ httpLbs req
-    Response sc _ _ <- withManager $ httpLbs req
-    return sc
 
 ----------------------------------------------------------------
 
@@ -120,13 +96,11 @@ case_get = do
 
 case_get2 :: Assertion
 case_get2 = do
-    Response rc _ _ <- withManager $ \mgr -> do
-        purl <- liftIO $ parseUrl url
-        httpLbs purl mgr
-    rc @?= notfound
+    req <- parseUrl url
+    Response sc _ _ <- safeHttpLbs req
+    sc @?= H.statusNotFound
   where
     url = "http://localhost:8080/dummy"
-    notfound = 404
 
 ----------------------------------------------------------------
 
@@ -145,7 +119,7 @@ case_get_modified = do
     Response _ hdr _ <- sendGET url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
-    sc @?= 304
+    sc @?= H.statusNotModified
   where
     url = "http://localhost:8080/"
 
@@ -161,41 +135,30 @@ case_get_partial = do
 
 ----------------------------------------------------------------
 
-sendGET :: String -> W.RequestHeaders -> IO Response
-sendGET url hdr = do
-    req' <- parseUrl url
-    let req = req' { requestHeaders = hdr }
-    withManager $ httpLbs req
-
-----------------------------------------------------------------
-
 case_head :: Assertion
 case_head = do
-    Response rc _ _ <- sendHEAD url []
-    rc @?= ok
+    Response sc _ _ <- sendHEAD url []
+    sc @?= H.statusOK
   where
     url = "http://localhost:8080/"
-    ok = 200
 
 ----------------------------------------------------------------
 
 case_head2 :: Assertion
 case_head2 = do
-    Response rc _ _ <- sendHEAD url []
-    rc @?= notfound
+    Response sc _ _ <- sendHEAD url []
+    sc @?= H.statusNotFound
   where
     url = "http://localhost:8080/dummy"
-    notfound = 404
 
 ----------------------------------------------------------------
 
 case_head_ja :: Assertion
 case_head_ja = do
-    Response rc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
-    rc @?= ok
+    Response sc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
+    sc @?= H.statusOK
   where
     url = "http://localhost:8080/ja/"
-    ok = 200
 
 ----------------------------------------------------------------
 
@@ -204,22 +167,9 @@ case_head_modified = do
     Response _ hdr _ <- sendHEAD url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
-    sc @?= 304
+    sc @?= H.statusNotModified
   where
     url = "http://localhost:8080/"
-
-----------------------------------------------------------------
-
-sendHEAD :: String -> W.RequestHeaders -> IO Response
-sendHEAD url hdr = do
-    req' <- parseUrl url
-    let req = req' {
-            requestHeaders = hdr
-          , method = "HEAD"
-          }
-    withManager $ \mgr -> run_ $ http req headIter mgr
-  where
-    headIter (W.Status sc _) hs = return $ Response sc hs ""
 
 ----------------------------------------------------------------
 
@@ -232,3 +182,43 @@ case_redirect = do
     url = "http://localhost:8080/redirect"
 
 ----------------------------------------------------------------
+----------------------------------------------------------------
+
+sendGET ::String -> H.RequestHeaders -> IO (Response BL.ByteString)
+sendGET url hdr = do
+    req' <- parseUrl url
+    let req = req' { requestHeaders = hdr }
+    safeHttpLbs req
+
+----------------------------------------------------------------
+
+sendHEAD :: String -> H.RequestHeaders -> IO (Response BL.ByteString)
+sendHEAD url hdr = do
+    req' <- parseUrl url
+    let req = req' {
+            requestHeaders = hdr
+          , method = "HEAD"
+          }
+    safeHttpLbs req
+
+----------------------------------------------------------------
+
+sendPOST :: String -> BL.ByteString -> IO (Response BL.ByteString)
+sendPOST url body = do
+    req' <- parseUrl url
+    let req = req' {
+            method = "POST"
+          , requestBody = RequestBodyLBS body
+          }
+    safeHttpLbs req
+
+----------------------------------------------------------------
+
+safeHttpLbs :: Request IO -> IO (Response BL.ByteString)
+safeHttpLbs req = withManager (httpLbs req) `catch` httpHandler
+
+----------------------------------------------------------------
+
+httpHandler :: HttpException -> IO (Response BL.ByteString)
+httpHandler (StatusCodeException sc hd) = return (Response sc hd BL.empty)
+httpHandler _                           = error "handler"
