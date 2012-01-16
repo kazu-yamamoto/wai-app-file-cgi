@@ -15,6 +15,7 @@ import qualified Data.ByteString as BS hiding (unpack)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
+import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
@@ -78,7 +79,7 @@ fromCGI rhdl cspec req = do
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
-    let src = if hasBody then (toSource bsrc) else sourceNull
+    let src = if hasBody then (toSource bsrc) else CL.sourceNull
     return $ ResponseSource st hdr' src
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of

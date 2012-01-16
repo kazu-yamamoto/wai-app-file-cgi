@@ -3,7 +3,6 @@
 module Network.Wai.Application.Classic.Conduit (
     byteStringToBuilder
   , toSource
-  , sourceNull
   , parseHeader
   ) where
 
@@ -28,9 +27,6 @@ byteStringToBuilder = BB.fromByteString
 
 toSource :: BufferedSource IO ByteString -> Source IO Builder
 toSource = fmap byteStringToBuilder . unbufferSource
-
-sourceNull :: Source IO Builder
-sourceNull = mempty
 
 ----------------------------------------------------------------
 
