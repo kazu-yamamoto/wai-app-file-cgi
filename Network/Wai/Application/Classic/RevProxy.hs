@@ -24,7 +24,6 @@ toHTTPRequest req route len = H.def {
     H.host = revProxyDomain route
   , H.port = revProxyPort route
   , H.secure = isSecure req
-  , H.checkCerts = H.defaultCheckCerts
   , H.requestHeaders = addForwardedFor req $ requestHeaders req
   , H.path = pathByteString path'
   , H.queryString = rawQueryString req
@@ -41,7 +40,9 @@ toHTTPRequest req route len = H.def {
     path' = dst </> (path <\> src)
 
 getBody :: Request -> Int64 -> H.RequestBody IO
-getBody req len = H.RequestBodySource len (toSource . requestBody $ req)
+getBody req len = H.RequestBodySource len (toBodySource req)
+  where
+    toBodySource = (byteStringToBuilder <$>) . requestBody 
 
 getLen :: Request -> Maybe Int64
 getLen req = do
@@ -67,7 +68,7 @@ revProxyApp' cspec spec route req = do
     H.Response status hdr downbody <- H.http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (toSource downbody)
+    return $ ResponseSource status hdr' (byteStringToBuilder <$> downbody)
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p

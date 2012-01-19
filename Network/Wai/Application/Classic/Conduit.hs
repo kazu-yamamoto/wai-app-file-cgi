@@ -14,7 +14,6 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
-import Data.Monoid
 import Data.Word
 import Network.HTTP.Types
 
