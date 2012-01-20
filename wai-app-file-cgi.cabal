@@ -4,9 +4,9 @@ Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
 License-File:           LICENSE
-Synopsis:               File/CGI App of WAI
-Description:            This WAI application handles static files and
-                        executes CGI scripts.
+Synopsis:               File/CGI/Rev Proxy App of WAI
+Description:            This WAI application handles static files,
+                        executes CGI scripts, and reverse proxy.
 Homepage:               http://www.mew.org/~kazu/
 Category:               Web, Yesod
 Cabal-Version:          >= 1.6
