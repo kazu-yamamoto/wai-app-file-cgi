@@ -80,7 +80,7 @@ fileApp cspec spec filei req = do
         _      -> return notAllowed
     (response, mlen) <- case body of
             NoBody                 -> return $ noBody st
-            BodyStatus -> statusBody st <$> (liftIO $ getStatusInfo cspec spec langs st)
+            BodyStatus -> statusBody st <$> liftIO (getStatusInfo cspec spec langs st)
             BodyFileNoBody hdr     -> return $ bodyFileNoBody st hdr
             BodyFile hdr afile rng -> return $ bodyFile st hdr afile rng
     liftIO $ logger cspec req st mlen
