@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, CPP, DoAndIfThenElse, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings, CPP, ScopedTypeVariables #-}
 
 module Network.Wai.Application.Classic.CGI (
     cgiApp
