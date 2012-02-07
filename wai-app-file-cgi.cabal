@@ -7,11 +7,12 @@ License-File:           LICENSE
 Synopsis:               File/CGI/Rev Proxy App of WAI
 Description:            This WAI application handles static files,
                         executes CGI scripts, and reverse proxy.
-Homepage:               http://www.mew.org/~kazu/
+Homepage:               http://www.mew.org/~kazu/proj/mighttpd/
 Category:               Web, Yesod
 Cabal-Version:          >= 1.6
 Build-Type:             Simple
-library
+
+Library
   if impl(ghc >= 6.12)
     GHC-Options:        -Wall -fno-warn-unused-do-bind
   else
@@ -29,16 +30,30 @@ library
                         Network.Wai.Application.Classic.RevProxy
                         Network.Wai.Application.Classic.Status
                         Network.Wai.Application.Classic.Types
-  Build-Depends:        base >= 4 && < 5, process,
-                        network, transformers,
-                        filepath, directory, unix,
-                        containers, attoparsec >= 0.10.0.0,
-                        wai >= 1.1, conduit >= 0.2,
-                        bytestring, blaze-builder,
-                        wai-app-static >= 0.3, http-types, http-date,
-                        case-insensitive, static-hash,
-                        wai-logger, wai-logger-prefork,
-                        http-conduit, lifted-base, attoparsec-conduit
+  Build-Depends:        base >= 4 && < 5
+                      , attoparsec >= 0.10.0.0
+                      , attoparsec-conduit
+                      , blaze-builder
+                      , bytestring
+                      , case-insensitive
+                      , conduit >= 0.2
+                      , containers
+                      , directory
+                      , filepath
+                      , http-conduit
+                      , http-date
+                      , http-types
+                      , lifted-base
+                      , network
+                      , process
+                      , static-hash
+                      , transformers
+                      , unix
+                      , wai >= 1.1
+                      , wai-app-static >= 0.3
+                      , wai-logger
+                      , wai-logger-prefork
+
 Source-Repository head
   Type:                 git
-  Location:             https://github.com/kazu-yamamoto/wai-app-file-cgi
+  Location:             git clone git://github.com/kazu-yamamoto/wai-app-file-cgi
