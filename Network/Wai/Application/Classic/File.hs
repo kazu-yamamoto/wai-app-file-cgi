@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings, TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables, DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Network.Wai.Application.Classic.File (
