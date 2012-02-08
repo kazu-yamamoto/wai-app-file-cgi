@@ -17,6 +17,8 @@ module Network.Wai.Application.Classic (
   , RevProxyRoute(..), revProxyApp
   -- * Path
   , module Network.Wai.Application.Classic.Path
+  -- * Misc
+  , redirectHeader
   ) where
 
 import Network.Wai.Application.Classic.CGI

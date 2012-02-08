@@ -4,12 +4,14 @@
 
 module Network.Wai.Application.Classic.File (
     fileApp
+  , redirectHeader
   ) where
 
 import Control.Applicative
 import Control.Exception (Exception, SomeException)
 import Control.Exception.Lifted (catch, throwIO)
 import Control.Monad.IO.Class (liftIO)
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Data.Conduit
@@ -185,14 +187,20 @@ tryRedirectFile (HandlerInfo spec req file _) lang = do
     _ <- liftIO $ getFileInfo spec (lang file)
     return $ RspSpec statusMovedPermanently (BodyFileNoBody hdr)
   where
-    hdr = locationHeader redirectURL
-    redirectURL = BS.concat [ "http://"
-                          , serverName req
-                          , ":"
-                          , (BS.pack . show . serverPort) req
-                          , rawPathInfo req
-                          , "/"
-                          ]
+    hdr = redirectHeader req
+
+redirectHeader :: Request -> ResponseHeaders
+redirectHeader = locationHeader . redirectURL
+
+redirectURL :: Request -> ByteString
+redirectURL req = BS.concat [
+    "http://"
+  , serverName req
+  , ":"
+  , (BS.pack . show . serverPort) req
+  , rawPathInfo req
+  , "/"
+  ]
 
 ----------------------------------------------------------------
 

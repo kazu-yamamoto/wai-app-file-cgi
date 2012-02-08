@@ -15,19 +15,28 @@ import qualified Data.ByteString.Char8 as BS (pack, unpack)
 import Data.Monoid
 import Data.String
 import Data.Word
+import Data.Function
 
 ----------------------------------------------------------------
 
 data Path = Path {
     pathString :: FilePath
   , pathByteString :: ByteString
-  } deriving Show
+  }
 
 instance IsString Path where
     fromString path = Path {
         pathString = path
       , pathByteString = BS.pack path
       }
+
+instance Show Path where
+    show = show . pathByteString
+
+instance Eq Path where
+    (==) = (==) `on` pathByteString
+
+----------------------------------------------------------------
 
 fromByteString :: ByteString -> Path
 fromByteString path = Path {
