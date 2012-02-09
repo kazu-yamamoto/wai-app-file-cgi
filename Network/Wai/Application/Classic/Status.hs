@@ -1,11 +1,11 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Status (getStatusInfo) where
 
 import Control.Applicative
 import Control.Arrow
 import Control.Exception
+import Data.Alternative.IO
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
 import Data.Maybe
@@ -14,13 +14,6 @@ import Network.HTTP.Types
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Prelude hiding (catch)
-
-instance Alternative IO where
-  empty = goNext
-  x <|> y = x `catch` (\(_ :: SomeException) -> y)
-
-goNext :: IO a
-goNext = throwIO $ userError "goNext for IO"
 
 ----------------------------------------------------------------
 

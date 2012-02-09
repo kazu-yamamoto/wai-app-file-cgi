@@ -1,7 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeSynonymInstances #-}
-{-# LANGUAGE ScopedTypeVariables, DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.File (
     fileApp
@@ -9,14 +6,12 @@ module Network.Wai.Application.Classic.File (
   ) where
 
 import Control.Applicative
-import Control.Exception (Exception, SomeException)
-import Control.Exception.Lifted (catch, throwIO)
 import Control.Monad.IO.Class (liftIO)
+import Data.Alternative.IO.Lifted
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Data.Conduit
-import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
@@ -28,22 +23,7 @@ import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 
-type RIO = ResourceT IO
 type Rsp = ResourceT IO RspSpec
-
-instance Alternative RIO where
-  empty = goNext
-  x <|> y = x `catch`  (\(_ :: SomeException) -> y)
-
-data RIOErr = RIOErr deriving (Show, Typeable)
-
-instance Exception RIOErr
-
-goNext :: RIO a
-goNext = throwIO RIOErr
-
-runAlt :: [RIO a] -> RIO a
-runAlt = foldr (<|>) goNext
 
 ----------------------------------------------------------------
 
@@ -125,12 +105,12 @@ fileApp cspec spec filei req = do
 
 processGET :: HandlerInfo -> Bool -> Maybe Path -> Rsp
 processGET hinfo ishtml rfile = tryGet      hinfo ishtml
-                            <|> tryRedirect hinfo rfile
-                            <|> return notFound
+                           <||> tryRedirect hinfo rfile
+                           <||> return notFound
 
 tryGet :: HandlerInfo -> Bool -> Rsp
 tryGet hinfo@(HandlerInfo _ _ _ langs) True =
-    runAlt $ map (tryGetFile hinfo True) langs
+    runAnyOne $ map (tryGetFile hinfo True) langs
 tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
@@ -154,12 +134,12 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
 
 processHEAD :: HandlerInfo -> Bool -> Maybe Path -> Rsp
 processHEAD hinfo ishtml rfile = tryHead     hinfo ishtml
-                             <|> tryRedirect hinfo rfile
-                             <|> return notFoundNoBody
+                            <||> tryRedirect hinfo rfile
+                            <||> return notFoundNoBody
 
 tryHead :: HandlerInfo -> Bool -> Rsp
 tryHead hinfo@(HandlerInfo _ _ _ langs) True =
-    runAlt $ map (tryHeadFile hinfo True) langs
+    runAnyOne $ map (tryHeadFile hinfo True) langs
 tryHead hinfo False= tryHeadFile hinfo False id
 
 tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
@@ -179,7 +159,7 @@ tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
 tryRedirect  :: HandlerInfo -> Maybe Path -> Rsp
 tryRedirect _ Nothing = goNext
 tryRedirect (HandlerInfo spec req _ langs) (Just file) =
-    runAlt $ map (tryRedirectFile hinfo) langs
+    runAnyOne $ map (tryRedirectFile hinfo) langs
   where
     hinfo = HandlerInfo spec req file langs
 
