@@ -83,6 +83,11 @@ p1 +++ p2 = Path {
 
 {-|
   Appending with the file separator.
+
+>>> "/foo" </> "bar"
+"/foo/bar"
+>>> "/foo/" </> "bar"
+"/foo/bar"
 -}
 
 (</>) :: Path -> Path -> Path
@@ -102,6 +107,13 @@ p1 </> p2
 {-|
   Removing prefix. The prefix of the second argument is removed
   from the first argument.
+
+>>> "foobar" <\> "foo"
+"bar"
+>>> "foo" <\> "foobar"
+""
+>>> "foobar" <\> "baz"
+"bar"
 -}
 (<\>) :: Path -> Path -> Path
 p1 <\> p2 = Path {
@@ -130,6 +142,13 @@ p1 <.> p2 = Path {
 
 {-|
   Breaking at the first path separator.
+ 
+>>> breakAtSeparator "/foo/bar/baz"
+("","/foo/bar/baz")
+>>> breakAtSeparator "foo/bar/baz"
+("foo","/bar/baz")
+>>> breakAtSeparator "foo"
+("foo","")
 -}
 breakAtSeparator :: Path -> (Path,Path)
 breakAtSeparator p = (fromByteString r1, fromByteString r2)
