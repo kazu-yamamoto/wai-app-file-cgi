@@ -19,6 +19,7 @@ import Data.Function
 
 ----------------------------------------------------------------
 
+-- | Smart file path.
 data Path = Path {
     pathString :: FilePath
   , pathByteString :: ByteString
@@ -52,6 +53,11 @@ pathSep = 47
 
 {-|
   Checking if the path ends with the path separator.
+
+>>> hasTrailingPathSeparator "/foo/bar/"
+True
+>>>  hasTrailingPathSeparator "/foo/bar"
+False
 -}
 hasTrailingPathSeparator :: Path -> Bool
 hasTrailingPathSeparator path

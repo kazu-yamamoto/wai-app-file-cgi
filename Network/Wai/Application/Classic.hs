@@ -9,12 +9,16 @@ module Network.Wai.Application.Classic (
   -- * Files
   , FileAppSpec(..)
   , FileInfo(..)
-  , FileRoute(..), fileApp
+  , FileRoute(..)
+  , fileApp
   -- * CGI
-  , CgiRoute(..), cgiApp
+  , CgiAppSpec(..)
+  , CgiRoute(..)
+  , cgiApp
   -- * Reverse Proxy
   , RevProxyAppSpec(..)
-  , RevProxyRoute(..), revProxyApp
+  , RevProxyRoute(..)
+  , revProxyApp
   -- * Path
   , module Network.Wai.Application.Classic.Path
   -- * Misc

@@ -44,17 +44,17 @@ The program to link this library must ignore SIGCHLD as follows:
 
 >   installHandler sigCHLD Ignore Nothing
 -}
-cgiApp :: ClassicAppSpec -> CgiRoute -> Application
-cgiApp cspec cgii req = case method of
-    "GET"  -> cgiApp' False cspec cgii req
-    "POST" -> cgiApp' True  cspec cgii req
+cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
+cgiApp cspec spec cgii req = case method of
+    "GET"  -> cgiApp' False cspec spec cgii req
+    "POST" -> cgiApp' True  cspec spec cgii req
     _      -> return $ responseLBS statusNotAllowed textPlainHeader "Method Not Allowed\r\n" -- xxx
   where
     method = requestMethod req
 
-cgiApp' :: Bool -> ClassicAppSpec -> CgiRoute -> Application
-cgiApp' body cspec cgii req = do
-    (rhdl,whdl,tellEOF) <- liftIO (execProcess cspec cgii req) >>= register3
+cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
+cgiApp' body cspec spec cgii req = do
+    (rhdl,whdl,tellEOF) <- liftIO (execProcess cspec spec cgii req) >>= register3
     when body $ toCGI whdl req
     tellEOF
     fromCGI rhdl cspec req
@@ -92,8 +92,8 @@ fromCGI rhdl cspec req = do
 
 ----------------------------------------------------------------
 
-execProcess :: ClassicAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
-execProcess cspec cgii req = do
+execProcess :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
+execProcess cspec spec cgii req = do
     let naddr = showSockAddr . remoteHost $ req
     (Just whdl,Just rhdl,_,pid) <- createProcess . proSpec $ naddr
     hSetEncoding rhdl latin1
@@ -112,9 +112,11 @@ execProcess cspec cgii req = do
       , create_group = True
 #endif
       }
-    (prog, scriptName, pathinfo) = pathinfoToCGI (cgiSrc cgii)
-                                                 (cgiDst cgii)
-                                                 (fromByteString (rawPathInfo req))
+    (prog, scriptName, pathinfo) =
+        pathinfoToCGI (cgiSrc cgii)
+                      (cgiDst cgii)
+                      (fromByteString (rawPathInfo req))
+                      (indexCgi spec)
 
 makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
 makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ baseEnv
@@ -144,11 +146,24 @@ addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
 
-pathinfoToCGI :: Path -> Path -> Path -> (FilePath, String, String)
-pathinfoToCGI src dst path = (prog, scriptName, pathinfo)
+{-|
+
+>>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin/foo" "index.cgi"
+("/User/cgi-bin/foo","/cgi-bin/foo","")
+>>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin/foo/bar" "index.cgi"
+("/User/cgi-bin/foo","/cgi-bin/foo","/bar")
+>>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin/" "index.cgi"
+("/User/cgi-bin/index.cgi","/cgi-bin/index.cgi","")
+
+-}
+
+pathinfoToCGI :: Path -> Path -> Path -> Path -> (FilePath, String, String)
+pathinfoToCGI src dst path index = (prog, scriptName, pathinfo)
   where
     path' = path <\> src
-    (prog',pathinfo') = breakAtSeparator path'
+    (prog',pathinfo')
+        | src == path = (index, "")
+        | otherwise   = breakAtSeparator path'
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'

@@ -3,7 +3,7 @@
 -- % mighty mighty.conf mighty.route
 -- % runghc -i.. Test.hs
 
-module Test where
+module Main where
 
 import Control.Exception.Lifted
 import qualified Data.ByteString.Lazy.Char8 as BL
@@ -13,15 +13,21 @@ import qualified Network.HTTP.Types as H
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Range
+import Prelude hiding (catch)
+import Test.Framework.Providers.DocTest
 import Test.Framework.Providers.HUnit
 import Test.Framework.TH.Prime
 import Test.HUnit
-import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 
 main :: IO ()
 main = $(defaultMainGenerator)
+
+----------------------------------------------------------------
+
+doc_test :: DocTests
+doc_test = docTest ["../Network/Wai/Application/Classic.hs"] ["-i..", "-XOverloadedStrings"]
 
 ----------------------------------------------------------------
 
