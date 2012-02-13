@@ -1,8 +1,5 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
--- % mighty mighty.conf mighty.route
--- % runghc -i.. Test.hs
-
 module Main where
 
 import Control.Exception.Lifted
@@ -27,7 +24,7 @@ main = $(defaultMainGenerator)
 ----------------------------------------------------------------
 
 doc_test :: DocTests
-doc_test = docTest ["../Network/Wai/Application/Classic.hs"] ["-i..", "-XOverloadedStrings"]
+doc_test = docTest ["Network/Wai/Application/Classic.hs"] ["-XOverloadedStrings"]
 
 ----------------------------------------------------------------
 
@@ -76,7 +73,7 @@ case_range = do
 case_post :: Assertion
 case_post = do
     Response _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
-    ans <- BL.readFile "data/post"
+    ans <- BL.readFile "test/data/post"
     bdy @?= ans
   where
     url = "http://localhost:8080/cgi-bin/echo-env/pathinfo?query=foo"
@@ -93,7 +90,7 @@ case_post2 = do
 case_get :: Assertion
 case_get = do
     rsp <- simpleHttp url
-    ans <- BL.readFile "html/index.html"
+    ans <- BL.readFile "test/html/index.html"
     rsp @?= ans
   where
     url = "http://localhost:8080/"
@@ -113,7 +110,7 @@ case_get2 = do
 case_get_ja :: Assertion
 case_get_ja = do
     Response _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
-    ans <- BL.readFile "html/ja/index.html.ja"
+    ans <- BL.readFile "test/html/ja/index.html.ja"
     bdy @?= ans
   where
     url = "http://localhost:8080/ja/"
@@ -182,7 +179,7 @@ case_head_modified = do
 case_redirect :: Assertion
 case_redirect = do
     rsp <- simpleHttp url
-    ans <- BL.readFile "html/redirect/index.html"
+    ans <- BL.readFile "test/html/redirect/index.html"
     rsp @?= ans
   where
     url = "http://localhost:8080/redirect"

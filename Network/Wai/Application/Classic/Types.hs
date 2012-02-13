@@ -6,7 +6,7 @@ import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Path
-import Network.Wai.Logger.Prefork
+import Network.Wai.Logger
 
 ----------------------------------------------------------------
 
