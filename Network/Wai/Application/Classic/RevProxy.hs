@@ -4,10 +4,11 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Control.Applicative
 import Control.Exception (SomeException)
-import Control.Exception.Lifted (catch)
+import Control.Exception.Lifted (catch, throwIO)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import Data.Conduit
+import Data.Conduit.List (sourceNull)
 import Data.Int
 import Data.Maybe
 import qualified Network.HTTP.Conduit as H
@@ -65,7 +66,7 @@ revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
-    H.Response status hdr downbody <- H.http httpReq mgr
+    H.Response status hdr downbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
     return $ ResponseSource status hdr' (Chunk . byteStringToBuilder <$> downbody)
@@ -73,7 +74,17 @@ revProxyApp' cspec spec route req = do
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
     p ("Content-Encoding", _) = False
+    p ("Content-Length", _)   = False
     p _ = True
+
+type Resp = ResourceT IO (H.Response (Source IO BS.ByteString))
+
+http :: H.Request IO -> H.Manager -> Resp
+http req mgr = H.http req mgr `catch` notSuccess
+
+notSuccess :: H.HttpException -> Resp
+notSuccess (H.StatusCodeException st hdr) = return $ H.Response st hdr sourceNull
+notSuccess e                              = throwIO e
 
 badGateway :: ClassicAppSpec -> Request-> SomeException -> ResourceT IO Response
 badGateway cspec req _ = do

@@ -4,13 +4,13 @@ module Network.Wai.Application.Classic.Path (
     Path(..)
   , fromString, fromByteString
   , (+++), (</>), (<\>), (<.>)
-  , breakAtSeparator, hasTrailingPathSeparator
+  , breakAtSeparator, hasLeadingPathSeparator, hasTrailingPathSeparator
   , isSuffixOf
   ) where
 
 import qualified Blaze.ByteString.Builder as BB
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS (null, last, append, drop, length, breakByte, isSuffixOf)
+import qualified Data.ByteString as BS (null, head, tail, last, append, drop, length, breakByte, isSuffixOf)
 import qualified Data.ByteString.Char8 as BS (pack, unpack)
 import Data.Monoid
 import Data.String
@@ -54,9 +54,25 @@ pathSep = 47
 {-|
   Checking if the path ends with the path separator.
 
+>>> hasLeadingPathSeparator "/foo/bar"
+True
+>>> hasLeadingPathSeparator "foo/bar"
+False
+-}
+hasLeadingPathSeparator :: Path -> Bool
+hasLeadingPathSeparator path
+  | BS.null bs            = False
+  | BS.head bs == pathSep = True
+  | otherwise             = False
+  where
+    bs = pathByteString path
+
+{-|
+  Checking if the path ends with the path separator.
+
 >>> hasTrailingPathSeparator "/foo/bar/"
 True
->>>  hasTrailingPathSeparator "/foo/bar"
+>>> hasTrailingPathSeparator "/foo/bar"
 False
 -}
 hasTrailingPathSeparator :: Path -> Bool
@@ -88,21 +104,31 @@ p1 +++ p2 = Path {
 "/foo/bar"
 >>> "/foo/" </> "bar"
 "/foo/bar"
+>>> "/foo" </> "/bar"
+"/foo/bar"
+>>> "/foo/" </> "/bar"
+"/foo/bar"
 -}
 
 (</>) :: Path -> Path -> Path
 p1 </> p2
-  | hasTrailingPathSeparator p1 = p1 +++ p2
-  | otherwise                   = Path {
-      pathString = BS.unpack p
-    , pathByteString = p
-    }
+  | has1 && not has2 || not has1 && has2 = p1 +++ p2
+  | has1      = toPath pp1
+  | otherwise = toPath pp2
   where
+    has1 = hasTrailingPathSeparator p1
+    has2 = hasLeadingPathSeparator p2
     p1' = pathByteString p1
     p2' = pathByteString p2
-    p = BB.toByteString (BB.fromByteString p1'
-                       `mappend` BB.fromWord8 pathSep
-                       `mappend` BB.fromByteString p2')
+    toPath p = Path {
+        pathString = BS.unpack p
+      , pathByteString = p
+      }
+    pp1 = BB.toByteString (BB.fromByteString p1'
+                           `mappend` BB.fromByteString (BS.tail p2'))
+    pp2 = BB.toByteString (BB.fromByteString p1'
+                           `mappend` BB.fromWord8 pathSep
+                           `mappend` BB.fromByteString p2')
 
 {-|
   Removing prefix. The prefix of the second argument is removed
