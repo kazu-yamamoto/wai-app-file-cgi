@@ -43,7 +43,7 @@ toHTTPRequest req route len = H.def {
 getBody :: Request -> Int64 -> H.RequestBody IO
 getBody req len = H.RequestBodySource len (toBodySource req)
   where
-    toBodySource = (byteStringToBuilder <$>) . requestBody 
+    toBodySource = (byteStringToBuilder <$>) . requestBody
 
 getLen :: Request -> Maybe Int64
 getLen req = do
