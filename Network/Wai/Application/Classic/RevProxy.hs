@@ -93,4 +93,4 @@ badGateway cspec req _ = do
   where
     hdr = addServer cspec textPlainHeader
     bdy = byteStringToBuilder "Bad Gateway\r\n"
-    st = statusBadGateway
+    st = badGateway502

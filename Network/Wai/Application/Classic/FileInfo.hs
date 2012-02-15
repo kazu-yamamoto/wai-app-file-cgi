@@ -19,30 +19,30 @@ ifmodified req size mtime = do
     date <- ifModifiedSince req
     if date /= mtime
        then unconditional req size mtime
-       else Just (Full statusNotModified)
+       else Just (Full notModified304)
 
 ifunmodified :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 ifunmodified req size mtime = do
     date <- ifUnmodifiedSince req
     if date == mtime
        then unconditional req size mtime
-       else Just (Full statusPreconditionFailed)
+       else Just (Full preconditionFailed412)
 
 ifrange :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 ifrange req size mtime = do
     date <- ifRange req
     rng  <- lookupRequestField fkRange req
     if date == mtime
-       then Just (Full statusOK)
+       then Just (Full ok200)
        else range size rng
 
 unconditional :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 unconditional req size _ =
-    maybe (Just (Full statusOK)) (range size) $ lookupRequestField fkRange req
+    maybe (Just (Full ok200)) (range size) $ lookupRequestField fkRange req
 
 range :: Integer -> ByteString -> Maybe StatusAux
 range size rng = case skipAndSize rng size of
-  Nothing         -> Just (Full statusRequestedRangeNotSatisfiable)
+  Nothing         -> Just (Full requestedRangeNotSatisfiable416)
   Just (skip,len) -> Just (Partial skip len)
 
 ----------------------------------------------------------------

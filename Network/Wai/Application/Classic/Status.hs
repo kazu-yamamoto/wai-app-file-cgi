@@ -30,10 +30,10 @@ getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
 
 statusList :: [Status]
 statusList = [
-    statusNotAllowed  -- 405 File
-  , statusNotFound    -- 404 File
-  , statusServerError -- 500 CGI
-  , statusBadGateway  -- 502 RevProxy
+    methodNotAllowed405    -- File
+  , notFound404            -- File
+  , internalServerError500 -- CGI
+  , badGateway502          -- RevProxy
   ]
 
 ----------------------------------------------------------------

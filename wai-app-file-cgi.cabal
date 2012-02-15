@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.5.2
+Version:                0.5.3
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -43,7 +43,7 @@ Library
                       , filepath
                       , http-conduit
                       , http-date
-                      , http-types
+                      , http-types >= 0.6.9
                       , lifted-base
                       , network
                       , process

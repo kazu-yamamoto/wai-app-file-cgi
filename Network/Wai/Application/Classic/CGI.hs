@@ -48,7 +48,7 @@ cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req = case method of
     "GET"  -> cgiApp' False cspec spec cgii req
     "POST" -> cgiApp' True  cspec spec cgii req
-    _      -> return $ responseLBS statusNotAllowed textPlainHeader "Method Not Allowed\r\n" -- xxx
+    _      -> return $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
   where
     method = requestMethod req
 
@@ -75,7 +75,7 @@ fromCGI rhdl cspec req = do
     bsrc <- bufferSource $ CB.sourceHandle rhdl
     m <- (check <$> (bsrc $$ parseHeader)) `catch` recover
     let (st, hdr, hasBody) = case m of
-            Nothing    -> (statusServerError,[],False)
+            Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
@@ -83,7 +83,7 @@ fromCGI rhdl cspec req = do
     return $ ResponseSource st hdr' (Chunk <$> src)
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of
-        Nothing -> Just (status200, hs)
+        Nothing -> Just (ok200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
         hs' = filter (\(k,_) -> k /= "status") hs

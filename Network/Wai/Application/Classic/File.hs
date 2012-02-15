@@ -126,9 +126,9 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
                <|> unconditional req size mtime
     case pst of
         Full st
-          | st == statusOK -> return $ RspSpec statusOK (BodyFile hdr sfile (Entire size))
-          | otherwise      -> return $ RspSpec st (BodyFileNoBody hdr)
-        Partial skip len   -> return $ RspSpec statusPartialContent (BodyFile hdr sfile (Part skip len))
+          | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
+          | otherwise    -> return $ RspSpec st (BodyFileNoBody hdr)
+        Partial skip len -> return $ RspSpec partialContent206 (BodyFile hdr sfile (Part skip len))
 
 ----------------------------------------------------------------
 
@@ -149,7 +149,7 @@ tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
         size = fileInfoSize finfo
         hdr = newHeader ishtml (pathByteString file) mtime
         Just pst = ifmodified req size mtime -- never Nothing
-               <|> Just (Full statusOK)
+               <|> Just (Full ok200)
     case pst of
         Full st -> return $ RspSpec st (BodyFileNoBody hdr)
         _       -> goNext -- never reached
@@ -166,7 +166,7 @@ tryRedirect (HandlerInfo spec req _ langs) (Just file) =
 tryRedirectFile :: HandlerInfo -> Lang -> Rsp
 tryRedirectFile (HandlerInfo spec req file _) lang = do
     _ <- liftIO $ (getFileInfo spec) (lang file)
-    return $ RspSpec statusMovedPermanently (BodyFileNoBody hdr)
+    return $ RspSpec movedPermanently301 (BodyFileNoBody hdr)
   where
     hdr = redirectHeader req
 
@@ -186,10 +186,10 @@ redirectURL req = BS.concat [
 ----------------------------------------------------------------
 
 notFound :: RspSpec
-notFound = RspSpec statusNotFound BodyStatus
+notFound = RspSpec notFound404 BodyStatus
 
 notFoundNoBody :: RspSpec
-notFoundNoBody = RspSpec statusNotFound NoBody
+notFoundNoBody = RspSpec notFound404 NoBody
 
 notAllowed :: RspSpec
-notAllowed = RspSpec statusNotAllowed BodyStatus
+notAllowed = RspSpec methodNotAllowed405 BodyStatus
