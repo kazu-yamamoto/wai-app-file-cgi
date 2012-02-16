@@ -81,7 +81,7 @@ case_post = do
 case_post2 :: Assertion
 case_post2 = do
     Response sc _ _ <- sendPOST url "foo bar.\nbaz!\n"
-    sc @?= H.statusServerError
+    sc @?= H.internalServerError500
   where
     url = "http://localhost:8080/cgi-bin/broken"
 
@@ -101,7 +101,7 @@ case_get2 :: Assertion
 case_get2 = do
     req <- parseUrl url
     Response sc _ _ <- safeHttpLbs req
-    sc @?= H.statusNotFound
+    sc @?= H.notFound404
   where
     url = "http://localhost:8080/dummy"
 
@@ -122,7 +122,7 @@ case_get_modified = do
     Response _ hdr _ <- sendGET url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
-    sc @?= H.statusNotModified
+    sc @?= H.notModified304
   where
     url = "http://localhost:8080/"
 
@@ -141,7 +141,7 @@ case_get_partial = do
 case_head :: Assertion
 case_head = do
     Response sc _ _ <- sendHEAD url []
-    sc @?= H.statusOK
+    sc @?= H.ok200
   where
     url = "http://localhost:8080/"
 
@@ -150,7 +150,7 @@ case_head = do
 case_head2 :: Assertion
 case_head2 = do
     Response sc _ _ <- sendHEAD url []
-    sc @?= H.statusNotFound
+    sc @?= H.notFound404
   where
     url = "http://localhost:8080/dummy"
 
@@ -159,7 +159,7 @@ case_head2 = do
 case_head_ja :: Assertion
 case_head_ja = do
     Response sc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
-    sc @?= H.statusOK
+    sc @?= H.ok200
   where
     url = "http://localhost:8080/ja/"
 
@@ -170,7 +170,7 @@ case_head_modified = do
     Response _ hdr _ <- sendHEAD url []
     let Just lm = lookup fkLastModified hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
-    sc @?= H.statusNotModified
+    sc @?= H.notModified304
   where
     url = "http://localhost:8080/"
 
