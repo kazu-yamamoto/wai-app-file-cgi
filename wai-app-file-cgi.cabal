@@ -31,7 +31,6 @@ Library
                         Network.Wai.Application.Classic.Status
                         Network.Wai.Application.Classic.Types
   Build-Depends:        base >= 4 && < 5
-                      , alternative-io
                       , attoparsec >= 0.10.0.0
                       , attoparsec-conduit
                       , blaze-builder
@@ -44,6 +43,7 @@ Library
                       , http-conduit
                       , http-date
                       , http-types >= 0.6.9
+                      , io-choice
                       , lifted-base
                       , network
                       , process

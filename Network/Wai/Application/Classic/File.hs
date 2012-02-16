@@ -6,8 +6,8 @@ module Network.Wai.Application.Classic.File (
   ) where
 
 import Control.Applicative
+import Control.Exception.IOChoice.Lifted
 import Control.Monad.IO.Class (liftIO)
-import Data.Alternative.IO.Lifted
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
@@ -105,8 +105,8 @@ fileApp cspec spec filei req = do
 
 processGET :: HandlerInfo -> Bool -> Maybe Path -> Rsp
 processGET hinfo ishtml rfile = tryGet      hinfo ishtml
-                           <||> tryRedirect hinfo rfile
-                           <||> return notFound
+                            ||> tryRedirect hinfo rfile
+                            ||> return notFound
 
 tryGet :: HandlerInfo -> Bool -> Rsp
 tryGet hinfo@(HandlerInfo _ _ _ langs) True =
@@ -134,8 +134,8 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
 
 processHEAD :: HandlerInfo -> Bool -> Maybe Path -> Rsp
 processHEAD hinfo ishtml rfile = tryHead     hinfo ishtml
-                            <||> tryRedirect hinfo rfile
-                            <||> return notFoundNoBody
+                             ||> tryRedirect hinfo rfile
+                             ||> return notFoundNoBody
 
 tryHead :: HandlerInfo -> Bool -> Rsp
 tryHead hinfo@(HandlerInfo _ _ _ langs) True =

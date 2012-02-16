@@ -5,7 +5,7 @@ module Network.Wai.Application.Classic.Status (getStatusInfo) where
 import Control.Applicative
 import Control.Arrow
 import Control.Exception
-import Data.Alternative.IO
+import Control.Exception.IOChoice
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
 import Data.Maybe
@@ -19,8 +19,8 @@ import Prelude hiding (catch)
 
 getStatusInfo :: ClassicAppSpec -> FileAppSpec -> [Lang] -> Status -> IO StatusInfo
 getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
-                                <|> getStatusBS code
-                                <|> return StatusNone
+                                ||> getStatusBS code
+                                ||> return StatusNone
   where
     dir = statusFileDir cspec
     getF = getFileInfo spec
@@ -62,6 +62,6 @@ getStatusFile getF dir code langs = tryFile mfiles
         Nothing   -> []
         Just file -> map ($ (dir </> file)) langs
     tryFile = foldr func goNext
-    func f io = StatusFile f . fileInfoSize <$> getF f <|> io
+    func f io = StatusFile f . fileInfoSize <$> getF f ||> io
 
 ----------------------------------------------------------------
