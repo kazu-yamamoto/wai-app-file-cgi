@@ -5,11 +5,7 @@ module Main where
 import Control.Exception.Lifted
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Network.HTTP.Conduit
-import Network.HTTP.Date
 import qualified Network.HTTP.Types as H
-import Network.Wai.Application.Classic.Header
-import Network.Wai.Application.Classic.Lang
-import Network.Wai.Application.Classic.Range
 import Prelude hiding (catch)
 import Test.Framework.Providers.DocTest
 import Test.Framework.Providers.HUnit
@@ -25,49 +21,6 @@ main = $(defaultMainGenerator)
 
 doc_test :: DocTests
 doc_test = docTest ["Network/Wai/Application/Classic.hs"] ["-XOverloadedStrings"]
-
-----------------------------------------------------------------
-
-case_lang :: Assertion
-case_lang = do
-    let res = parseLang "en-gb;q=0.8, en;q=0.7, da"
-    res @?= ans
-  where
-    ans = ["da","en-gb","en"]
-
-----------------------------------------------------------------
-
-case_date :: Assertion
-case_date = do
-    let Just x = parseHTTPDate date
-        res = formatHTTPDate x
-    res @?= date
-  where
-    date = "Tue, 15 Nov 1994 08:12:31 GMT"
-
-----------------------------------------------------------------
-
-case_range :: Assertion
-case_range = do
-    let res1 = skipAndSize range1 size
-        res2 = skipAndSize range2 size
-        res3 = skipAndSize range3 size
-        res4 = skipAndSize range4 size
-    res1 @?= ans1
-    res2 @?= ans2
-    res3 @?= ans3
-    res4 @?= ans4
-  where
-    size = 10000
-    range1 = "bytes=0-399"
-    range2 = "bytes=500-799"
-    range3 = "bytes=-500"
-    range4 = "bytes=9500-"
-    ans1 = Just (0,400)
-    ans2 = Just (500,300)
-    ans3 = Just (9500,500)
-    ans4 = Just (9500,500)
-
 ----------------------------------------------------------------
 
 case_post :: Assertion
@@ -120,7 +73,7 @@ case_get_ja = do
 case_get_modified :: Assertion
 case_get_modified = do
     Response _ hdr _ <- sendGET url []
-    let Just lm = lookup fkLastModified hdr
+    let Just lm = lookup "Last-Modified" hdr
     Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
     sc @?= H.notModified304
   where
@@ -168,7 +121,7 @@ case_head_ja = do
 case_head_modified :: Assertion
 case_head_modified = do
     Response _ hdr _ <- sendHEAD url []
-    let Just lm = lookup fkLastModified hdr
+    let Just lm = lookup "Last-Modified" hdr
     Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
     sc @?= H.notModified304
   where

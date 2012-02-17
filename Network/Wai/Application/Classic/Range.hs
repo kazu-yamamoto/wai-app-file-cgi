@@ -7,6 +7,15 @@ import Data.Attoparsec.ByteString hiding (satisfy)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.ByteString.Char8 hiding (map, count, take, elem)
 
+-- |
+-- >>> skipAndSize "bytes=0-399" 10000
+-- Just (0,400)
+-- >>> skipAndSize "bytes=500-799" 10000
+-- Just (500,300)
+-- >>> skipAndSize "bytes=-500" 10000
+-- Just (9500,500)
+-- >>> skipAndSize "bytes=9500-" 10000
+-- Just (9500,500)
 skipAndSize :: ByteString -> Integer -> Maybe (Integer,Integer)
 skipAndSize bs size = case parseRange bs of
   Just [(mbeg,mend)] -> adjust mbeg mend size

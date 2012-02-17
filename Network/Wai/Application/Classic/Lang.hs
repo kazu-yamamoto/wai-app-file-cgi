@@ -10,6 +10,10 @@ import Data.List (sortBy)
 import Data.Ord
 import Prelude hiding (takeWhile)
 
+-- |
+-- >>> parseLang "en-gb;q=0.8, en;q=0.7, da"
+-- ["da","en-gb","en"]
+
 parseLang :: ByteString -> [ByteString]
 parseLang bs = case parseOnly acceptLanguage bs of
     Right ls -> map fst $ sortBy detrimental ls
