@@ -4,11 +4,10 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Control.Applicative
 import Control.Exception (SomeException)
-import Control.Exception.Lifted (catch, throwIO)
+import Control.Exception.Lifted (catch)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import Data.Conduit
-import Data.Conduit.List (sourceNull)
 import Data.Int
 import Data.Maybe
 import qualified Network.HTTP.Conduit as H
@@ -33,6 +32,7 @@ toHTTPRequest req route len = H.def {
   , H.proxy = Nothing
   , H.rawBody = False
   , H.decompress = H.alwaysDecompress
+  , H.checkStatus = \_ _ -> Nothing
   }
   where
     path = fromByteString $ rawPathInfo req
@@ -80,11 +80,7 @@ revProxyApp' cspec spec route req = do
 type Resp = ResourceT IO (H.Response (Source IO BS.ByteString))
 
 http :: H.Request IO -> H.Manager -> Resp
-http req mgr = H.http req mgr `catch` notSuccess
-
-notSuccess :: H.HttpException -> Resp
-notSuccess (H.StatusCodeException st hdr) = return $ H.Response st hdr sourceNull
-notSuccess e                              = throwIO e
+http req mgr = H.http req mgr
 
 badGateway :: ClassicAppSpec -> Request-> SomeException -> ResourceT IO Response
 badGateway cspec req _ = do
