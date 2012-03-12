@@ -33,6 +33,7 @@ toHTTPRequest req route len = H.def {
   , H.rawBody = False
   , H.decompress = H.alwaysDecompress
   , H.checkStatus = \_ _ -> Nothing
+  , H.redirectCount = 0
   }
   where
     path = fromByteString $ rawPathInfo req
