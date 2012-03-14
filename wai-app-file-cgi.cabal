@@ -36,7 +36,7 @@ Library
                       , blaze-builder
                       , bytestring
                       , case-insensitive
-                      , conduit >= 0.2
+                      , conduit >= 0.3
                       , containers
                       , directory
                       , filepath
@@ -47,6 +47,7 @@ Library
                       , lifted-base
                       , network
                       , process
+                      , resourcet
                       , static-hash
                       , transformers
                       , unix
@@ -60,6 +61,7 @@ Test-Suite test
   HS-Source-Dirs:       test
   Build-Depends:        base >= 4 && < 5
                       , bytestring
+                      , conduit >= 0.3
                       , http-conduit
                       , http-types
                       , lifted-base

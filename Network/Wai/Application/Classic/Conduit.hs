@@ -24,12 +24,12 @@ byteStringToBuilder = BB.fromByteString
 
 ----------------------------------------------------------------
 
-toSource :: BufferedSource IO ByteString -> Source IO Builder
+toSource :: BufferedSource (ResourceT IO) ByteString -> Source (ResourceT IO) Builder
 toSource = fmap byteStringToBuilder . unbufferSource
 
 ----------------------------------------------------------------
 
-parseHeader :: Sink ByteString IO RequestHeaders
+parseHeader :: Sink ByteString (ResourceT IO) RequestHeaders
 parseHeader = sinkParser parseHeader'
 
 parseHeader' :: Parser RequestHeaders
