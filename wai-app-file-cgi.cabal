@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.5.6
+Version:                0.5.6.1
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -36,7 +36,7 @@ Library
                       , blaze-builder
                       , bytestring
                       , case-insensitive
-                      , conduit >= 0.2
+                      , conduit >= 0.2 && < 0.3
                       , containers
                       , directory
                       , filepath
@@ -70,4 +70,4 @@ Test-Suite test
 
 Source-Repository head
   Type:                 git
-  Location:             git clone git://github.com/kazu-yamamoto/wai-app-file-cgi
+  Location:             git://github.com/kazu-yamamoto/wai-app-file-cgi
