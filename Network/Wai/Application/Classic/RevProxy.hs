@@ -26,7 +26,11 @@ toHTTPRequest req route len = H.def {
   , H.secure = isSecure req
   , H.requestHeaders = addForwardedFor req $ requestHeaders req
   , H.path = pathByteString path'
-  , H.queryString = BS.drop 1 $ rawQueryString req
+  , H.queryString =
+      let q = rawQueryString req
+      in if "?" `BS.isPrefixOf` q
+         then BS.drop 1 q
+         else q
   , H.requestBody = getBody req len
   , H.method = requestMethod req
   , H.proxy = Nothing
