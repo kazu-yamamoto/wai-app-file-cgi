@@ -6,7 +6,8 @@ import Control.Applicative
 import Control.Exception (SomeException)
 import Control.Exception.Lifted (catch)
 import Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8 as BS hiding (uncons)
+import qualified Data.ByteString as BS (uncons)
 import Data.Conduit
 import Data.Int
 import Data.Maybe
@@ -26,11 +27,7 @@ toHTTPRequest req route len = H.def {
   , H.secure = isSecure req
   , H.requestHeaders = addForwardedFor req $ requestHeaders req
   , H.path = pathByteString path'
-  , H.queryString =
-      let q = rawQueryString req
-      in if "?" `BS.isPrefixOf` q
-         then BS.drop 1 q
-         else q
+  , H.queryString = dropQuestion $ rawQueryString req
   , H.requestBody = getBody req len
   , H.method = requestMethod req
   , H.proxy = Nothing
@@ -44,6 +41,9 @@ toHTTPRequest req route len = H.def {
     src = revProxySrc route
     dst = revProxyDst route
     path' = dst </> (path <\> src)
+    dropQuestion q = case BS.uncons q of
+        Just (63, q') -> q' -- '?' is 63
+        _             -> q
 
 getBody :: Request -> Int64 -> H.RequestBody IO
 getBody req len = H.RequestBodySource len (toBodySource req)
