@@ -8,6 +8,7 @@ import Control.Exception.Lifted (catch)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS
 import Data.Conduit
+import qualified Data.Conduit.List as CL
 import Data.Int
 import Data.Maybe
 import qualified Network.HTTP.Conduit as H
@@ -44,7 +45,7 @@ toHTTPRequest req route len = H.def {
 getBody :: Request -> Int64 -> H.RequestBody (ResourceT IO)
 getBody req len = H.RequestBodySource len (toBodySource req)
   where
-    toBodySource = (byteStringToBuilder <$>) . requestBody
+    toBodySource r = requestBody r $= CL.map byteStringToBuilder
 
 getLen :: Request -> Maybe Int64
 getLen req = do
@@ -70,7 +71,7 @@ revProxyApp' cspec spec route req = do
     H.Response status _ hdr downbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (Chunk . byteStringToBuilder <$> downbody)
+    return $ ResponseSource status hdr' (toResponseSource downbody)
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p

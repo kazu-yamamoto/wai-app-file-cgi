@@ -2,7 +2,7 @@
 
 module Network.Wai.Application.Classic.Conduit (
     byteStringToBuilder
-  , toSource
+  , toResponseSource
   , parseHeader
   ) where
 
@@ -14,6 +14,7 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
+import qualified Data.Conduit.List as CL
 import Data.Word
 import Network.HTTP.Types
 
@@ -24,8 +25,9 @@ byteStringToBuilder = BB.fromByteString
 
 ----------------------------------------------------------------
 
-toSource :: BufferedSource (ResourceT IO) ByteString -> Source (ResourceT IO) Builder
-toSource = fmap byteStringToBuilder . unbufferSource
+toResponseSource :: Source (ResourceT IO) ByteString 
+                 -> Source (ResourceT IO) (Flush Builder)
+toResponseSource = ($= CL.map (Chunk . byteStringToBuilder))
 
 ----------------------------------------------------------------
 
