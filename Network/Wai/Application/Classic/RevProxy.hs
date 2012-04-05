@@ -9,6 +9,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import qualified Data.ByteString as BS (uncons)
 import Data.Conduit
+import qualified Data.Conduit.List as CL
 import Data.Int
 import Data.Maybe
 import qualified Network.HTTP.Conduit as H
@@ -20,7 +21,7 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Prelude hiding (catch)
 
-toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request IO
+toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request (ResourceT IO)
 toHTTPRequest req route len = H.def {
     H.host = revProxyDomain route
   , H.port = revProxyPort route
@@ -45,10 +46,10 @@ toHTTPRequest req route len = H.def {
         Just (63, q') -> q' -- '?' is 63
         _             -> q
 
-getBody :: Request -> Int64 -> H.RequestBody IO
+getBody :: Request -> Int64 -> H.RequestBody (ResourceT IO)
 getBody req len = H.RequestBodySource len (toBodySource req)
   where
-    toBodySource = (byteStringToBuilder <$>) . requestBody
+    toBodySource r = requestBody r $= CL.map byteStringToBuilder
 
 getLen :: Request -> Maybe Int64
 getLen req = do
@@ -71,10 +72,10 @@ revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
-    H.Response status hdr downbody <- http httpReq mgr
+    H.Response status _ hdr downbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (Chunk . byteStringToBuilder <$> downbody)
+    return $ ResponseSource status hdr' (toResponseSource downbody)
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
@@ -82,9 +83,9 @@ revProxyApp' cspec spec route req = do
     p ("Content-Length", _)   = False
     p _ = True
 
-type Resp = ResourceT IO (H.Response (Source IO BS.ByteString))
+type Resp = ResourceT IO (H.Response (Source (ResourceT IO) BS.ByteString))
 
-http :: H.Request IO -> H.Manager -> Resp
+http :: H.Request (ResourceT IO) -> H.Manager -> Resp
 http req mgr = H.http req mgr
 
 badGateway :: ClassicAppSpec -> Request-> SomeException -> ResourceT IO Response

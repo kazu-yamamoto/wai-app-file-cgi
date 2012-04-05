@@ -4,7 +4,6 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Control.Applicative
 import Control.Exception (SomeException)
 import Control.Exception.Lifted (catch)
 import Control.Monad (when)
@@ -72,15 +71,14 @@ toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
-    bsrc <- bufferSource $ CB.sourceHandle rhdl
-    m <- (check <$> (bsrc $$ parseHeader)) `catch` recover
-    let (st, hdr, hasBody) = case m of
+    (src', hs) <- (CB.sourceHandle rhdl $$+ parseHeader) `catch` recover
+    let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
-    let src = if hasBody then toSource bsrc else CL.sourceNull
-    return $ ResponseSource st hdr' (Chunk <$> src)
+    let src = if hasBody then src' else CL.sourceNull
+    return $ ResponseSource st hdr' (toResponseSource src)
   where
     check hs = lookup fkContentType hs >> case lookup "status" hs of
         Nothing -> Just (ok200, hs)
@@ -88,7 +86,8 @@ fromCGI rhdl cspec req = do
       where
         hs' = filter (\(k,_) -> k /= "status") hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
-    recover (_ :: SomeException) = return Nothing
+    emptyHeader = []
+    recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
 
 ----------------------------------------------------------------
 

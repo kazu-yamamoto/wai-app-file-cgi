@@ -4,6 +4,7 @@ module Main where
 
 import Control.Exception.Lifted
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Conduit
 import Network.HTTP.Conduit
 import qualified Network.HTTP.Types as H
 import Prelude hiding (catch)
@@ -25,7 +26,7 @@ doc_test = docTest ["Network/Wai/Application/Classic.hs"] ["-XOverloadedStrings"
 
 case_post :: Assertion
 case_post = do
-    Response _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
+    Response _ _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
     ans <- BL.readFile "test/data/post"
     bdy @?= ans
   where
@@ -33,7 +34,7 @@ case_post = do
 
 case_post2 :: Assertion
 case_post2 = do
-    Response sc _ _ <- sendPOST url "foo bar.\nbaz!\n"
+    Response sc _ _ _ <- sendPOST url "foo bar.\nbaz!\n"
     sc @?= H.internalServerError500
   where
     url = "http://localhost:8080/cgi-bin/broken"
@@ -53,7 +54,7 @@ case_get = do
 case_get2 :: Assertion
 case_get2 = do
     req <- parseUrl url
-    Response sc _ _ <- safeHttpLbs req
+    Response sc _ _ _ <- safeHttpLbs req
     sc @?= H.notFound404
   where
     url = "http://localhost:8080/dummy"
@@ -62,7 +63,7 @@ case_get2 = do
 
 case_get_ja :: Assertion
 case_get_ja = do
-    Response _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
+    Response _ _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
     ans <- BL.readFile "test/html/ja/index.html.ja"
     bdy @?= ans
   where
@@ -72,9 +73,9 @@ case_get_ja = do
 
 case_get_modified :: Assertion
 case_get_modified = do
-    Response _ hdr _ <- sendGET url []
+    Response _ _ hdr _ <- sendGET url []
     let Just lm = lookup "Last-Modified" hdr
-    Response sc _ _ <- sendGET url [("If-Modified-Since", lm)]
+    Response sc _ _ _ <- sendGET url [("If-Modified-Since", lm)]
     sc @?= H.notModified304
   where
     url = "http://localhost:8080/"
@@ -83,7 +84,7 @@ case_get_modified = do
 
 case_get_partial :: Assertion
 case_get_partial = do
-    Response _ _ bdy <- sendGET url [("Range", "bytes=10-20")]
+    Response _ _ _ bdy <- sendGET url [("Range", "bytes=10-20")]
     bdy @?= ans
   where
     url = "http://localhost:8080/"
@@ -93,7 +94,7 @@ case_get_partial = do
 
 case_head :: Assertion
 case_head = do
-    Response sc _ _ <- sendHEAD url []
+    Response sc _ _ _ <- sendHEAD url []
     sc @?= H.ok200
   where
     url = "http://localhost:8080/"
@@ -102,7 +103,7 @@ case_head = do
 
 case_head2 :: Assertion
 case_head2 = do
-    Response sc _ _ <- sendHEAD url []
+    Response sc _ _ _ <- sendHEAD url []
     sc @?= H.notFound404
   where
     url = "http://localhost:8080/dummy"
@@ -111,7 +112,7 @@ case_head2 = do
 
 case_head_ja :: Assertion
 case_head_ja = do
-    Response sc _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
+    Response sc _ _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
     sc @?= H.ok200
   where
     url = "http://localhost:8080/ja/"
@@ -120,9 +121,9 @@ case_head_ja = do
 
 case_head_modified :: Assertion
 case_head_modified = do
-    Response _ hdr _ <- sendHEAD url []
+    Response _ _ hdr _ <- sendHEAD url []
     let Just lm = lookup "Last-Modified" hdr
-    Response sc _ _ <- sendHEAD url [("If-Modified-Since", lm)]
+    Response sc _ _ _ <- sendHEAD url [("If-Modified-Since", lm)]
     sc @?= H.notModified304
   where
     url = "http://localhost:8080/"
@@ -170,11 +171,11 @@ sendPOST url body = do
 
 ----------------------------------------------------------------
 
-safeHttpLbs :: Request IO -> IO (Response BL.ByteString)
+safeHttpLbs :: Request (ResourceT IO) -> IO (Response BL.ByteString)
 safeHttpLbs req = withManager (httpLbs req) `catch` httpHandler
 
 ----------------------------------------------------------------
 
 httpHandler :: HttpException -> IO (Response BL.ByteString)
-httpHandler (StatusCodeException sc hd) = return (Response sc hd BL.empty)
+httpHandler (StatusCodeException sc hd) = return (Response sc H.http11 hd BL.empty)
 httpHandler _                           = error "handler"
