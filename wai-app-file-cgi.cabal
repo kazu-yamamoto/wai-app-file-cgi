@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.5.8
+Version:                0.5.9
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -52,7 +52,9 @@ Library
                       , transformers
                       , unix
                       , wai >= 1.2
-                      , wai-app-static >= 0.3
+                      -- should be removed someday
+                      , blaze-html >= 0.5
+                      , wai-app-static >= 1.2
                       , wai-logger
 
 Test-Suite test
