@@ -8,11 +8,9 @@ module Network.Wai.Application.Classic.Path (
   , isSuffixOf
   ) where
 
-import qualified Blaze.ByteString.Builder as BB
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS (null, head, tail, last, append, drop, length, breakByte, isSuffixOf)
+import qualified Data.ByteString as BS (null, head, tail, last, concat, append, drop, length, breakByte, isSuffixOf)
 import qualified Data.ByteString.Char8 as BS (pack, unpack)
-import Data.Monoid
 import Data.String
 import Data.Word
 import Data.Function
@@ -45,11 +43,17 @@ fromByteString path = Path {
   , pathByteString = path
   }
 
-pathDot :: Word8
-pathDot = 46
+-- pathDot :: Word8
+-- pathDot = 46
+
+pathDotBS :: ByteString
+pathDotBS = "."
 
 pathSep :: Word8
 pathSep = 47
+
+pathSepBS :: ByteString
+pathSepBS = "/"
 
 {-|
   Checking if the path ends with the path separator.
@@ -90,10 +94,7 @@ infixr +++
 -}
 
 (+++) :: Path -> Path -> Path
-p1 +++ p2 = Path {
-    pathString = BS.unpack p
-  , pathByteString = p
-  }
+p1 +++ p2 = fromByteString p
   where
     p = pathByteString p1 `BS.append` pathByteString p2
 
@@ -113,22 +114,15 @@ p1 +++ p2 = Path {
 (</>) :: Path -> Path -> Path
 p1 </> p2
   | has1 && not has2 || not has1 && has2 = p1 +++ p2
-  | has1      = toPath pp1
-  | otherwise = toPath pp2
+  | has1      = fromByteString pp1
+  | otherwise = fromByteString pp2
   where
     has1 = hasTrailingPathSeparator p1
     has2 = hasLeadingPathSeparator p2
     p1' = pathByteString p1
     p2' = pathByteString p2
-    toPath p = Path {
-        pathString = BS.unpack p
-      , pathByteString = p
-      }
-    pp1 = BB.toByteString (BB.fromByteString p1'
-                           `mappend` BB.fromByteString (BS.tail p2'))
-    pp2 = BB.toByteString (BB.fromByteString p1'
-                           `mappend` BB.fromWord8 pathSep
-                           `mappend` BB.fromByteString p2')
+    pp1 = p1' `BS.append` BS.tail p2'
+    pp2 = BS.concat [p1',pathSepBS,p2']
 
 {-|
   Removing prefix. The prefix of the second argument is removed
@@ -142,10 +136,7 @@ p1 </> p2
 "bar"
 -}
 (<\>) :: Path -> Path -> Path
-p1 <\> p2 = Path {
-    pathString = BS.unpack p
-  , pathByteString = p
-  }
+p1 <\> p2 = fromByteString p
   where
     p1' = pathByteString p1
     p2' = pathByteString p2
@@ -155,16 +146,11 @@ p1 <\> p2 = Path {
   Adding suffix.
 -}
 (<.>) :: Path -> Path -> Path
-p1 <.> p2 = Path {
-    pathString = BS.unpack p
-  , pathByteString = p
-  }
+p1 <.> p2 = fromByteString p
   where
     p1' = pathByteString p1
     p2' = pathByteString p2
-    p = BB.toByteString (BB.fromByteString p1'
-                       `mappend` BB.fromWord8 pathDot
-                       `mappend` BB.fromByteString p2')
+    p = BS.concat [p1',pathDotBS,p2']
 
 {-|
   Breaking at the first path separator.
