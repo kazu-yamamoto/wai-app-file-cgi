@@ -59,8 +59,8 @@ cgiApp' body cspec spec cgii req = do
     fromCGI rhdl cspec req
   where
     register3 (rhdl,whdl,pid) = do
-        register $ terminateProcess pid -- SIGTERM
-        register $ hClose rhdl
+        _ <- register $ terminateProcess pid -- SIGTERM
+        _ <- register $ hClose rhdl
         keyw <- register $ hClose whdl
         return (rhdl,whdl,release keyw)
 

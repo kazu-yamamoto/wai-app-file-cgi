@@ -45,7 +45,7 @@ type RequestHeader = (CI ByteString, ByteString)
 keyVal :: Parser RequestHeader
 keyVal = do
     key <- takeTill (wcollon==)
-    word8 wcollon
+    _ <- word8 wcollon
     skipWhile (wspace ==)
     val <- takeTill (`elem` [wlf,wcr])
     crlf
