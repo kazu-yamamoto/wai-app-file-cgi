@@ -26,6 +26,7 @@ data StatusInfo =
   | StatusFile Path Integer
   -- | No HTTP status body.
   | StatusNone
+  deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
@@ -43,28 +44,37 @@ data FileInfo = FileInfo {
     fileInfoName :: Path
   , fileInfoSize :: Integer
   , fileInfoTime :: HTTPDate
-  } deriving Show
+  } deriving (Eq, Show)
 
 data FileRoute = FileRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
     fileSrc :: Path
     -- | Path prefix to an actual file system.
   , fileDst :: Path
-  }
+  } deriving (Eq,Show)
+
+----------------------------------------------------------------
+
+data RedirectRoute = RedirectRoute {
+    -- | Path prefix to be matched to 'rawPathInfo'.
+    redirectSrc :: Path
+    -- | Path prefix to an actual file system.
+  , redirectDst :: Path
+  } deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
 data CgiAppSpec = CgiAppSpec {
     -- | A file name of the default CGI.
     indexCgi :: Path
-  }
+  } deriving (Eq,Show)
 
 data CgiRoute = CgiRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.
     cgiSrc :: Path
     -- | Path prefix to an actual file system.
   , cgiDst :: Path
-  }
+  } deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
@@ -82,7 +92,7 @@ data RevProxyRoute = RevProxyRoute {
   , revProxyDomain :: ByteString
     -- | Destination port number.
   , revProxyPort :: Int
-  }
+  } deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
@@ -91,19 +101,21 @@ data RspSpec = RspSpec {
     rspStatus :: Status
     -- | Response body.
   , rspBody :: RspBody
-  }
+  } deriving (Eq,Show)
 
 data RspBody =
     NoBody
   | BodyStatus
   | BodyFileNoBody ResponseHeaders
   | BodyFile ResponseHeaders Path Range
+  deriving (Eq,Show)
 
 data Range =
     -- | Entire file showing its file size
     Entire Integer
     -- | A part of a file taking offset and length
   | Part Integer Integer
+  deriving (Eq,Show)
 
 ----------------------------------------------------------------
 

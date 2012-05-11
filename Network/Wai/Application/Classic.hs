@@ -11,6 +11,9 @@ module Network.Wai.Application.Classic (
   , FileInfo(..)
   , FileRoute(..)
   , fileApp
+  -- * Redirect
+  , RedirectRoute(..)
+  , redirectApp
   -- * CGI
   , CgiAppSpec(..)
   , CgiRoute(..)
@@ -28,5 +31,6 @@ module Network.Wai.Application.Classic (
 import Network.Wai.Application.Classic.CGI
 import Network.Wai.Application.Classic.File
 import Network.Wai.Application.Classic.Path
+import Network.Wai.Application.Classic.Redirect
 import Network.Wai.Application.Classic.RevProxy
 import Network.Wai.Application.Classic.Types
