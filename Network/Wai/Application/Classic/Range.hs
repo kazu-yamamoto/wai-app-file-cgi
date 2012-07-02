@@ -6,6 +6,7 @@ import Control.Applicative hiding (optional)
 import Data.Attoparsec.ByteString hiding (satisfy)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.ByteString.Char8 hiding (map, count, take, elem)
+import Network.HTTP.Types
 
 -- |
 -- >>> skipAndSize "bytes=0-399" 10000
@@ -18,40 +19,38 @@ import Data.ByteString.Char8 hiding (map, count, take, elem)
 -- Just (9500,500)
 skipAndSize :: ByteString -> Integer -> Maybe (Integer,Integer)
 skipAndSize bs size = case parseRange bs of
-  Just [(mbeg,mend)] -> adjust mbeg mend size
-  _                  -> Nothing
+  Just [rng] -> adjust rng size
+  _          -> Nothing
 
-adjust :: Maybe Integer -> Maybe Integer -> Integer -> Maybe (Integer,Integer)
-adjust (Just beg) (Just end) siz
+adjust :: ByteRange -> Integer -> Maybe (Integer,Integer)
+adjust (ByteRangeFromTo beg end) siz
   | beg <= end && end <= siz     = Just (beg, end - beg + 1)
   | otherwise                    = Nothing
-adjust (Just beg) Nothing    siz
+adjust (ByteRangeFrom beg) siz
   | beg <= siz                   = Just (beg, siz - beg)
   | otherwise                    = Nothing
-adjust Nothing    (Just end) siz
+adjust (ByteRangeSuffix end) siz
   | end <= siz                   = Just (siz - end, end)
   | otherwise                    = Nothing
-adjust Nothing    Nothing    _   = Nothing
 
-type Range = (Maybe Integer, Maybe Integer)
-
-parseRange :: ByteString -> Maybe [Range]
+parseRange :: ByteString -> Maybe [ByteRange]
 parseRange bs = case parseOnly byteRange bs of
     Right x -> Just x
     _       -> Nothing
 
-byteRange :: Parser [Range]
+byteRange :: Parser [ByteRange]
 byteRange = string "bytes=" *> (ranges <* endOfInput)
 
-ranges :: Parser [Range]
+ranges :: Parser [ByteRange]
 ranges = sepBy1 (range <|> suffixRange) (spcs >> char ',' >> spcs)
 
-range :: Parser Range
-range = (,) <$> ((Just <$> num) <* char '-')
-            <*> option Nothing (Just <$> num)
+range :: Parser ByteRange
+range = do
+  beg <- num <* char '-'
+  (ByteRangeFromTo beg <$> num) <|> return (ByteRangeFrom beg)
 
-suffixRange :: Parser Range
-suffixRange = (,) Nothing <$> (char '-' *> (Just <$> num))
+suffixRange :: Parser ByteRange
+suffixRange = ByteRangeSuffix <$> (char '-' *> num)
 
 num :: Parser Integer
 num = read <$> many1 digit
