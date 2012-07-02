@@ -40,10 +40,10 @@ lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 ----------------------------------------------------------------
 
 textPlainHeader :: ResponseHeaders
-textPlainHeader = [("Content-Type", "text/plain")]
+textPlainHeader = headerContentType "text/plain" : []
 
 textHtmlHeader :: ResponseHeaders
-textHtmlHeader = [("Content-Type", "text/html")]
+textHtmlHeader = headerContentType "text/html" : []
 
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [("Location", url)]
@@ -74,12 +74,12 @@ addForwardedFor req hdr = ("X-Forwarded-For", addr) : hdr
     addr = BS.pack . showSockAddr . remoteHost $ req
 
 addLength :: Integer -> ResponseHeaders -> ResponseHeaders
-addLength len hdr = ("Content-Length", BS.pack . show $ len) : hdr
+addLength len hdr = headerContentLength (BS.pack . show $ len) : hdr
 
 newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
 newHeader ishtml file mtime
   | ishtml    = lastMod : textHtmlHeader
-  | otherwise = lastMod : [("Content-Type", mimeType file)]
+  | otherwise = lastMod : headerContentType (mimeType file) : []
   where
     lastMod = ("Last-Modified", formatHTTPDate mtime)
 

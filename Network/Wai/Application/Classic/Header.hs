@@ -44,6 +44,10 @@ fkContentLength = "content-length"
 fkContentType :: FieldKey
 fkContentType = "content-type"
 
+-- | Look-up key for Content-Type:.
+fkContentEncoding :: FieldKey
+fkContentEncoding = "content-encoding"
+
 -- | Look-up key for Cookie:.
 fkCookie :: FieldKey
 fkCookie = "cookie"
@@ -55,6 +59,10 @@ fkUserAgent = "user-agent"
 -- | Look-up key for Referer:.
 fkReferer :: FieldKey
 fkReferer = "referer"
+
+-- | Look-up key for Status.
+fkStatus :: FieldKey
+fkStatus = "status"
 
 ----------------------------------------------------------------
 

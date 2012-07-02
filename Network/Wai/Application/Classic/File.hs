@@ -58,9 +58,9 @@ If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req = do
     RspSpec st body <- case method of
-        "GET"  -> processGET  hinfo ishtml rfile
-        "HEAD" -> processHEAD hinfo ishtml rfile
-        _      -> return notAllowed
+        Right GET  -> processGET  hinfo ishtml rfile
+        Right HEAD -> processHEAD hinfo ishtml rfile
+        _          -> return notAllowed
     (response, mlen) <- case body of
             NoBody                 -> return $ noBody st
             BodyStatus -> statusBody st <$> liftIO (getStatusInfo cspec spec langs st)
@@ -70,7 +70,7 @@ fileApp cspec spec filei req = do
     return response
   where
     hinfo = HandlerInfo spec req file langs
-    method = requestMethod req
+    method = parseMethod $ requestMethod req
     path = pathinfoToFilePath req filei
     file = addIndex spec path
     ishtml = isHTML spec file

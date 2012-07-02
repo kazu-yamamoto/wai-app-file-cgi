@@ -45,11 +45,11 @@ The program to link this library must ignore SIGCHLD as follows:
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req = case method of
-    "GET"  -> cgiApp' False cspec spec cgii req
-    "POST" -> cgiApp' True  cspec spec cgii req
-    _      -> return $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
+    Right GET  -> cgiApp' False cspec spec cgii req
+    Right POST -> cgiApp' True  cspec spec cgii req
+    _          -> return $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
   where
-    method = requestMethod req
+    method = parseMethod $ requestMethod req
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp' body cspec spec cgii req = do
@@ -80,11 +80,11 @@ fromCGI rhdl cspec req = do
     let src = if hasBody then src' else CL.sourceNull
     return $ ResponseSource st hdr' (toResponseSource src)
   where
-    check hs = lookup fkContentType hs >> case lookup "status" hs of
+    check hs = lookup fkContentType hs >> case lookup fkStatus hs of
         Nothing -> Just (ok200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
-        hs' = filter (\(k,_) -> k /= "status") hs
+        hs' = filter (\(k,_) -> k /= fkStatus) hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     emptyHeader = []
     recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
