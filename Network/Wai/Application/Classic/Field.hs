@@ -2,6 +2,7 @@
 
 module Network.Wai.Application.Classic.Field where
 
+import Control.Applicative
 import Control.Arrow (first)
 import Control.Monad (mplus)
 import Data.ByteString (ByteString)
@@ -19,6 +20,7 @@ import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
 import Network.Wai.Logger.Utils
+import System.Posix.Time
 
 ----------------------------------------------------------------
 
@@ -99,3 +101,8 @@ extensions file = exts
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
 defaultMimeTypes' = SH.fromList $ map (first (BS.pack.fromFilePath)) $ Map.toList defaultMimeTypes
+
+addDate :: ResponseHeaders -> IO ResponseHeaders
+addDate hdr = do
+    date <- formatHTTPDate . epochTimeToHTTPDate <$> epochTime
+    return $ ("Date",date) : hdr

@@ -62,10 +62,10 @@ fileApp cspec spec filei req = do
         Right HEAD -> processHEAD hinfo ishtml rfile
         _          -> return notAllowed
     (response, mlen) <- case body of
-            NoBody                 -> return $ noBody st
-            BodyStatus -> statusBody st <$> liftIO (getStatusInfo cspec spec langs st)
-            BodyFileNoBody hdr     -> return $ bodyFileNoBody st hdr
-            BodyFile hdr afile rng -> return $ bodyFile st hdr afile rng
+            NoBody                 -> noBody st
+            BodyStatus             -> bodyStatus st
+            BodyFileNoBody hdr     -> bodyFileNoBody st hdr
+            BodyFile hdr afile rng -> bodyFile st hdr afile rng
     liftIO $ logger cspec req st mlen
     return response
   where
@@ -76,29 +76,34 @@ fileApp cspec spec filei req = do
     ishtml = isHTML spec file
     rfile = redirectPath spec path
     langs = langSuffixes req
-    noBody st = (responseLBS st hdr "", Nothing)
-      where
-        hdr = addServer cspec []
+    noBody st = do
+        hdr <- liftIO . addDate $ addServer cspec []
+        return (responseLBS st hdr "", Nothing)
+    bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
+                >>= statusBody st
     statusBody st StatusNone = noBody st
-    statusBody st (StatusByteString bd) = (responseLBS st hdr bd, Just (len bd))
+    statusBody st (StatusByteString bd) = do
+        hdr <- liftIO . addDate $ addServer cspec textPlainHeader
+        return (responseLBS st hdr bd, Just (len bd))
       where
         len = fromIntegral . BL.length
-        hdr = addServer cspec textPlainHeader
-    statusBody st (StatusFile afile len) = (ResponseFile st hdr fl mfp, Just len)
+    statusBody st (StatusFile afile len) = do
+        hdr <- liftIO . addDate $  addServer cspec textHtmlHeader
+        return (ResponseFile st hdr fl mfp, Just len)
       where
-        hdr = addServer cspec textHtmlHeader
         mfp = Just (FilePart 0 len)
         fl = pathString afile
-    bodyFileNoBody st hdr = (responseLBS st hdr' "", Nothing)
-      where
-        hdr' = addServer cspec hdr
-    bodyFile st hdr afile rng = (ResponseFile st hdr' fl mfp, Just len)
+    bodyFileNoBody st hdr = do
+        hdr' <- liftIO . addDate $ addServer cspec hdr
+        return (responseLBS st hdr' "", Nothing)
+    bodyFile st hdr afile rng = do
+        hdr' <- liftIO . addDate $ addLength len $ addServer cspec hdr
+        return (ResponseFile st hdr' fl mfp, Just len)
       where
         (len, mfp) = case rng of
             -- sendfile of Linux does not support the entire file
             Entire bytes    -> (bytes, Just (FilePart 0 bytes))
             Part skip bytes -> (bytes, Just (FilePart skip bytes))
-        hdr' = addLength len $ addServer cspec hdr
         fl = pathString afile
 
 ----------------------------------------------------------------
