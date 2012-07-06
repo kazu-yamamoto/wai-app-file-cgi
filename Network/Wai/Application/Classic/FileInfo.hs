@@ -31,14 +31,14 @@ ifunmodified req size mtime = do
 ifrange :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 ifrange req size mtime = do
     date <- ifRange req
-    rng  <- lookupRequestField fkRange req
+    rng  <- lookupRequestField hRange req
     if date == mtime
        then Just (Full ok200)
        else range size rng
 
 unconditional :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 unconditional req size _ =
-    maybe (Just (Full ok200)) (range size) $ lookupRequestField fkRange req
+    maybe (Just (Full ok200)) (range size) $ lookupRequestField hRange req
 
 range :: Integer -> ByteString -> Maybe StatusAux
 range size rng = case skipAndSize rng size of

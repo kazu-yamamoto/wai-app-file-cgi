@@ -40,7 +40,7 @@ Library
                       , filepath
                       , http-conduit
                       , http-date
-                      , http-types >= 0.6.9
+                      , http-types >= 0.7
                       , io-choice
                       , lifted-base
                       , network
@@ -51,7 +51,7 @@ Library
                       , unix
                       , wai >= 1.2
                       -- should be removed someday
-                      , blaze-html >= 0.5
+                      , blaze-html >= 0.4
                       , wai-app-static >= 1.2
                       , wai-logger
 

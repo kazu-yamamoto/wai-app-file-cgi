@@ -80,11 +80,11 @@ fromCGI rhdl cspec req = do
     let src = if hasBody then src' else CL.sourceNull
     return $ ResponseSource st hdr' (toResponseSource src)
   where
-    check hs = lookup fkContentType hs >> case lookup fkStatus hs of
+    check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
-        hs' = filter (\(k,_) -> k /= fkStatus) hs
+        hs' = filter (\(k,_) -> k /= hStatus) hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     emptyHeader = []
     recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
@@ -133,9 +133,9 @@ makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ bas
       , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
-    addLen = addEnv "CONTENT_LENGTH" $ lookup fkContentLength headers
-    addType   = addEnv "CONTENT_TYPE" $ lookup fkContentType headers
-    addCookie = addEnv "HTTP_COOKIE" $ lookup fkCookie headers
+    addLen    = addEnv "CONTENT_LENGTH" $ lookup hContentLength headers
+    addType   = addEnv "CONTENT_TYPE"   $ lookup hContentType   headers
+    addCookie = addEnv "HTTP_COOKIE"    $ lookup hCookie        headers
     query = BS.unpack . safeTail . rawQueryString
       where
         safeTail "" = ""

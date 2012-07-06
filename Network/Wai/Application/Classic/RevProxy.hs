@@ -17,7 +17,6 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
-import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Prelude hiding (catch)
@@ -54,7 +53,7 @@ getBody req len = H.RequestBodySource len (toBodySource req)
 
 getLen :: Request -> Maybe Int64
 getLen req = do
-    len' <- lookup fkContentLength $ requestHeaders req
+    len' <- lookup hContentLength $ requestHeaders req
     case reads $ BS.unpack len' of
         [] -> Nothing
         (i, _):_ -> Just i
@@ -81,8 +80,8 @@ revProxyApp' cspec spec route req = do
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
     p (k,_)
-      | k == fkContentEncoding = False
-      | k == fkContentLength   = False
+      | k == hContentEncoding = False
+      | k == hContentLength   = False
       | otherwise              = True
 
 type Resp = ResourceT IO (H.Response (Source (ResourceT IO) BS.ByteString))
