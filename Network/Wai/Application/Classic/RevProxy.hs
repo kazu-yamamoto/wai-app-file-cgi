@@ -16,10 +16,12 @@ import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
+import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
+import Blaze.ByteString.Builder (Builder)
 import Prelude hiding (catch)
 
 toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request (ResourceT IO)
@@ -76,7 +78,7 @@ revProxyApp' cspec spec route req = do
     H.Response status _ hdr downbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (toResponseSource downbody)
+    return $ ResponseSource status hdr' (toSource (lookup "content-type" hdr') downbody)
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
@@ -84,6 +86,12 @@ revProxyApp' cspec spec route req = do
       | k == fkContentEncoding = False
       | k == fkContentLength   = False
       | otherwise              = True
+
+toSource :: Maybe BS.ByteString
+         -> Source (ResourceT IO) BS.ByteString
+         -> Source (ResourceT IO) (Flush Builder)
+toSource (Just "text/event-stream") = toResponseEventSource
+toSource _ = toResponseSource
 
 type Resp = ResourceT IO (H.Response (Source (ResourceT IO) BS.ByteString))
 
