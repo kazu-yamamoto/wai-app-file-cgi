@@ -12,14 +12,15 @@ import qualified Data.Map as Map (toList)
 import Data.Maybe
 import Data.StaticHash (StaticHash)
 import qualified Data.StaticHash as SH
+import qualified Data.Text as T
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.HTTP.Types.Header
+import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
 import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
 import Network.Wai.Logger.Utils
 import System.Posix.Time
 
@@ -101,7 +102,7 @@ extensions file = exts
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
-defaultMimeTypes' = SH.fromList $ map (first (BS.pack.fromFilePath)) $ Map.toList defaultMimeTypes
+defaultMimeTypes' = SH.fromList $ map (first (BS.pack . T.unpack)) $ Map.toList defaultMimeMap
 
 addDate :: ResponseHeaders -> IO ResponseHeaders
 addDate hdr = do

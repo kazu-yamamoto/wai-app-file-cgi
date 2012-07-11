@@ -71,14 +71,14 @@ toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
-    (src', hs) <- (CB.sourceHandle rhdl $$+ parseHeader) `catch` recover
+    (src', hs) <- cgiHeader `catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
     let src = if hasBody then src' else CL.sourceNull
-    return $ ResponseSource st hdr' (toResponseSource src)
+    return $ ResponseSource st hdr' src
   where
     check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
@@ -88,6 +88,10 @@ fromCGI rhdl cspec req = do
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     emptyHeader = []
     recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
+    cgiHeader = do
+        (rsrc,hs) <- CB.sourceHandle rhdl $$+ parseHeader
+        src <- toResponseSource rsrc
+        return (src,hs)
 
 ----------------------------------------------------------------
 

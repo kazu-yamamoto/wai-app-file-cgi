@@ -25,9 +25,11 @@ byteStringToBuilder = BB.fromByteString
 
 ----------------------------------------------------------------
 
-toResponseSource :: Source (ResourceT IO) ByteString 
-                 -> Source (ResourceT IO) (Flush Builder)
-toResponseSource = ($= CL.map (Chunk . byteStringToBuilder))
+toResponseSource :: ResumableSource (ResourceT IO) ByteString
+                 -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
+toResponseSource rsrc = do
+    (src,_) <- unwrapResumable rsrc
+    return $ src $= CL.map (Chunk . byteStringToBuilder)
 
 ----------------------------------------------------------------
 

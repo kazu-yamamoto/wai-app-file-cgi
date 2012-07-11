@@ -72,10 +72,10 @@ revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
-    H.Response status _ hdr downbody <- http httpReq mgr
+    H.Response status _ hdr rdownbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (toResponseSource downbody)
+    ResponseSource status hdr' <$> toResponseSource rdownbody
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
@@ -84,7 +84,7 @@ revProxyApp' cspec spec route req = do
       | k == hContentLength   = False
       | otherwise              = True
 
-type Resp = ResourceT IO (H.Response (Source (ResourceT IO) BS.ByteString))
+type Resp = ResourceT IO (H.Response (ResumableSource (ResourceT IO) BS.ByteString))
 
 http :: H.Request (ResourceT IO) -> H.Manager -> Resp
 http req mgr = H.http req mgr
