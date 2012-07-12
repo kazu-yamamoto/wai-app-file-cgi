@@ -21,17 +21,9 @@ hStatus = "status"
 hXForwardedFor :: HeaderName
 hXForwardedFor = "x-forwarded-for"
 
--- | Look-up key for Server.
-hServer :: HeaderName
-hServer = "server"
-
 -- | Look-up key for Via.
 hVia :: HeaderName
 hVia = "via"
-
--- | Look-up key for Location.
-hLocation :: HeaderName
-hLocation = "location"
 
 ----------------------------------------------------------------
 
