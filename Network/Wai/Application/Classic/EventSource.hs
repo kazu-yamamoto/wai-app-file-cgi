@@ -51,6 +51,8 @@ eventSourceConduit = CL.concatMapAccum f ""
         xs = splitDoubleLineBreak (rest `BS.append` input)
 
 -- insert Flush if exists a double line-break
-toResponseEventSource :: Source (ResourceT IO) ByteString
-                      -> Source (ResourceT IO) (Flush Builder)
-toResponseEventSource = ($= eventSourceConduit)
+toResponseEventSource :: ResumableSource (ResourceT IO) ByteString
+                      -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
+toResponseEventSource rsrc = do
+    (src,_) <- unwrapResumable rsrc
+    return $ src $= eventSourceConduit

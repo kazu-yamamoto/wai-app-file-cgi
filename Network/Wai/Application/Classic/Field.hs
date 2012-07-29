@@ -12,50 +12,52 @@ import qualified Data.Map as Map (toList)
 import Data.Maybe
 import Data.StaticHash (StaticHash)
 import qualified Data.StaticHash as SH
+import qualified Data.Text as T
 import Network.HTTP.Date
 import Network.HTTP.Types
+import Network.HTTP.Types.Header
+import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
 import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Application.Static (defaultMimeTypes, defaultMimeType, MimeType, fromFilePath)
 import Network.Wai.Logger.Utils
 import System.Posix.Time
 
 ----------------------------------------------------------------
 
-languages :: Request -> [Ascii]
-languages req = maybe [] parseLang $ lookupRequestField fkAcceptLanguage req
+languages :: Request -> [ByteString]
+languages req = maybe [] parseLang $ lookupRequestField hAcceptLanguage req
 
 ifModifiedSince :: Request -> Maybe HTTPDate
-ifModifiedSince = lookupAndParseDate fkIfModifiedSince
+ifModifiedSince = lookupAndParseDate hIfModifiedSince
 
 ifUnmodifiedSince :: Request -> Maybe HTTPDate
-ifUnmodifiedSince = lookupAndParseDate fkIfUnmodifiedSince
+ifUnmodifiedSince = lookupAndParseDate hIfUnmodifiedSince
 
 ifRange :: Request -> Maybe HTTPDate
-ifRange = lookupAndParseDate fkIfRange
+ifRange = lookupAndParseDate hIfRange
 
-lookupAndParseDate :: FieldKey -> Request -> Maybe HTTPDate
+lookupAndParseDate :: HeaderName -> Request -> Maybe HTTPDate
 lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
 
 ----------------------------------------------------------------
 
 textPlainHeader :: ResponseHeaders
-textPlainHeader = headerContentType "text/plain" : []
+textPlainHeader = [(hContentType,"text/plain")]
 
 textHtmlHeader :: ResponseHeaders
-textHtmlHeader = headerContentType "text/html" : []
+textHtmlHeader = [(hContentType,"text/html")]
 
 locationHeader :: ByteString -> ResponseHeaders
-locationHeader url = [("Location", url)]
+locationHeader url = [(hLocation, url)]
 
 addServer :: ClassicAppSpec -> ResponseHeaders -> ResponseHeaders
-addServer cspec hdr = ("Server", softwareName cspec) : hdr
+addServer cspec hdr = (hServer, softwareName cspec) : hdr
 
 -- FIXME: the case where "Via:" already exists
 addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
-addVia cspec req hdr = ("Via", val) : hdr
+addVia cspec req hdr = (hVia, val) : hdr
   where
     ver = httpVersion req
     showBS = BS.pack . show
@@ -71,19 +73,19 @@ addVia cspec req hdr = ("Via", val) : hdr
       ]
 
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
-addForwardedFor req hdr = ("X-Forwarded-For", addr) : hdr
+addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
   where
     addr = BS.pack . showSockAddr . remoteHost $ req
 
 addLength :: Integer -> ResponseHeaders -> ResponseHeaders
-addLength len hdr = headerContentLength (BS.pack . show $ len) : hdr
+addLength len hdr = (hContentLength, BS.pack (show len)) : hdr
 
 newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
 newHeader ishtml file mtime
   | ishtml    = lastMod : textHtmlHeader
-  | otherwise = lastMod : headerContentType (mimeType file) : []
+  | otherwise = lastMod : (hContentType, mimeType file) : []
   where
-    lastMod = ("Last-Modified", formatHTTPDate mtime)
+    lastMod = (hLastModified, formatHTTPDate mtime)
 
 mimeType :: ByteString -> MimeType
 mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
@@ -100,9 +102,9 @@ extensions file = exts
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
-defaultMimeTypes' = SH.fromList $ map (first (BS.pack.fromFilePath)) $ Map.toList defaultMimeTypes
+defaultMimeTypes' = SH.fromList $ map (first (BS.pack . T.unpack)) $ Map.toList defaultMimeMap
 
 addDate :: ResponseHeaders -> IO ResponseHeaders
 addDate hdr = do
     date <- formatHTTPDate . epochTimeToHTTPDate <$> epochTime
-    return $ ("Date",date) : hdr
+    return $ (hDate,date) : hdr

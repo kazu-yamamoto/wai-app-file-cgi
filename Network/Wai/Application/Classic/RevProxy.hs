@@ -18,7 +18,6 @@ import Network.Wai
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
-import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Blaze.ByteString.Builder (Builder)
@@ -56,7 +55,7 @@ getBody req len = H.RequestBodySource len (toBodySource req)
 
 getLen :: Request -> Maybe Int64
 getLen req = do
-    len' <- lookup fkContentLength $ requestHeaders req
+    len' <- lookup hContentLength $ requestHeaders req
     case reads $ BS.unpack len' of
         [] -> Nothing
         (i, _):_ -> Just i
@@ -75,25 +74,25 @@ revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
-    H.Response status _ hdr downbody <- http httpReq mgr
+    H.Response status _ hdr rdownbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    return $ ResponseSource status hdr' (toSource (lookup "content-type" hdr') downbody)
+    ResponseSource status hdr' <$> (toSource (lookup "content-type" hdr') rdownbody)
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
     p (k,_)
-      | k == fkContentEncoding = False
-      | k == fkContentLength   = False
+      | k == hContentEncoding = False
+      | k == hContentLength   = False
       | otherwise              = True
 
 toSource :: Maybe BS.ByteString
-         -> Source (ResourceT IO) BS.ByteString
-         -> Source (ResourceT IO) (Flush Builder)
+         -> ResumableSource (ResourceT IO) BS.ByteString
+         -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
 toSource (Just "text/event-stream") = toResponseEventSource
 toSource _ = toResponseSource
 
-type Resp = ResourceT IO (H.Response (Source (ResourceT IO) BS.ByteString))
+type Resp = ResourceT IO (H.Response (ResumableSource (ResourceT IO) BS.ByteString))
 
 http :: H.Request (ResourceT IO) -> H.Manager -> Resp
 http req mgr = H.http req mgr

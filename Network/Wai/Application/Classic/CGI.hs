@@ -71,23 +71,27 @@ toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
-    (src', hs) <- (CB.sourceHandle rhdl $$+ parseHeader) `catch` recover
+    (src', hs) <- cgiHeader `catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     liftIO $ logger cspec req st Nothing
     let src = if hasBody then src' else CL.sourceNull
-    return $ ResponseSource st hdr' (toResponseSource src)
+    return $ ResponseSource st hdr' src
   where
-    check hs = lookup fkContentType hs >> case lookup fkStatus hs of
+    check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
-        hs' = filter (\(k,_) -> k /= fkStatus) hs
+        hs' = filter (\(k,_) -> k /= hStatus) hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     emptyHeader = []
     recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
+    cgiHeader = do
+        (rsrc,hs) <- CB.sourceHandle rhdl $$+ parseHeader
+        src <- toResponseSource rsrc
+        return (src,hs)
 
 ----------------------------------------------------------------
 
@@ -133,9 +137,9 @@ makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ bas
       , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
-    addLen = addEnv "CONTENT_LENGTH" $ lookup fkContentLength headers
-    addType   = addEnv "CONTENT_TYPE" $ lookup fkContentType headers
-    addCookie = addEnv "HTTP_COOKIE" $ lookup fkCookie headers
+    addLen    = addEnv "CONTENT_LENGTH" $ lookup hContentLength headers
+    addType   = addEnv "CONTENT_TYPE"   $ lookup hContentType   headers
+    addCookie = addEnv "HTTP_COOKIE"    $ lookup hCookie        headers
     query = BS.unpack . safeTail . rawQueryString
       where
         safeTail "" = ""

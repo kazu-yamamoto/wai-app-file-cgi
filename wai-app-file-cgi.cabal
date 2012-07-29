@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.6.0
+Version:                0.7.0
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -33,27 +33,27 @@ Library
                       , attoparsec >= 0.10.0.0
                       , attoparsec-conduit
                       , blaze-builder
+                      , blaze-html
                       , bytestring
                       , case-insensitive
-                      , conduit >= 0.4 && < 0.5
+                      , conduit >= 0.5 && < 0.6
                       , containers
                       , directory
                       , filepath
                       , http-conduit
                       , http-date
-                      , http-types >= 0.6.9
+                      , http-types >= 0.7
+                      , mime-types
                       , io-choice
                       , lifted-base
                       , network
                       , process
                       , resourcet
                       , static-hash
+                      , text
                       , transformers
                       , unix
                       , wai >= 1.2
-                      -- should be removed someday
-                      , blaze-html >= 0.5
-                      , wai-app-static >= 1.2
                       , wai-logger
 
 Test-Suite test
@@ -62,7 +62,7 @@ Test-Suite test
   HS-Source-Dirs:       test
   Build-Depends:        base >= 4 && < 5
                       , bytestring
-                      , conduit >= 0.4 && < 0.5
+                      , conduit >= 0.5 && < 0.6
                       , http-conduit
                       , http-types
                       , lifted-base
