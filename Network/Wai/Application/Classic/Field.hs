@@ -80,12 +80,12 @@ addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
 addLength :: Integer -> ResponseHeaders -> ResponseHeaders
 addLength len hdr = (hContentLength, BS.pack (show len)) : hdr
 
-newHeader :: Bool -> ByteString -> HTTPDate -> ResponseHeaders
-newHeader ishtml file mtime
+newHeader :: Bool -> ByteString -> ByteString -> ResponseHeaders
+newHeader ishtml file date
   | ishtml    = lastMod : textHtmlHeader
   | otherwise = lastMod : (hContentType, mimeType file) : []
   where
-    lastMod = (hLastModified, formatHTTPDate mtime)
+    lastMod = (hLastModified, date)
 
 mimeType :: ByteString -> MimeType
 mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets

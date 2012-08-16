@@ -44,6 +44,7 @@ data FileInfo = FileInfo {
     fileInfoName :: Path
   , fileInfoSize :: Integer
   , fileInfoTime :: HTTPDate
+  , fileInfoDate :: ByteString
   } deriving (Eq, Show)
 
 data FileRoute = FileRoute {

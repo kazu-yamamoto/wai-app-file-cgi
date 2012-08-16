@@ -124,7 +124,8 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
         sfile = fileInfoName finfo
-        hdr = newHeader ishtml (pathByteString file) mtime
+        date = fileInfoDate finfo
+        hdr = newHeader ishtml (pathByteString file) date
         Just pst = ifmodified req size mtime -- never Nothing
                <|> ifunmodified req size mtime
                <|> ifrange req size mtime
@@ -152,7 +153,8 @@ tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
     finfo <- liftIO $ (getFileInfo spec) (lang file)
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
-        hdr = newHeader ishtml (pathByteString file) mtime
+        date = fileInfoDate finfo
+        hdr = newHeader ishtml (pathByteString file) date
         Just pst = ifmodified req size mtime -- never Nothing
                <|> Just (Full ok200)
     case pst of
