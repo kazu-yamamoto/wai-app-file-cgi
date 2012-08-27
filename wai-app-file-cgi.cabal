@@ -17,6 +17,7 @@ Library
   Exposed-Modules:      Network.Wai.Application.Classic
   Other-Modules:        Network.Wai.Application.Classic.CGI
                         Network.Wai.Application.Classic.Conduit
+                        Network.Wai.Application.Classic.EventSource
                         Network.Wai.Application.Classic.Field
                         Network.Wai.Application.Classic.File
                         Network.Wai.Application.Classic.FileInfo
