@@ -120,7 +120,7 @@ tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
 tryGetFile (HandlerInfo spec req file _) ishtml lang = do
-    finfo <- liftIO $ (getFileInfo spec) (lang file)
+    finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
         sfile = fileInfoName finfo
@@ -150,7 +150,7 @@ tryHead hinfo False= tryHeadFile hinfo False id
 
 tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
 tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
-    finfo <- liftIO $ (getFileInfo spec) (lang file)
+    finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
         size = fileInfoSize finfo
         date = fileInfoDate finfo
@@ -172,7 +172,7 @@ tryRedirect (HandlerInfo spec req _ langs) (Just file) =
 
 tryRedirectFile :: HandlerInfo -> Lang -> Rsp
 tryRedirectFile (HandlerInfo spec req file _) lang = do
-    _ <- liftIO $ (getFileInfo spec) (lang file)
+    _ <- liftIO $ getFileInfo spec (lang file)
     return $ RspSpec movedPermanently301 (BodyFileNoBody hdr)
   where
     hdr = redirectHeader req

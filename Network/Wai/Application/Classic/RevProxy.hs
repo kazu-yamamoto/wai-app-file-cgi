@@ -77,7 +77,7 @@ revProxyApp' cspec spec route req = do
     H.Response status _ hdr rdownbody <- http httpReq mgr
     let hdr' = fixHeader hdr
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    ResponseSource status hdr' <$> (toSource (lookup hContentType hdr') rdownbody)
+    ResponseSource status hdr' <$> toSource (lookup hContentType hdr') rdownbody
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
