@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, IOException, try)
 import Control.Exception.Lifted (catch)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
@@ -24,6 +24,7 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Logger.Utils
 import Prelude hiding (catch)
+import System.Environment
 import System.IO
 import System.Process
 
@@ -66,6 +67,8 @@ cgiApp' body cspec spec cgii req = do
 
 ----------------------------------------------------------------
 
+type TRYPATH = Either IOException String
+
 toCGI :: Handle -> Request -> ResourceT IO ()
 toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
@@ -98,15 +101,16 @@ fromCGI rhdl cspec req = do
 execProcess :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
 execProcess cspec spec cgii req = do
     let naddr = showSockAddr . remoteHost $ req
-    (Just whdl,Just rhdl,_,pid) <- createProcess . proSpec $ naddr
+    epath <- try (getEnv "PATH") :: IO TRYPATH
+    (Just whdl,Just rhdl,_,pid) <- createProcess $ proSpec naddr epath
     hSetEncoding rhdl latin1
     hSetEncoding whdl latin1
     return (rhdl, whdl, pid)
  where
-    proSpec naddr = CreateProcess {
+    proSpec naddr epath = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
-      , env = Just (makeEnv req naddr scriptName pathinfo (softwareName cspec))
+      , env = Just $ makeEnv req naddr scriptName pathinfo (softwareName cspec) epath
       , std_in = CreatePipe
       , std_out = CreatePipe
       , std_err = Inherit
@@ -121,8 +125,9 @@ execProcess cspec spec cgii req = do
                       (fromByteString (rawPathInfo req))
                       (indexCgi spec)
 
-makeEnv :: Request -> NumericAddress -> String -> String -> ByteString -> ENVVARS
-makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ baseEnv
+makeEnv :: Request -> NumericAddress -> String -> String -> ByteString ->
+           TRYPATH -> ENVVARS
+makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . addType . addCookie $ baseEnv
   where
     baseEnv = [
         ("GATEWAY_INTERFACE", gatewayInterface)
@@ -140,6 +145,8 @@ makeEnv req naddr scriptName pathinfo sname = addLen . addType . addCookie $ bas
     addLen    = addEnv "CONTENT_LENGTH" $ lookup hContentLength headers
     addType   = addEnv "CONTENT_TYPE"   $ lookup hContentType   headers
     addCookie = addEnv "HTTP_COOKIE"    $ lookup hCookie        headers
+    addPath (Left _)     ev = ev
+    addPath (Right path) ev = ("PATH", path) : ev
     query = BS.unpack . safeTail . rawQueryString
       where
         safeTail "" = ""
