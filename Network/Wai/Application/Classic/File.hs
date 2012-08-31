@@ -76,28 +76,29 @@ fileApp cspec spec filei req = do
     ishtml = isHTML spec file
     rfile = redirectPath spec path
     langs = langSuffixes req
+    zdater = dater cspec
     noBody st = do
-        hdr <- liftIO . addDate $ addServer cspec []
+        hdr <- liftIO . addDate zdater $ addServer cspec []
         return (responseLBS st hdr "", Nothing)
     bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) = do
-        hdr <- liftIO . addDate $ addServer cspec textPlainHeader
+        hdr <- liftIO . addDate zdater $ addServer cspec textPlainHeader
         return (responseLBS st hdr bd, Just (len bd))
       where
         len = fromIntegral . BL.length
     statusBody st (StatusFile afile len) = do
-        hdr <- liftIO . addDate $  addServer cspec textHtmlHeader
+        hdr <- liftIO . addDate zdater $ addServer cspec textHtmlHeader
         return (ResponseFile st hdr fl mfp, Just len)
       where
         mfp = Just (FilePart 0 len)
         fl = pathString afile
     bodyFileNoBody st hdr = do
-        hdr' <- liftIO . addDate $ addServer cspec hdr
+        hdr' <- liftIO . addDate zdater $ addServer cspec hdr
         return (responseLBS st hdr' "", Nothing)
     bodyFile st hdr afile rng = do
-        hdr' <- liftIO . addDate $ addLength len $ addServer cspec hdr
+        hdr' <- liftIO . addDate zdater $ addLength len $ addServer cspec hdr
         return (ResponseFile st hdr' fl mfp, Just len)
       where
         (len, mfp) = case rng of
