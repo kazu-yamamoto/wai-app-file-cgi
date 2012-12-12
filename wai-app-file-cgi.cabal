@@ -69,6 +69,31 @@ Test-Suite doctest
   Build-Depends:        base
                       , doctest >= 0.9.3
 
+Test-Suite spec
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       test
+  Ghc-Options:          -threaded -Wall
+  Main-Is:              Spec.hs
+  Other-Modules:        ClassicSpec
+  Build-Depends:        base
+                      , bytestring
+                      , conduit
+                      , date-cache
+                      , directory
+                      , fast-logger
+                      , filepath
+                      , hspec >= 1.3
+                      , http-conduit
+                      , http-date
+                      , http-types
+                      , lifted-base
+                      , unix
+                      , wai
+                      , wai-app-file-cgi
+                      , warp
+                      , wai-logger
+
 Source-Repository head
   Type:                 git
   Location:             git://github.com/kazu-yamamoto/wai-app-file-cgi

@@ -1,3 +1,0 @@
-[localhost 127.0.0.1]
-/cgi-bin/ => /Users/kazu/work/wai-app-file-cgi/test/cgi-bin/
-/         -> /Users/kazu/work/wai-app-file-cgi/test/html/
