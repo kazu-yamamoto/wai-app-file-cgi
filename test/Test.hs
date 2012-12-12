@@ -20,10 +20,6 @@ main = $(defaultMainGenerator)
 
 ----------------------------------------------------------------
 
-doc_test :: DocTests
-doc_test = docTest ["Network/Wai/Application/Classic.hs"] ["-XOverloadedStrings"]
-----------------------------------------------------------------
-
 case_post :: Assertion
 case_post = do
     Response _ _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
