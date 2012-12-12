@@ -154,7 +154,7 @@ p1 <.> p2 = fromByteString p
 
 {-|
   Breaking at the first path separator.
- 
+
 >>> breakAtSeparator "/foo/bar/baz"
 ("","/foo/bar/baz")
 >>> breakAtSeparator "foo/bar/baz"
