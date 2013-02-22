@@ -36,7 +36,7 @@ toHTTPRequest req route len = H.def {
   , H.proxy = Nothing
   , H.rawBody = False
   , H.decompress = H.alwaysDecompress
-  , H.checkStatus = \_ _ -> Nothing
+  , H.checkStatus = \_ _ _ -> Nothing
   , H.redirectCount = 0
   }
   where
@@ -74,10 +74,12 @@ revProxyApp' cspec spec route req = do
     let mlen = getLen req
         len = fromMaybe 0 mlen
         httpReq = toHTTPRequest req route len
-    H.Response status _ hdr rdownbody <- http httpReq mgr
-    let hdr' = fixHeader hdr
+    res <- http httpReq mgr
+    let status    = H.responseStatus res
+        hdr       = fixHeader $ H.responseHeaders res
+        rdownbody = H.responseBody res
     liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    ResponseSource status hdr' <$> toSource (lookup hContentType hdr') rdownbody
+    ResponseSource status hdr <$> toSource (lookup hContentType hdr) rdownbody
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p

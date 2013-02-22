@@ -2,7 +2,7 @@
 
 module ClassicSpec where
 
-import Control.Exception.Lifted
+import Control.Applicative
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Conduit
 import Network.HTTP.Conduit
@@ -15,12 +15,12 @@ spec = do
     describe "cgiApp" $ do
         it "accepts POST" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/echo-env/pathinfo?query=foo"
-            Response _ _ _ bdy <- sendPOST url "foo bar.\nbaz!\n"
+            bdy <- responseBody <$> sendPOST url "foo bar.\nbaz!\n"
             ans <- BL.readFile "test/data/post"
             bdy `shouldBe` ans
         it "causes 500 if the CGI script does not exist" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
-            Response sc _ _ _ <- sendPOST url "foo bar.\nbaz!\n"
+            sc <- responseStatus <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` H.internalServerError500
 
     describe "fileApp" $ do
@@ -32,41 +32,41 @@ spec = do
         it "returns 400 if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             req <- parseUrl url
-            Response sc _ _ _ <- safeHttpLbs req
+            sc <- responseStatus <$> safeHttpLbs req
             sc `shouldBe` H.notFound404
         it "returns Japanese HTML if language is specified" $ do
             let url = "http://127.0.0.1:2345/ja/"
-            Response _ _ _ bdy <- sendGET url [("Accept-Language", "ja, en;q=0.7")]
+            bdy <- responseBody <$> sendGET url [("Accept-Language", "ja, en;q=0.7")]
             ans <- BL.readFile "test/html/ja/index.html.ja"
             bdy `shouldBe` ans
         it "returns 304 if not changed" $ do
             let url = "http://127.0.0.1:2345/"
-            Response _ _ hdr _ <- sendGET url []
+            hdr <- responseHeaders <$> sendGET url []
             let Just lm = lookup "Last-Modified" hdr
-            Response sc _ _ _ <- sendGET url [("If-Modified-Since", lm)]
+            sc <- responseStatus <$> sendGET url [("If-Modified-Since", lm)]
             sc `shouldBe` H.notModified304
         it "can handle partial request" $ do
             let url = "http://127.0.0.1:2345/"
                 ans = "html>\n<html"
-            Response _ _ _ bdy <- sendGET url [("Range", "bytes=10-20")]
+            bdy <- responseBody <$> sendGET url [("Range", "bytes=10-20")]
             bdy `shouldBe` ans
         it "can handle HEAD" $ do
             let url = "http://127.0.0.1:2345/"
-            Response sc _ _ _ <- sendHEAD url []
+            sc <- responseStatus <$> sendHEAD url []
             sc `shouldBe` H.ok200
         it "returns 404 for HEAD if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
-            Response sc _ _ _ <- sendHEAD url []
+            sc <- responseStatus <$> sendHEAD url []
             sc `shouldBe` H.notFound404
         it "can handle HEAD even if language is specified" $ do
             let url = "http://127.0.0.1:2345/ja/"
-            Response sc _ _ _ <- sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
+            sc <- responseStatus <$> sendHEAD url [("Accept-Language", "ja, en;q=0.7")]
             sc `shouldBe` H.ok200
         it "returns 304 for HEAD if not modified" $ do
             let url = "http://127.0.0.1:2345/"
-            Response _ _ hdr _ <- sendHEAD url []
+            hdr <- responseHeaders <$> sendHEAD url []
             let Just lm = lookup "Last-Modified" hdr
-            Response sc _ _ _ <- sendHEAD url [("If-Modified-Since", lm)]
+            sc <- responseStatus <$> sendHEAD url [("If-Modified-Since", lm)]
             sc `shouldBe` H.notModified304
         it "redirects to dir/ if trailing slash is missing" $ do
             let url = "http://127.0.0.1:2345/redirect"
@@ -104,8 +104,6 @@ sendPOST url body = do
 ----------------------------------------------------------------
 
 safeHttpLbs :: Request (ResourceT IO) -> IO (Response BL.ByteString)
-safeHttpLbs req = withManager (httpLbs req) `catch` httpHandler
-
-httpHandler :: HttpException -> IO (Response BL.ByteString)
-httpHandler (StatusCodeException sc hd) = return (Response sc H.http11 hd BL.empty)
-httpHandler _                           = error "handler"
+safeHttpLbs req = withManager $ httpLbs req {
+    checkStatus = \_ _ _  -> Nothing -- prevent throwing an error
+  }
