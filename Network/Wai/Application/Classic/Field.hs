@@ -14,7 +14,6 @@ import qualified Data.StaticHash as SH
 import qualified Data.Text as T
 import Network.HTTP.Date
 import Network.HTTP.Types
-import Network.HTTP.Types.Header
 import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
 import Network.Wai
 import Network.Wai.Application.Classic.Header
