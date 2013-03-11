@@ -38,7 +38,7 @@ Library
                       , blaze-html
                       , bytestring
                       , case-insensitive
-                      , conduit >= 0.5 && < 0.6
+                      , conduit >= 0.5
                       , containers
                       , date-cache
                       , directory
