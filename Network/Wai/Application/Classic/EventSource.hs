@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Network.Wai.Application.Classic.EventSource (
-  toResponseEventSource
-) where
+    toResponseEventSource
+  ) where
 
 import Blaze.ByteString.Builder
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import Data.ByteString.Char8 ()
 import Data.Conduit
 import qualified Data.Conduit.List as CL
 
