@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Control.Applicative
 import Control.Exception (SomeException)
-import Control.Exception.Lifted (catch)
+import Control.Exception.Lifted as L (catch)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import qualified Data.ByteString as BS (uncons)
@@ -21,7 +21,6 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Blaze.ByteString.Builder (Builder)
-import Prelude hiding (catch)
 
 toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request (ResourceT IO)
 toHTTPRequest req route len = H.def {
@@ -67,7 +66,7 @@ getLen req = do
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req =
     revProxyApp' cspec spec route req
-    `catch` badGateway cspec req
+    `L.catch` badGateway cspec req
 
 revProxyApp' :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp' cspec spec route req = do

@@ -5,7 +5,7 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import Control.Exception (SomeException, IOException, try)
-import Control.Exception.Lifted (catch)
+import Control.Exception.Lifted as L (catch)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Resource
@@ -23,7 +23,6 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Logger.Utils
-import Prelude hiding (catch)
 import System.Environment
 import System.IO
 import System.Process
@@ -74,7 +73,7 @@ toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
-    (src', hs) <- cgiHeader `catch` recover
+    (src', hs) <- cgiHeader `L.catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)

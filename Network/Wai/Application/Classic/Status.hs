@@ -8,12 +8,10 @@ import Control.Exception
 import Control.Exception.IOChoice
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
-import Data.Maybe
 import qualified Data.StaticHash as M
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 

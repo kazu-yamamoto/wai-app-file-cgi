@@ -19,7 +19,6 @@ import Network.Wai.Application.Classic.FileInfo
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
-import Prelude hiding (catch)
 
 ----------------------------------------------------------------
 
