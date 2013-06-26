@@ -7,7 +7,6 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Conduit
 import Network.HTTP.Conduit
 import qualified Network.HTTP.Types as H
-import Prelude hiding (catch)
 import Test.Hspec
 
 spec :: Spec
