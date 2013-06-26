@@ -1,13 +1,17 @@
+{-# LANGUAGE CPP #-}
+
 module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
-import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Logger
 import System.Log.FastLogger
+#ifdef REV_PROXY
+import qualified Network.HTTP.Conduit as H
+#endif
 
 ----------------------------------------------------------------
 
@@ -81,6 +85,7 @@ data CgiRoute = CgiRoute {
 
 ----------------------------------------------------------------
 
+#ifdef REV_PROXY
 data RevProxyAppSpec = RevProxyAppSpec {
     -- | Connection manager
     revProxyManager :: H.Manager
@@ -96,6 +101,7 @@ data RevProxyRoute = RevProxyRoute {
     -- | Destination port number.
   , revProxyPort :: Int
   } deriving (Eq,Show)
+#endif
 
 ----------------------------------------------------------------
 

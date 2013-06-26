@@ -8,7 +8,7 @@ SERVER_SOFTWARE: ClassicTester
 PATH_INFO: /pathinfo
 QUERY_STRING: query=foo
 CONTENT_LENGTH: 14
-CONTENT_TYPE: 
+CONTENT_TYPE: Text/Plain
 HTTP_COOKIE: 
 
 foo bar.
