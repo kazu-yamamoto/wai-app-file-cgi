@@ -22,6 +22,9 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Blaze.ByteString.Builder (Builder)
 
+revProxyApp = undefined
+
+{-
 toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request (ResourceT IO)
 toHTTPRequest req route len = H.def {
     H.host = revProxyDomain route
@@ -106,3 +109,4 @@ badGateway cspec req _ = do
     hdr = addServer cspec textPlainHeader
     bdy = byteStringToBuilder "Bad Gateway\r\n"
     st = badGateway502
+-}

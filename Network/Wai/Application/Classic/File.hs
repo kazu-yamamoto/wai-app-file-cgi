@@ -11,7 +11,6 @@ import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (pack, concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
-import Data.Conduit
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
@@ -22,7 +21,7 @@ import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 
-type Rsp = ResourceT IO RspSpec
+type Rsp = IO RspSpec
 
 ----------------------------------------------------------------
 
