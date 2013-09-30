@@ -51,7 +51,6 @@ Library
                       , containers
                       , date-cache
                       , directory
-                      , fast-logger >= 0.3
                       , filepath
                       , http-date
                       , http-types >= 0.7

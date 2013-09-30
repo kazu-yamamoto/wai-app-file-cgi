@@ -4,11 +4,11 @@ module Network.Wai.Application.Classic.Def where
 
 import Control.Applicative
 import Control.Exception
+import Data.ByteString (ByteString)
 import Network.HTTP.Date
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Logger
-import System.Log.FastLogger.Date
 import System.Posix
 
 -- |
@@ -24,7 +24,7 @@ defaultClassicAppSpec = ClassicAppSpec {
 defaultLogger :: ApacheLogger
 defaultLogger _ _ _ = return ()
 
-defaultDater :: IO ZonedDate
+defaultDater :: IO ByteString
 defaultDater = formatHTTPDate . epochTimeToHTTPDate <$> epochTime
 
 ----------------------------------------------------------------

@@ -8,7 +8,6 @@ import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Logger
-import System.Log.FastLogger
 #ifdef REV_PROXY
 import qualified Network.HTTP.Conduit as H
 #endif
@@ -20,8 +19,9 @@ data ClassicAppSpec = ClassicAppSpec {
     softwareName :: ByteString
     -- | A function for logging. The third argument is a body size.
   , logger :: ApacheLogger
+    -- | A function to get HTTP's GMT Date.
+  , dater :: IO ByteString
     -- | A function to get the HTTP body of status.
-  , dater :: IO ZonedDate
   , statusFileDir :: Path
   }
 
