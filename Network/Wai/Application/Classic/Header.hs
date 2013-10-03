@@ -25,6 +25,10 @@ hXForwardedFor = "x-forwarded-for"
 hVia :: HeaderName
 hVia = "via"
 
+-- | Look-up key for Host.
+hHost :: HeaderName
+hHost = "host"
+
 ----------------------------------------------------------------
 
 {-|
