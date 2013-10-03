@@ -64,11 +64,12 @@ addVia cspec req hdr = (hVia, val) : hdr
       , "."
       , showBS (httpMinor ver)
       , " "
-      , serverName req
+      , host
       , " ("
       , softwareName cspec
       , ")"
       ]
+    host = lookupRequestField' hHost req
 
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
 addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
