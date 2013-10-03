@@ -9,12 +9,14 @@ import Control.Applicative
 import Control.Exception.IOChoice.Lifted
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (pack, concat)
+import qualified Data.ByteString.Char8 as BS (concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
 import Network.Wai
+import Network.Wai.Internal
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
@@ -182,12 +184,13 @@ redirectHeader = locationHeader . redirectURL
 redirectURL :: Request -> ByteString
 redirectURL req = BS.concat [
     "http://"
-  , serverName req
-  , ":"
-  , (BS.pack . show . serverPort) req
+  -- Host includes ":<port>" if it is not 80.
+  , host
   , rawPathInfo req
   , "/"
   ]
+  where
+    host = lookupRequestField' hHost req
 
 ----------------------------------------------------------------
 
