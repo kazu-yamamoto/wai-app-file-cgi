@@ -4,10 +4,8 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Control.Exception (SomeException, IOException, try)
-import Control.Exception.Lifted as L (catch)
+import Control.Exception (SomeException, IOException, try, catch)
 import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Resource
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (unpack)
@@ -27,9 +25,6 @@ import System.Environment
 import System.IO
 import System.Process
 
-cgiApp = undefined
-
-{-
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
@@ -56,34 +51,37 @@ cgiApp cspec spec cgii req = case method of
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp' body cspec spec cgii req = do
-    (rhdl,whdl,tellEOF) <- liftIO (execProcess cspec spec cgii req) >>= register3
+    (rhdl,whdl,tellEOF) <- execProcess cspec spec cgii req >>= register3
     when body $ toCGI whdl req
     tellEOF
     fromCGI rhdl cspec req
   where
+    register3 = undefined
+{-
     register3 (rhdl,whdl,pid) = do
         _ <- register $ terminateProcess pid -- SIGTERM
         _ <- register $ hClose rhdl
         keyw <- register $ hClose whdl
         return (rhdl,whdl,release keyw)
+-}
 
 ----------------------------------------------------------------
 
 type TRYPATH = Either IOException String
 
-toCGI :: Handle -> Request -> ResourceT IO ()
+toCGI :: Handle -> Request -> IO ()
 toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Application
 fromCGI rhdl cspec req = do
-    (src', hs) <- cgiHeader `L.catch` recover
+    (src', hs) <- cgiHeader `catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
-    liftIO $ logger cspec req st Nothing
+    logger cspec req st Nothing
     let src = if hasBody then src' else CL.sourceNull
-    return $ ResponseSource st hdr' src
+    return $ responseSource st hdr' src
   where
     check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
@@ -135,8 +133,8 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
         ("GATEWAY_INTERFACE", gatewayInterface)
       , ("SCRIPT_NAME",       scriptName)
       , ("REQUEST_METHOD",    BS.unpack . requestMethod $ req)
-      , ("SERVER_NAME",       BS.unpack . serverName $ req)
-      , ("SERVER_PORT",       show . serverPort $ req)
+      , ("SERVER_NAME",       undefined) -- BS.unpack . serverName $ req)
+      , ("SERVER_PORT",       undefined) -- show . serverPort $ req)
       , ("REMOTE_ADDR",       naddr)
       , ("SERVER_PROTOCOL",   show . httpVersion $ req)
       , ("SERVER_SOFTWARE",   BS.unpack sname)
@@ -179,4 +177,3 @@ pathinfoToCGI src dst path index = (prog, scriptName, pathinfo)
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'
--}

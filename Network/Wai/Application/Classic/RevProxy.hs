@@ -2,16 +2,15 @@
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
+import Blaze.ByteString.Builder (Builder)
 import Control.Applicative
-import Control.Exception (SomeException)
-import Control.Exception.Lifted as L (catch)
-import Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as BS hiding (uncons)
+import Control.Exception (SomeException, catch)
 import qualified Data.ByteString as BS (uncons)
+import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
 import qualified Data.Conduit.List as CL
-import Data.Int
 import Data.Maybe
+import Data.Word
 import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Types
 import Network.Wai
@@ -20,12 +19,8 @@ import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Blaze.ByteString.Builder (Builder)
 
-revProxyApp = undefined
-
-{-
-toHTTPRequest :: Request -> RevProxyRoute -> Int64 -> H.Request (ResourceT IO)
+toHTTPRequest :: Request -> RevProxyRoute -> Word64 -> H.Request IO
 toHTTPRequest req route len = H.def {
     H.host = revProxyDomain route
   , H.port = revProxyPort route
@@ -50,12 +45,12 @@ toHTTPRequest req route len = H.def {
         Just (63, q') -> q' -- '?' is 63
         _             -> q
 
-getBody :: Request -> Int64 -> H.RequestBody (ResourceT IO)
-getBody req len = H.RequestBodySource len (toBodySource req)
+getBody :: Request -> Word64 -> H.RequestBody IO
+getBody req len = H.RequestBodySource (fromIntegral len) (toBodySource req)
   where
     toBodySource r = requestBody r $= CL.map byteStringToBuilder
 
-getLen :: Request -> Maybe Int64
+getLen :: Request -> Maybe Word64
 getLen req = do
     len' <- lookup hContentLength $ requestHeaders req
     case reads $ BS.unpack len' of
@@ -69,7 +64,7 @@ getLen req = do
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req =
     revProxyApp' cspec spec route req
-    `L.catch` badGateway cspec req
+    `catch` badGateway cspec req
 
 revProxyApp' :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp' cspec spec route req = do
@@ -80,8 +75,8 @@ revProxyApp' cspec spec route req = do
     let status    = H.responseStatus res
         hdr       = fixHeader $ H.responseHeaders res
         rdownbody = H.responseBody res
-    liftIO $ logger cspec req status (fromIntegral <$> mlen)
-    ResponseSource status hdr <$> toSource (lookup hContentType hdr) rdownbody
+    logger cspec req status (fromIntegral <$> mlen)
+    responseSource status hdr <$> toSource (lookup hContentType hdr) rdownbody
   where
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filter p
@@ -91,22 +86,22 @@ revProxyApp' cspec spec route req = do
       | otherwise              = True
 
 toSource :: Maybe BS.ByteString
-         -> ResumableSource (ResourceT IO) BS.ByteString
-         -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
+         -> ResumableSource IO BS.ByteString
+         -> IO (Source IO (Flush Builder))
 toSource (Just "text/event-stream") = toResponseEventSource
 toSource _                          = toResponseSource
 
-type Resp = ResourceT IO (H.Response (ResumableSource (ResourceT IO) BS.ByteString))
+type Resp = IO (H.Response (ResumableSource IO BS.ByteString))
 
-http :: H.Request (ResourceT IO) -> H.Manager -> Resp
-http req mgr = H.http req mgr
+http :: H.Request IO -> H.Manager -> Resp
+-- http req mgr = H.http req mgr
+http = undefined
 
-badGateway :: ClassicAppSpec -> Request-> SomeException -> ResourceT IO Response
+badGateway :: ClassicAppSpec -> Request-> SomeException -> IO Response
 badGateway cspec req _ = do
-    liftIO $ logger cspec req st Nothing -- FIXME body length
-    return $ ResponseBuilder st hdr bdy
+    logger cspec req st Nothing -- FIXME body length
+    return $ responseBuilder st hdr bdy
   where
     hdr = addServer cspec textPlainHeader
     bdy = byteStringToBuilder "Bad Gateway\r\n"
     st = badGateway502
--}

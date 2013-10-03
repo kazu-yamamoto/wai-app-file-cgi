@@ -25,15 +25,15 @@ byteStringToBuilder = BB.fromByteString
 
 ----------------------------------------------------------------
 
-toResponseSource :: ResumableSource (ResourceT IO) ByteString
-                 -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
+toResponseSource :: ResumableSource IO ByteString
+                 -> IO (Source IO (Flush Builder))
 toResponseSource rsrc = do
     (src,_) <- unwrapResumable rsrc
     return $ src $= CL.map (Chunk . byteStringToBuilder)
 
 ----------------------------------------------------------------
 
-parseHeader :: Sink ByteString (ResourceT IO) RequestHeaders
+parseHeader :: Sink ByteString IO RequestHeaders
 parseHeader = sinkParser parseHeader'
 
 parseHeader' :: Parser RequestHeaders

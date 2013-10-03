@@ -44,7 +44,7 @@ splitDoubleLineBreak str = go str 0
                                     in xs:go ys 0
             | otherwise = [bs]
 
-eventSourceConduit :: Conduit ByteString (ResourceT IO) (Flush Builder)
+eventSourceConduit :: Conduit ByteString IO (Flush Builder)
 eventSourceConduit = CL.concatMapAccum f ""
   where
     f input rest = (last xs, concatMap addFlush $ init xs)
@@ -53,8 +53,8 @@ eventSourceConduit = CL.concatMapAccum f ""
         xs = splitDoubleLineBreak (rest `BS.append` input)
 
 -- insert Flush if exists a double line-break
-toResponseEventSource :: ResumableSource (ResourceT IO) ByteString
-                      -> (ResourceT IO) (Source (ResourceT IO) (Flush Builder))
+toResponseEventSource :: ResumableSource IO ByteString
+                      -> IO (Source IO (Flush Builder))
 toResponseEventSource rsrc = do
     (src,_) <- unwrapResumable rsrc
     return $ src $= eventSourceConduit
