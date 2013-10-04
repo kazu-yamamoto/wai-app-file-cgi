@@ -55,14 +55,12 @@ cgiApp' body cspec spec cgii req = do
     tellEOF
     fromCGI rhdl cspec req
   where
-    register3 = undefined
-{-
     register3 (rhdl,whdl,pid) = do
-        _ <- register $ terminateProcess pid -- SIGTERM
-        _ <- register $ hClose rhdl
-        keyw <- register $ hClose whdl
+        keyw <- flip runInternalState (resourceInternalState req) $ do
+            _ <- register $ terminateProcess pid -- SIGTERM
+            _ <- register $ hClose rhdl
+            register $ hClose whdl
         return (rhdl,whdl,release keyw)
--}
 
 ----------------------------------------------------------------
 
