@@ -8,7 +8,7 @@ import Control.Exception (SomeException, IOException, try, catch)
 import Control.Monad (when)
 import Control.Monad.Trans.Resource
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (readInt, unpack, break, tail)
+import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
@@ -130,8 +130,8 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
         ("GATEWAY_INTERFACE", gatewayInterface)
       , ("SCRIPT_NAME",       scriptName)
       , ("REQUEST_METHOD",    BS.unpack . requestMethod $ req)
-      , ("SERVER_NAME",       host)
-      , ("SERVER_PORT",       port)
+      , ("SERVER_NAME",       BS.unpack host)
+      , ("SERVER_PORT",       BS.unpack port)
       , ("REMOTE_ADDR",       naddr)
       , ("SERVER_PROTOCOL",   show . httpVersion $ req)
       , ("SERVER_SOFTWARE",   BS.unpack sname)
@@ -149,13 +149,6 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
         safeTail "" = ""
         safeTail bs = BS.tail bs
     (host, port) = hostPort headers
-
-hostPort :: RequestHeaders -> (String, String)
-hostPort hdrs = case lookup hHost hdrs of
-    Nothing -> ("Unknown","80")
-    Just hostport -> case BS.break (== ':') hostport of
-        (host,"")   -> (BS.unpack host,"80")
-        (host,port) -> (BS.unpack host, BS.unpack (BS.tail port))
 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs

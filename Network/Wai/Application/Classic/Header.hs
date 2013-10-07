@@ -3,6 +3,7 @@
 module Network.Wai.Application.Classic.Header where
 
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as BS (tail,break)
 import Data.Maybe
 import Network.HTTP.Types.Header
 import Network.Wai
@@ -47,3 +48,12 @@ lookupRequestField' :: HeaderName -> Request -> ByteString
 lookupRequestField' x req = fromMaybe "" $ lookup x hdrs
   where
     hdrs = requestHeaders req
+
+----------------------------------------------------------------
+
+hostPort :: RequestHeaders -> (ByteString, ByteString)
+hostPort hdrs = case lookup hHost hdrs of
+    Nothing -> ("Unknown","80")
+    Just hostport -> case BS.break (== ':') hostport of
+        (host,"")   -> (host,"80")
+        (host,port) -> (host, BS.tail port)
