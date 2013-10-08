@@ -6,8 +6,8 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import Network.HTTP.Date
 import Network.HTTP.Types
+import Network.Wai
 import Network.Wai.Application.Classic.Path
-import Network.Wai.Logger
 #ifdef REV_PROXY
 import qualified Network.HTTP.Conduit as H
 #endif
@@ -18,7 +18,7 @@ data ClassicAppSpec = ClassicAppSpec {
     -- | Name specified to Server: in HTTP response.
     softwareName :: ByteString
     -- | A function for logging. The third argument is a body size.
-  , logger :: ApacheLogger
+  , logger :: Request -> Status -> Maybe Integer -> IO ()
     -- | A function to get HTTP's GMT Date.
   , dater :: IO ByteString
     -- | A function to get the HTTP body of status.

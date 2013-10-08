@@ -60,12 +60,12 @@ Library
                       , network
                       , process
                       , resourcet
+                      , sockaddr
                       , static-hash
                       , text
                       , transformers
                       , unix
                       , wai >= 1.2
-                      , wai-logger
                       , word8
   if flag(rev-proxy)
     Build-Depends:      http-conduit >= 1.9

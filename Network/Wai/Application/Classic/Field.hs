@@ -15,11 +15,11 @@ import qualified Data.Text as T
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
+import Network.SockAddr
 import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Logger.Utils
 import System.Date.Cache
 
 ----------------------------------------------------------------

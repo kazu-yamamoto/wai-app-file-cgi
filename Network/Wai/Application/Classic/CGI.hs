@@ -13,13 +13,13 @@ import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
+import Network.SockAddr
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Logger.Utils
 import System.Environment
 import System.IO
 import System.Process
@@ -122,7 +122,7 @@ execProcess cspec spec cgii req = do
                       (fromByteString (rawPathInfo req))
                       (indexCgi spec)
 
-makeEnv :: Request -> NumericAddress -> String -> String -> ByteString ->
+makeEnv :: Request -> String -> String -> String -> ByteString ->
            TRYPATH -> ENVVARS
 makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . addType . addCookie $ baseEnv
   where

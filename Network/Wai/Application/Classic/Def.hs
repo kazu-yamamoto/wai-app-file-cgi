@@ -6,9 +6,10 @@ import Control.Applicative
 import Control.Exception
 import Data.ByteString (ByteString)
 import Network.HTTP.Date
+import Network.HTTP.Types
+import Network.Wai
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
-import Network.Wai.Logger
 import System.Posix
 
 -- |
@@ -21,7 +22,7 @@ defaultClassicAppSpec = ClassicAppSpec {
   , statusFileDir = "/usr/local/share/html/status/"
   }
 
-defaultLogger :: ApacheLogger
+defaultLogger :: Request -> Status -> Maybe Integer -> IO ()
 defaultLogger _ _ _ = return ()
 
 defaultDater :: IO ByteString
