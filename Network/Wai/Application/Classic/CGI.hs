@@ -24,6 +24,10 @@ import System.Environment
 import System.IO
 import System.Process
 
+cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
+cgiApp = undefined
+
+{-
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
@@ -175,3 +179,4 @@ pathinfoToCGI src dst path index = (prog, scriptName, pathinfo)
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'
+-}
