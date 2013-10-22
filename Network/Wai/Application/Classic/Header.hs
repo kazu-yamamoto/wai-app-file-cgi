@@ -25,6 +25,10 @@ hXForwardedFor = "x-forwarded-for"
 hVia :: HeaderName
 hVia = "via"
 
+-- | Look-up key for Content-Range.
+hContentRange :: HeaderName
+hContentRange = "content-range"
+
 ----------------------------------------------------------------
 
 {-|
