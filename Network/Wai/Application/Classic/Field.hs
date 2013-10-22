@@ -58,7 +58,6 @@ addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
 addVia cspec req hdr = (hVia, val) : hdr
   where
     ver = httpVersion req
-    showBS = BS.pack . show
     val = BS.concat [
         showBS (httpMajor ver)
       , "."
@@ -107,3 +106,18 @@ addDate :: DateCacheGetter -> ResponseHeaders -> IO ResponseHeaders
 addDate zdater hdr = do
     date <- zdater
     return $ (hDate,date) : hdr
+
+addContentRange :: Integer -> Integer -> Integer -> ResponseHeaders -> ResponseHeaders
+addContentRange off len size hdr = (hContentRange, val) : hdr
+  where
+    val = BS.concat [
+        "bytes "
+      , showBS off
+      , "-"
+      , showBS (off + len - 1)
+      , "/"
+      , showBS size
+      ]
+
+showBS :: Show a => a -> ByteString
+showBS = BS.pack . show

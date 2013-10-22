@@ -135,7 +135,7 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
         Full st
           | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
           | otherwise    -> return $ RspSpec st (BodyFileNoBody hdr)
-        Partial skip len -> return $ RspSpec partialContent206 (BodyFile hdr sfile (Part skip len))
+        Partial skip len -> return $ RspSpec partialContent206 (BodyFile (addContentRange skip len size hdr) sfile (Part skip len))
 
 ----------------------------------------------------------------
 

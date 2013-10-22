@@ -33,8 +33,8 @@ ifrange req size mtime = do
     date <- ifRange req
     rng  <- lookupRequestField hRange req
     if date == mtime
-       then Just (Full ok200)
-       else range size rng
+       then range size rng
+       else Just (Full ok200)
 
 unconditional :: Request -> Integer -> HTTPDate -> Maybe StatusAux
 unconditional req size _ =
