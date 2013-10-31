@@ -57,9 +57,8 @@ getLen req = do
         [] -> Nothing
         (i, _):_ -> Just i
 
-{-|
-  Relaying any requests as reverse proxy.
--}
+
+-- |  Relaying any requests as reverse proxy.
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req =
