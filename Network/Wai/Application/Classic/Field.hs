@@ -75,9 +75,6 @@ addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
   where
     addr = BS.pack . showSockAddr . remoteHost $ req
 
-addLength :: Integer -> ResponseHeaders -> ResponseHeaders
-addLength len hdr = (hContentLength, BS.pack (show len)) : hdr
-
 newHeader :: Bool -> ByteString -> ByteString -> ResponseHeaders
 newHeader ishtml file date
   | ishtml    = lastMod : textHtmlHeader

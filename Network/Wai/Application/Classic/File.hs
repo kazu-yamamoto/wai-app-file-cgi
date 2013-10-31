@@ -98,7 +98,7 @@ fileApp cspec spec filei req = do
         hdr' <- liftIO . addDate zdater $ addServer cspec hdr
         return (responseLBS st hdr' "", Nothing)
     bodyFile st hdr afile rng = do
-        hdr' <- liftIO . addDate zdater $ addLength len $ addServer cspec hdr
+        hdr' <- liftIO . addDate zdater $ addServer cspec hdr
         return (ResponseFile st hdr' fl mfp, Just len)
       where
         (len, mfp) = case rng of
