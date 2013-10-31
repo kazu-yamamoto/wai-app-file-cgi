@@ -24,10 +24,6 @@ import System.Environment
 import System.IO
 import System.Process
 
-cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp = undefined
-
-{-
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
@@ -59,12 +55,15 @@ cgiApp' body cspec spec cgii req = do
     tellEOF
     fromCGI rhdl cspec req
   where
+    register3 = undefined
+{- FIXME
     register3 (rhdl,whdl,pid) = do
-        keyw <- flip runInternalState (resourceInternalState req) $ do
+        keyw <- withInternalState $ \istate -> flip runInternalState istate $ do
             _ <- register $ terminateProcess pid -- SIGTERM
             _ <- register $ hClose rhdl
             register $ hClose whdl
         return (rhdl,whdl,release keyw)
+-}
 
 ----------------------------------------------------------------
 
@@ -179,4 +178,3 @@ pathinfoToCGI src dst path index = (prog, scriptName, pathinfo)
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'
--}
