@@ -123,7 +123,9 @@ data Range =
     -- | Entire file showing its file size
     Entire Integer
     -- | A part of a file taking offset and length
-  | Part Integer Integer
+  | Part Integer -- offset
+         Integer -- length
+         Integer -- total
   deriving (Eq,Show)
 
 ----------------------------------------------------------------

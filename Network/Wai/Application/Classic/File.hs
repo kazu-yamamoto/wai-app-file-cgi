@@ -92,7 +92,7 @@ fileApp cspec spec filei req = do
         hdr <- liftIO . addDate zdater $ addServer cspec textHtmlHeader
         return (ResponseFile st hdr fl mfp, Just len)
       where
-        mfp = Just (FilePart 0 len)
+        mfp = Just (FilePart 0 len len)
         fl = pathString afile
     bodyFileNoBody st hdr = do
         hdr' <- liftIO . addDate zdater $ addServer cspec hdr
@@ -103,8 +103,8 @@ fileApp cspec spec filei req = do
       where
         (len, mfp) = case rng of
             -- sendfile of Linux does not support the entire file
-            Entire bytes    -> (bytes, Just (FilePart 0 bytes))
-            Part skip bytes -> (bytes, Just (FilePart skip bytes))
+            Entire bytes          -> (bytes, Just (FilePart 0 bytes bytes))
+            Part skip bytes total -> (bytes, Just (FilePart skip bytes total))
         fl = pathString afile
 
 ----------------------------------------------------------------
@@ -135,7 +135,7 @@ tryGetFile (HandlerInfo spec req file _) ishtml lang = do
         Full st
           | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
           | otherwise    -> return $ RspSpec st (BodyFileNoBody hdr)
-        Partial skip len -> return $ RspSpec partialContent206 (BodyFile (addContentRange skip len size hdr) sfile (Part skip len))
+        Partial skip len -> return $ RspSpec partialContent206 (BodyFile (addContentRange skip len size hdr) sfile (Part skip len size))
 
 ----------------------------------------------------------------
 
