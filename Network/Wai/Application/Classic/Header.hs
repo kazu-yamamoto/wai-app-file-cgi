@@ -30,10 +30,6 @@ hVia = "via"
 hHost :: HeaderName
 hHost = "host"
 
--- | Look-up key for Content-Range.
-hContentRange :: HeaderName
-hContentRange = "content-range"
-
 ----------------------------------------------------------------
 
 {-|

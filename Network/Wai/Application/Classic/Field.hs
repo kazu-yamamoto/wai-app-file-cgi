@@ -107,17 +107,5 @@ addDate zdater hdr = do
     date <- zdater
     return $ (hDate,date) : hdr
 
-addContentRange :: Integer -> Integer -> Integer -> ResponseHeaders -> ResponseHeaders
-addContentRange off len size hdr = (hContentRange, val) : hdr
-  where
-    val = BS.concat [
-        "bytes "
-      , showBS off
-      , "-"
-      , showBS (off + len - 1)
-      , "/"
-      , showBS size
-      ]
-
 showBS :: Show a => a -> ByteString
 showBS = BS.pack . show
