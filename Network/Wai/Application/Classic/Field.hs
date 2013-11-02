@@ -10,6 +10,7 @@ import Data.ByteString.Char8 as BS (pack)
 import qualified Data.Map as Map (toList)
 import Data.Maybe
 import Data.StaticHash (StaticHash)
+import Data.List (delete)
 import qualified Data.StaticHash as SH
 import qualified Data.Text as T
 import Network.HTTP.Date
@@ -69,6 +70,9 @@ addVia cspec req hdr = (hVia, val) : hdr
       , ")"
       ]
     host = lookupRequestField' hHost req
+
+deleteTransferEncoding :: ResponseHeaders -> ResponseHeaders
+deleteTransferEncoding hdr = delete ("Transfer-Encoding", "chunked") hdr
 
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
 addForwardedFor req hdr = (hXForwardedFor, addr) : hdr

@@ -78,7 +78,7 @@ revProxyApp' cspec spec route req = do
     responseSource status hdr <$> toSource (lookup hContentType hdr) rdownbody
   where
     mgr = revProxyManager spec
-    fixHeader = addVia cspec req . filter p
+    fixHeader = deleteTransferEncoding . addVia cspec req . filter p
     p (k,_)
       | k == hContentEncoding = False
       | k == hContentLength   = False
