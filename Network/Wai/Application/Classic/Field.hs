@@ -69,7 +69,7 @@ addVia cspec req hdr = (hVia, val) : hdr
       , softwareName cspec
       , ")"
       ]
-    host = lookupRequestField' hHost req
+    host = fromMaybe "" $ requestHeaderHost req
 
 deleteTransferEncoding :: ResponseHeaders -> ResponseHeaders
 deleteTransferEncoding hdr = delete ("Transfer-Encoding", "chunked") hdr

@@ -26,10 +26,6 @@ hXForwardedFor = "x-forwarded-for"
 hVia :: HeaderName
 hVia = "via"
 
--- | Look-up key for Host.
-hHost :: HeaderName
-hHost = "host"
-
 ----------------------------------------------------------------
 
 {-|
@@ -51,8 +47,8 @@ lookupRequestField' x req = fromMaybe "" $ lookup x hdrs
 
 ----------------------------------------------------------------
 
-hostPort :: RequestHeaders -> (ByteString, ByteString)
-hostPort hdrs = case lookup hHost hdrs of
+hostPort :: Request -> (ByteString, ByteString)
+hostPort req = case requestHeaderHost req of
     Nothing -> ("Unknown","80")
     Just hostport -> case BS.break (== ':') hostport of
         (host,"")   -> (host,"80")

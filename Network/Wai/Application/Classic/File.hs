@@ -9,6 +9,7 @@ import Control.Applicative
 import Control.Exception.IOChoice.Lifted
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
+import Data.Maybe
 import qualified Data.ByteString.Char8 as BS (concat)
 import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
@@ -16,7 +17,6 @@ import Network.Wai
 import Network.Wai.Internal
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
-import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
@@ -190,7 +190,7 @@ redirectURL req = BS.concat [
   , "/"
   ]
   where
-    host = lookupRequestField' hHost req
+    host = fromMaybe "" $ requestHeaderHost req
 
 ----------------------------------------------------------------
 

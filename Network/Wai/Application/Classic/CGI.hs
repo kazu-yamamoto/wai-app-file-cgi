@@ -151,7 +151,7 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
       where
         safeTail "" = ""
         safeTail bs = BS.tail bs
-    (host, port) = hostPort headers
+    (host, port) = hostPort req
 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
