@@ -76,30 +76,25 @@ fileApp cspec spec filei req = do
     ishtml = isHTML spec file
     rfile = redirectPath spec path
     langs = langSuffixes req
-    zdater = dater cspec
-    noBody st = do
-        hdr <- liftIO . addDate zdater $ addServer cspec []
-        return (responseLBS st hdr "", Nothing)
+    noBody st = return (responseLBS st (addServer cspec []) "", Nothing)
     bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) = do
-        hdr <- liftIO . addDate zdater $ addServer cspec textPlainHeader
         return (responseLBS st hdr bd, Just (len bd))
       where
         len = fromIntegral . BL.length
-    statusBody st (StatusFile afile len) = do
-        hdr <- liftIO . addDate zdater $ addServer cspec textHtmlHeader
+        hdr = addServer cspec textPlainHeader
+    statusBody st (StatusFile afile len) =
         return (ResponseFile st hdr fl mfp, Just len)
       where
         mfp = Just (FilePart 0 len len)
         fl = pathString afile
-    bodyFileNoBody st hdr = do
-        hdr' <- liftIO . addDate zdater $ addServer cspec hdr
-        return (responseLBS st hdr' "", Nothing)
-    bodyFile st hdr afile rng = do
-        hdr' <- liftIO . addDate zdater $ addServer cspec hdr
-        return (ResponseFile st hdr' fl mfp, Just len)
+        hdr = addServer cspec textHtmlHeader
+    bodyFileNoBody st hdr =
+        return (responseLBS st (addServer cspec hdr) "", Nothing)
+    bodyFile st hdr afile rng =
+        return (ResponseFile st (addServer cspec hdr) fl mfp, Just len)
       where
         (len, mfp) = case rng of
             -- sendfile of Linux does not support the entire file

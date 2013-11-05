@@ -2,9 +2,7 @@
 
 module Network.Wai.Application.Classic.Def where
 
-import Control.Applicative
 import Control.Exception
-import Data.ByteString (ByteString)
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
@@ -18,15 +16,11 @@ defaultClassicAppSpec :: ClassicAppSpec
 defaultClassicAppSpec = ClassicAppSpec {
     softwareName = "Classic"
   , logger = defaultLogger
-  , dater = defaultDater
   , statusFileDir = "/usr/local/share/html/status/"
   }
 
 defaultLogger :: Request -> Status -> Maybe Integer -> IO ()
 defaultLogger _ _ _ = return ()
-
-defaultDater :: IO ByteString
-defaultDater = formatHTTPDate . epochTimeToHTTPDate <$> epochTime
 
 ----------------------------------------------------------------
 

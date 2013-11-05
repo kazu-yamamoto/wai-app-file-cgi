@@ -20,8 +20,6 @@ data ClassicAppSpec = ClassicAppSpec {
     -- | A function for logging. The third argument is a body size.
   , logger :: Request -> Status -> Maybe Integer -> IO ()
     -- | A function to get HTTP's GMT Date.
-  , dater :: IO ByteString
-    -- | A function to get the HTTP body of status.
   , statusFileDir :: Path
   }
 

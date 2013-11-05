@@ -21,7 +21,6 @@ import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
-import System.Date.Cache
 
 ----------------------------------------------------------------
 
@@ -102,11 +101,6 @@ extensions file = exts
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
 defaultMimeTypes' = SH.fromList $ map (first (BS.pack . T.unpack)) $ Map.toList defaultMimeMap
-
-addDate :: DateCacheGetter -> ResponseHeaders -> IO ResponseHeaders
-addDate zdater hdr = do
-    date <- zdater
-    return $ (hDate,date) : hdr
 
 showBS :: Show a => a -> ByteString
 showBS = BS.pack . show
