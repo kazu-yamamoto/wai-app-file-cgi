@@ -80,7 +80,7 @@ fileApp cspec spec filei req = do
     bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
-    statusBody st (StatusByteString bd) = do
+    statusBody st (StatusByteString bd) =
         return (responseLBS st hdr bd, Just (len bd))
       where
         len = fromIntegral . BL.length
