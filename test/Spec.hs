@@ -12,9 +12,11 @@ import Network.Wai.Handler.Warp
 import System.Directory
 import System.FilePath
 import Test.Hspec
+import System.Posix
 
 main :: IO ()
 main = do
+    void $ installHandler sigCHLD Ignore Nothing
     void $ forkIO testServer
     threadDelay 100000
     hspec spec
