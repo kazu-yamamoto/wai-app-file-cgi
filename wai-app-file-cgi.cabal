@@ -59,7 +59,6 @@ Library
                       , mime-types
                       , network
                       , process
-                      , resourcet
                       , sockaddr
                       , static-hash
                       , text
