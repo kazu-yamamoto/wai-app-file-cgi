@@ -51,12 +51,9 @@ getBody req len = H.RequestBodySource (fromIntegral len) (toBodySource req)
     toBodySource r = requestBody r $= CL.map byteStringToBuilder
 
 getLen :: Request -> Maybe Word64
-getLen req = do
-    len' <- lookup hContentLength $ requestHeaders req
-    case reads $ BS.unpack len' of
-        [] -> Nothing
-        (i, _):_ -> Just i
-
+getLen req = case requestBodyLength req of
+    ChunkedBody     -> Nothing
+    KnownLength len -> Just len
 
 -- |  Relaying any requests as reverse proxy.
 
