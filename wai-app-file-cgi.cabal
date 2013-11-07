@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                0.8.7
+Version:                1.0.0
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -64,7 +64,7 @@ Library
                       , text
                       , transformers
                       , unix
-                      , wai >= 1.2
+                      , wai >= 2.0
                       , word8
   if flag(rev-proxy)
     Build-Depends:      http-conduit >= 1.9
@@ -93,9 +93,9 @@ Test-Suite spec
                       , hspec >= 1.3
                       , http-types
                       , unix
-                      , wai
+                      , wai >= 2.0
                       , wai-app-file-cgi
-                      , warp
+                      , warp >= 2.0
                       , HTTP
 
 Source-Repository head
