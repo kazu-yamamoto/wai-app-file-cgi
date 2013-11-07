@@ -139,7 +139,7 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
       , ("QUERY_STRING",      query req)
       ]
     headers = requestHeaders req
-    addLen    = addEnv "CONTENT_LENGTH" $ lookup hContentLength headers
+    addLen    = addLength "CONTENT_LENGTH" $ requestBodyLength req
     addType   = addEnv "CONTENT_TYPE"   $ lookup hContentType   headers
     addCookie = addEnv "HTTP_COOKIE"    $ lookup hCookie        headers
     addPath (Left _)     ev = ev
@@ -153,6 +153,10 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
+
+addLength :: String -> RequestBodyLength -> ENVVARS -> ENVVARS
+addLength _   ChunkedBody       envs = envs
+addLength key (KnownLength len) envs = (key, show len) : envs
 
 {-|
 
