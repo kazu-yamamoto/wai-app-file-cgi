@@ -17,6 +17,7 @@ import Network.Wai
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
@@ -75,10 +76,10 @@ revProxyApp' cspec spec route req = do
     responseSource status hdr <$> toSource (lookup hContentType hdr) rdownbody
   where
     mgr = revProxyManager spec
-    fixHeader = deleteTransferEncoding . addVia cspec req . filter p
+    fixHeader = addVia cspec req . filter p
     p (k,_)
-      | k == hContentEncoding = False
-      | k == hContentLength   = False
+      | k == hTransferEncoding = False
+      | k == hContentLength    = False
       | otherwise              = True
 
 toSource :: Maybe BS.ByteString

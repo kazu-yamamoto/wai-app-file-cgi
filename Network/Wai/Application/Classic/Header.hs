@@ -26,6 +26,10 @@ hXForwardedFor = "x-forwarded-for"
 hVia :: HeaderName
 hVia = "via"
 
+-- | Lookup key for Transfer-Encoding.
+hTransferEncoding :: HeaderName
+hTransferEncoding = "transfer-encoding"
+
 ----------------------------------------------------------------
 
 {-|
