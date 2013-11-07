@@ -14,36 +14,36 @@ import Network.Wai.Application.Classic.Types
 
 data StatusAux = Full Status | Partial Integer Integer deriving Show
 
-ifmodified :: Request -> Integer -> HTTPDate -> Maybe StatusAux
-ifmodified req size mtime = do
-    date <- ifModifiedSince req
+ifmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
+ifmodified reqidx size mtime = do
+    date <- ifModifiedSince reqidx
     if date /= mtime
-       then unconditional req size mtime
+       then unconditional reqidx size mtime
        else Just (Full notModified304)
 
-ifunmodified :: Request -> Integer -> HTTPDate -> Maybe StatusAux
-ifunmodified req size mtime = do
-    date <- ifUnmodifiedSince req
+ifunmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
+ifunmodified reqidx size mtime = do
+    date <- ifUnmodifiedSince reqidx
     if date == mtime
-       then unconditional req size mtime
+       then unconditional reqidx size mtime
        else Just (Full preconditionFailed412)
 
-ifrange :: Request -> Integer -> HTTPDate -> Maybe StatusAux
-ifrange req size mtime = do
-    date <- ifRange req
-    rng  <- lookupRequestField hRange req
+ifrange :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
+ifrange reqidx size mtime = do
+    date <- ifRange reqidx
+    rng  <- range reqidx
     if date == mtime
-       then range size rng
+       then parseRange size rng
        else Just (Full ok200)
 
-unconditional :: Request -> Integer -> HTTPDate -> Maybe StatusAux
-unconditional req size _ =
-    maybe (Just (Full ok200)) (range size) $ lookupRequestField hRange req
+unconditional :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
+unconditional reqidx size _ =
+    maybe (Just (Full ok200)) (parseRange size) $ range reqidx
 
-range :: Integer -> ByteString -> Maybe StatusAux
-range size rng = case skipAndSize rng size of
-  Nothing         -> Just (Full requestedRangeNotSatisfiable416)
-  Just (skip,len) -> Just (Partial skip len)
+parseRange :: Integer -> ByteString -> Maybe StatusAux
+parseRange size rng = case skipAndSize rng size of
+    Nothing         -> Just (Full requestedRangeNotSatisfiable416)
+    Just (skip,len) -> Just (Partial skip len)
 
 ----------------------------------------------------------------
 

@@ -17,6 +17,7 @@ import Network.Wai
 import Network.Wai.Internal
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
+import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
@@ -27,12 +28,12 @@ type Rsp = IO RspSpec
 
 ----------------------------------------------------------------
 
-data HandlerInfo = HandlerInfo FileAppSpec Request Path [Lang]
+data HandlerInfo = HandlerInfo FileAppSpec Request IndexedHeader Path [Lang]
 
-langSuffixes :: Request -> [Lang]
-langSuffixes req = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
+langSuffixes :: IndexedHeader -> [Lang]
+langSuffixes reqidx = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
   where
-    langs = map fromByteString $ languages req
+    langs = map fromByteString $ languages reqidx
 
 ----------------------------------------------------------------
 
@@ -69,13 +70,14 @@ fileApp cspec spec filei req = do
     liftIO $ logger cspec req st mlen
     return response
   where
-    hinfo = HandlerInfo spec req file langs
+    reqidx = indexRequestHeader (requestHeaders req)
+    hinfo = HandlerInfo spec req reqidx file langs
     method = parseMethod $ requestMethod req
     path = pathinfoToFilePath req filei
     file = addIndex spec path
     ishtml = isHTML spec file
     rfile = redirectPath spec path
-    langs = langSuffixes req
+    langs = langSuffixes reqidx
     noBody st = return (responseLBS st (addServer cspec []) "", Nothing)
     bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
                 >>= statusBody st
@@ -110,22 +112,22 @@ processGET hinfo ishtml rfile = tryGet      hinfo ishtml
                             ||> return notFound
 
 tryGet :: HandlerInfo -> Bool -> Rsp
-tryGet hinfo@(HandlerInfo _ _ _ langs) True =
+tryGet hinfo@(HandlerInfo _ _ _ _ langs) True =
     runAnyOne $ map (tryGetFile hinfo True) langs
 tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryGetFile (HandlerInfo spec req file _) ishtml lang = do
+tryGetFile (HandlerInfo spec _ reqidx file _) ishtml lang = do
     finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
-        size = fileInfoSize finfo
+        size  = fileInfoSize finfo
         sfile = fileInfoName finfo
-        date = fileInfoDate finfo
+        date  = fileInfoDate finfo
         hdr = newHeader ishtml (pathByteString file) date
-        Just pst = ifmodified req size mtime -- never Nothing
-               <|> ifunmodified req size mtime
-               <|> ifrange req size mtime
-               <|> unconditional req size mtime
+        Just pst = ifmodified    reqidx size mtime -- never Nothing
+               <|> ifunmodified  reqidx size mtime
+               <|> ifrange       reqidx size mtime
+               <|> unconditional reqidx size mtime
     case pst of
         Full st
           | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
@@ -140,18 +142,18 @@ processHEAD hinfo ishtml rfile = tryHead     hinfo ishtml
                              ||> return notFoundNoBody
 
 tryHead :: HandlerInfo -> Bool -> Rsp
-tryHead hinfo@(HandlerInfo _ _ _ langs) True =
+tryHead hinfo@(HandlerInfo _ _ _ _ langs) True =
     runAnyOne $ map (tryHeadFile hinfo True) langs
 tryHead hinfo False= tryHeadFile hinfo False id
 
 tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
+tryHeadFile (HandlerInfo spec _ reqidx file _) ishtml lang = do
     finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
-        size = fileInfoSize finfo
-        date = fileInfoDate finfo
+        size  = fileInfoSize finfo
+        date  = fileInfoDate finfo
         hdr = newHeader ishtml (pathByteString file) date
-        Just pst = ifmodified req size mtime -- never Nothing
+        Just pst = ifmodified reqidx size mtime -- never Nothing
                <|> Just (Full ok200)
     case pst of
         Full st -> return $ RspSpec st (BodyFileNoBody hdr)
@@ -161,13 +163,13 @@ tryHeadFile (HandlerInfo spec req file _) ishtml lang = do
 
 tryRedirect  :: HandlerInfo -> Maybe Path -> Rsp
 tryRedirect _ Nothing = goNext
-tryRedirect (HandlerInfo spec req _ langs) (Just file) =
+tryRedirect (HandlerInfo spec req reqidx _ langs) (Just file) =
     runAnyOne $ map (tryRedirectFile hinfo) langs
   where
-    hinfo = HandlerInfo spec req file langs
+    hinfo = HandlerInfo spec req reqidx file langs
 
 tryRedirectFile :: HandlerInfo -> Lang -> Rsp
-tryRedirectFile (HandlerInfo spec req file _) lang = do
+tryRedirectFile (HandlerInfo spec req _ file _) lang = do
     _ <- liftIO $ getFileInfo spec (lang file)
     return $ RspSpec movedPermanently301 (BodyFileNoBody hdr)
   where

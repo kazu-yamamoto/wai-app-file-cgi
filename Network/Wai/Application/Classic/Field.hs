@@ -4,6 +4,7 @@ module Network.Wai.Application.Classic.Field where
 
 import Control.Arrow (first)
 import Control.Monad (mplus)
+import Data.Array ((!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS hiding (pack)
 import Data.ByteString.Char8 as BS (pack)
@@ -23,20 +24,20 @@ import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 
-languages :: Request -> [ByteString]
-languages req = maybe [] parseLang $ lookupRequestField hAcceptLanguage req
+languages :: IndexedHeader -> [ByteString]
+languages reqidx = maybe [] parseLang $ reqidx ! idxAcceptLanguage
 
-ifModifiedSince :: Request -> Maybe HTTPDate
-ifModifiedSince = lookupAndParseDate hIfModifiedSince
+ifModifiedSince :: IndexedHeader -> Maybe HTTPDate
+ifModifiedSince reqidx = reqidx ! idxIfModifiedSince >>= parseHTTPDate
 
-ifUnmodifiedSince :: Request -> Maybe HTTPDate
-ifUnmodifiedSince = lookupAndParseDate hIfUnmodifiedSince
+ifUnmodifiedSince :: IndexedHeader -> Maybe HTTPDate
+ifUnmodifiedSince reqidx = reqidx ! idxIfUnmodifiedSince >>= parseHTTPDate
 
-ifRange :: Request -> Maybe HTTPDate
-ifRange = lookupAndParseDate hIfRange
+ifRange :: IndexedHeader -> Maybe HTTPDate
+ifRange reqidx = reqidx ! idxIfRange >>= parseHTTPDate
 
-lookupAndParseDate :: HeaderName -> Request -> Maybe HTTPDate
-lookupAndParseDate key req = lookupRequestField key req >>= parseHTTPDate
+range :: IndexedHeader -> Maybe ByteString
+range reqidx = reqidx ! idxRange
 
 ----------------------------------------------------------------
 
