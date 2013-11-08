@@ -5,7 +5,7 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import Blaze.ByteString.Builder (Builder)
-import Control.Exception (SomeException, IOException, try, catch, bracketOnError, bracket)
+import Control.Exception (SomeException, IOException, try, catch)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
@@ -15,7 +15,6 @@ import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.SockAddr
 import Network.Wai
-import Network.Wai.Internal
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
@@ -31,20 +30,6 @@ type ENVVARS = [(String,String)]
 
 gatewayInterface :: String
 gatewayInterface = "CGI/1.1"
-
-----------------------------------------------------------------
-
-responseSourceBracket :: IO a
-                      -> (a -> IO b)
-                      -> (a -> IO (Status
-                                  ,ResponseHeaders
-                                  ,Source IO (Flush Builder)))
-                      -> IO Response
-responseSourceBracket setup teardown action =
-    bracketOnError setup teardown $ \resource -> do
-        (st,hdr,src) <- action resource
-        return $ ResponseSource st hdr $ \f ->
-            bracket (return resource) teardown (\_ -> f src)
 
 ----------------------------------------------------------------
 
