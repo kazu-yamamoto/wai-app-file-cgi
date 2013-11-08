@@ -5,18 +5,17 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import Blaze.ByteString.Builder (Builder)
-import Control.Exception (SomeException, IOException, try, catch)
+import Control.Exception (SomeException, IOException, try, catch, bracketOnError, bracket)
 import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
-import Data.Monoid ((<>))
 import Network.HTTP.Types
 import Network.SockAddr
 import Network.Wai
+import Network.Wai.Internal
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
@@ -32,6 +31,20 @@ type ENVVARS = [(String,String)]
 
 gatewayInterface :: String
 gatewayInterface = "CGI/1.1"
+
+----------------------------------------------------------------
+
+responseSourceBracket :: IO a
+                      -> (a -> IO b)
+                      -> (a -> IO (Status
+                                  ,ResponseHeaders
+                                  ,Source IO (Flush Builder)))
+                      -> IO Response
+responseSourceBracket setup teardown action =
+    bracketOnError setup teardown $ \resource -> do
+        (st,hdr,src) <- action resource
+        return $ ResponseSource st hdr $ \f ->
+            bracket (return resource) teardown (\_ -> f src)
 
 ----------------------------------------------------------------
 
@@ -51,15 +64,17 @@ cgiApp cspec spec cgii req = case method of
     method = parseMethod $ requestMethod req
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp' body cspec spec cgii req = do
-    (rhdl,whdl,pid) <- execProcess cspec spec cgii req
-    when body $ toCGI whdl req
-    let cleanup = liftIO $ do
-            terminateProcess pid -- SIGTERM
-            hClose rhdl
-            hClose whdl
-    hClose whdl -- telling EOF
-    fromCGI rhdl cleanup cspec req
+cgiApp' body cspec spec cgii req = responseSourceBracket setup teardown cgi
+  where
+    setup = execProcess cspec spec cgii req
+    teardown (rhdl,whdl,pid) = do
+        terminateProcess pid -- SIGTERM
+        hClose rhdl
+        hClose whdl
+    cgi (rhdl,whdl,_) = do
+        when body $ toCGI whdl req
+        hClose whdl -- telling EOF
+        fromCGI rhdl cspec req
 
 ----------------------------------------------------------------
 
@@ -68,17 +83,17 @@ type TRYPATH = Either IOException String
 toCGI :: Handle -> Request -> IO ()
 toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
-fromCGI :: Handle -> Source IO (Flush Builder) -> ClassicAppSpec -> Request -> IO Response
-fromCGI rhdl cleanup cspec req = do
+fromCGI :: Handle -> ClassicAppSpec -> Request -> IO (Status, RequestHeaders, Source IO (Flush Builder))
+fromCGI rhdl cspec req = do
     (src', hs) <- cgiHeader `catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
         hdr' = addServer cspec hdr
     logger cspec req st Nothing
-    let src | hasBody   = src' <> cleanup
-            | otherwise = CL.sourceNull <> cleanup
-    return $ responseSource st hdr' src
+    let src | hasBody   = src'
+            | otherwise = CL.sourceNull
+    return (st, hdr', src)
   where
     check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
