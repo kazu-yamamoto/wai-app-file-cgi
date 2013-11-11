@@ -6,16 +6,12 @@ License:                BSD3
 License-File:           LICENSE
 Synopsis:               File/CGI/Rev Proxy App of WAI
 Description:            This WAI application library handles static files,
-                        executes CGI scripts, and serves as a reverse proxy.
+                        executes CGI scripts, and serves as a reverse proxy
+                        (including EventSource).
 Homepage:               http://www.mew.org/~kazu/proj/mighttpd/
 Category:               Web, Yesod
 Cabal-Version:          >= 1.10
 Build-Type:             Simple
-
-Flag rev-proxy
-  Description:          Support reverse proxy with http-client.
-                        This requires unnecessary crypt libraries.
-  Default:              True
 
 Library
   Default-Language:     Haskell2010
