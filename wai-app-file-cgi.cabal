@@ -13,15 +13,13 @@ Cabal-Version:          >= 1.10
 Build-Type:             Simple
 
 Flag rev-proxy
-  Description:          Support reverse proxy wish http-conduit.
+  Description:          Support reverse proxy with http-client.
                         This requires unnecessary crypt libraries.
   Default:              True
 
 Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall
-  if flag(rev-proxy)
-    Cpp-Options:        -DREV_PROXY
   Exposed-Modules:      Network.Wai.Application.Classic
   Other-Modules:        Network.Wai.Application.Classic.CGI
                         Network.Wai.Application.Classic.Conduit
@@ -37,8 +35,7 @@ Library
                         Network.Wai.Application.Classic.Redirect
                         Network.Wai.Application.Classic.Status
                         Network.Wai.Application.Classic.Types
-  if flag(rev-proxy)
-    Other-Modules:      Network.Wai.Application.Classic.RevProxy
+                        Network.Wai.Application.Classic.RevProxy
 
   Build-Depends:        base >= 4 && < 5
                       , array
@@ -67,8 +64,9 @@ Library
                       , unix
                       , wai >= 2.0
                       , word8
-  if flag(rev-proxy)
-    Build-Depends:      http-conduit >= 1.9
+                      , http-client
+                      , http-client-conduit
+                      , data-default
 
 Test-Suite doctest
   Type:                 exitcode-stdio-1.0

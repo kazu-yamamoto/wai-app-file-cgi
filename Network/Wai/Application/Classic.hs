@@ -23,12 +23,10 @@ module Network.Wai.Application.Classic (
   , defaultCgiAppSpec
   , CgiRoute(..)
   , cgiApp
-#ifdef REV_PROXY
   -- * Reverse Proxy
   , RevProxyAppSpec(..)
   , RevProxyRoute(..)
   , revProxyApp
-#endif
   -- * Path
   , module Network.Wai.Application.Classic.Path
   -- * Misc
@@ -42,7 +40,5 @@ import Network.Wai.Application.Classic.File
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Redirect
-import Network.Wai.Application.Classic.Types
-#ifdef REV_PROXY
 import Network.Wai.Application.Classic.RevProxy
-#endif
+import Network.Wai.Application.Classic.Types

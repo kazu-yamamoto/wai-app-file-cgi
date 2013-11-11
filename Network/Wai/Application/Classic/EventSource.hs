@@ -1,15 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.EventSource (
-    toResponseEventSource
+    bodyToEventSource
   ) where
 
 import Blaze.ByteString.Builder
+import Control.Monad
+import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Char8 ()
 import Data.Conduit
 import qualified Data.Conduit.List as CL
+import qualified Network.HTTP.Client.Body as H
+import Network.Wai.Application.Classic.Conduit
 
 lineBreak :: ByteString -> Int -> Maybe Int
 lineBreak bs n = go
@@ -53,8 +57,12 @@ eventSourceConduit = CL.concatMapAccum f ""
         xs = splitDoubleLineBreak (rest `BS.append` input)
 
 -- insert Flush if exists a double line-break
-toResponseEventSource :: ResumableSource IO ByteString
-                      -> IO (Source IO (Flush Builder))
-toResponseEventSource rsrc = do
-    (src,_) <- unwrapResumable rsrc
-    return $ src $= eventSourceConduit
+bodyToEventSource :: H.BodyReader -> Source IO (Flush Builder)
+bodyToEventSource br = loop
+  where
+    loop = do
+        bs <- liftIO $ H.brRead br
+        unless (BS.null bs) $ do
+            -- FIXME: how to add $= eventSourceConduit?
+            yield $ Chunk $ byteStringToBuilder bs
+            loop
