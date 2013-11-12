@@ -5,7 +5,7 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import Blaze.ByteString.Builder (Builder)
-import Control.Exception (SomeException, IOException, try, catch)
+import qualified Control.Exception as E (SomeException, IOException, try, catch)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
@@ -63,14 +63,14 @@ cgiApp' body cspec spec cgii req = responseSourceBracket setup teardown cgi
 
 ----------------------------------------------------------------
 
-type TRYPATH = Either IOException String
+type TRYPATH = Either E.IOException String
 
 toCGI :: Handle -> Request -> IO ()
 toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
 
 fromCGI :: Handle -> ClassicAppSpec -> Request -> IO (Status, RequestHeaders, Source IO (Flush Builder))
 fromCGI rhdl cspec req = do
-    (src', hs) <- cgiHeader `catch` recover
+    (src', hs) <- cgiHeader `E.catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
@@ -87,7 +87,7 @@ fromCGI rhdl cspec req = do
         hs' = filter (\(k,_) -> k /= hStatus) hs
     toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
     emptyHeader = []
-    recover (_ :: SomeException) = return (CL.sourceNull, emptyHeader)
+    recover (_ :: E.SomeException) = return (CL.sourceNull, emptyHeader)
     cgiHeader = do
         (rsrc,hs) <- CB.sourceHandle rhdl $$+ parseHeader
         src <- toResponseSource rsrc
@@ -98,7 +98,7 @@ fromCGI rhdl cspec req = do
 execProcess :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
 execProcess cspec spec cgii req = do
     let naddr = showSockAddr . remoteHost $ req
-    epath <- try (getEnv "PATH") :: IO TRYPATH
+    epath <- E.try (getEnv "PATH") :: IO TRYPATH
     (Just whdl,Just rhdl,_,pid) <- createProcess $ proSpec naddr epath
     hSetEncoding rhdl latin1
     hSetEncoding whdl latin1
