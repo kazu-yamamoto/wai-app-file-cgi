@@ -13,6 +13,7 @@ import Data.ByteString.Char8 ()
 import Data.Conduit
 import qualified Data.Conduit.List as CL
 import qualified Network.HTTP.Client.Body as H
+import qualified Network.HTTP.Client.Conduit as HC
 import Network.Wai.Application.Classic.Conduit
 
 lineBreak :: ByteString -> Int -> Maybe Int
@@ -58,11 +59,4 @@ eventSourceConduit = CL.concatMapAccum f ""
 
 -- insert Flush if exists a double line-break
 bodyToEventSource :: H.BodyReader -> Source IO (Flush Builder)
-bodyToEventSource br = loop
-  where
-    loop = do
-        bs <- liftIO $ H.brRead br
-        unless (BS.null bs) $ do
-            -- FIXME: how to add $= eventSourceConduit?
-            yield $ Chunk $ byteStringToBuilder bs
-            loop
+bodyToEventSource br = HC.bodyReaderSource br $= eventSourceConduit
