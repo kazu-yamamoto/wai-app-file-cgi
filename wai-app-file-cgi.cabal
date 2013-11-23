@@ -43,9 +43,11 @@ Library
                       , case-insensitive
                       , conduit >= 0.5
                       , containers
-                      , date-cache
+                      , data-default
                       , directory
                       , filepath
+                      , http-client
+                      , http-client-conduit
                       , http-date
                       , http-types >= 0.7
                       , io-choice
@@ -60,9 +62,6 @@ Library
                       , unix
                       , wai >= 2.0
                       , word8
-                      , http-client
-                      , http-client-conduit
-                      , data-default
 
 Test-Suite doctest
   Type:                 exitcode-stdio-1.0
