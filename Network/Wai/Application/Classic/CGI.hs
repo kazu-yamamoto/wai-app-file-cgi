@@ -115,6 +115,9 @@ execProcess cspec spec cgii req = do
 #if __GLASGOW_HASKELL__ >= 702
       , create_group = True
 #endif
+#if __GLASGOW_HASKELL__ >= 707
+      , delegate_ctlc = False
+#endif
       }
     (prog, scriptName, pathinfo) =
         pathinfoToCGI (cgiSrc cgii)
