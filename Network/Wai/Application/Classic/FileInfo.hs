@@ -37,7 +37,7 @@ ifrange reqidx size mtime mrange = do
        else Just (Full ok200)
 
 unconditional :: IndexedHeader -> Integer -> HTTPDate -> Maybe ByteString -> Maybe StatusAux
-unconditional reqidx size _ mrange =
+unconditional _ size _ mrange =
     maybe (Just (Full ok200)) (parseRange size) mrange
 
 parseRange :: Integer -> ByteString -> Maybe StatusAux
