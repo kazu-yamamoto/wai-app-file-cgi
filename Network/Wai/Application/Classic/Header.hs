@@ -50,23 +50,20 @@ type IndexedHeader = Array Int (Maybe ByteString)
 indexRequestHeader :: RequestHeaders -> IndexedHeader
 indexRequestHeader hdr = traverseHeader hdr requestMaxIndex requestKeyIndex
 
-idxAcceptLanguage,idxIfModifiedSince,idxIfUnmodifiedSince :: Int
-idxIfRange,idxRange :: Int
+idxAcceptLanguage,idxIfModifiedSince,idxIfUnmodifiedSince,idxIfRange :: Int
 idxAcceptLanguage    = 0
 idxIfModifiedSince   = 1
 idxIfUnmodifiedSince = 2
 idxIfRange           = 3
-idxRange             = 4
 
 requestMaxIndex :: Int
-requestMaxIndex    = 4
+requestMaxIndex    = 3
 
 requestKeyIndex :: HeaderName -> Int
 requestKeyIndex "accept-language"     = idxAcceptLanguage
 requestKeyIndex "if-modified-since"   = idxIfModifiedSince
 requestKeyIndex "if-unmodified-since" = idxIfUnmodifiedSince
 requestKeyIndex "if-range"            = idxIfRange
-requestKeyIndex "range"               = idxRange
 requestKeyIndex _                     = -1
 
 defaultIndexRequestHeader :: IndexedHeader

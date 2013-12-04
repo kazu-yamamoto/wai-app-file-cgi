@@ -117,17 +117,18 @@ tryGet hinfo@(HandlerInfo _ _ _ _ langs) True =
 tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryGetFile (HandlerInfo spec _ reqidx file _) ishtml lang = do
+tryGetFile (HandlerInfo spec req reqidx file _) ishtml lang = do
     finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
         size  = fileInfoSize finfo
         sfile = fileInfoName finfo
         date  = fileInfoDate finfo
+        mrange = requestHeaderRange req
         hdr = newHeader ishtml (pathByteString file) date
-        Just pst = ifmodified    reqidx size mtime -- never Nothing
-               <|> ifunmodified  reqidx size mtime
-               <|> ifrange       reqidx size mtime
-               <|> unconditional reqidx size mtime
+        Just pst = ifmodified    reqidx size mtime mrange
+               <|> ifunmodified  reqidx size mtime mrange
+               <|> ifrange       reqidx size mtime mrange
+               <|> unconditional reqidx size mtime mrange
     case pst of
         Full st
           | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
@@ -147,13 +148,14 @@ tryHead hinfo@(HandlerInfo _ _ _ _ langs) True =
 tryHead hinfo False= tryHeadFile hinfo False id
 
 tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryHeadFile (HandlerInfo spec _ reqidx file _) ishtml lang = do
+tryHeadFile (HandlerInfo spec req reqidx file _) ishtml lang = do
     finfo <- liftIO $ getFileInfo spec (lang file)
     let mtime = fileInfoTime finfo
         size  = fileInfoSize finfo
         date  = fileInfoDate finfo
         hdr = newHeader ishtml (pathByteString file) date
-        Just pst = ifmodified reqidx size mtime -- never Nothing
+        mrange = requestHeaderRange req
+        Just pst = ifmodified reqidx size mtime mrange
                <|> Just (Full ok200)
     case pst of
         Full st -> return $ RspSpec st (BodyFileNoBody hdr)

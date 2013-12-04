@@ -36,9 +36,6 @@ ifUnmodifiedSince reqidx = reqidx ! idxIfUnmodifiedSince >>= parseHTTPDate
 ifRange :: IndexedHeader -> Maybe HTTPDate
 ifRange reqidx = reqidx ! idxIfRange >>= parseHTTPDate
 
-range :: IndexedHeader -> Maybe ByteString
-range reqidx = reqidx ! idxRange
-
 ----------------------------------------------------------------
 
 textPlainHeader :: ResponseHeaders

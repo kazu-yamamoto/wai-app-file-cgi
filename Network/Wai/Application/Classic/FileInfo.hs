@@ -14,31 +14,31 @@ import Network.Wai.Application.Classic.Types
 
 data StatusAux = Full Status | Partial Integer Integer deriving Show
 
-ifmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
-ifmodified reqidx size mtime = do
+ifmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe ByteString -> Maybe StatusAux
+ifmodified reqidx size mtime mrange = do
     date <- ifModifiedSince reqidx
     if date /= mtime
-       then unconditional reqidx size mtime
+       then unconditional reqidx size mtime mrange
        else Just (Full notModified304)
 
-ifunmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
-ifunmodified reqidx size mtime = do
+ifunmodified :: IndexedHeader -> Integer -> HTTPDate -> Maybe ByteString -> Maybe StatusAux
+ifunmodified reqidx size mtime mrange = do
     date <- ifUnmodifiedSince reqidx
     if date == mtime
-       then unconditional reqidx size mtime
+       then unconditional reqidx size mtime mrange
        else Just (Full preconditionFailed412)
 
-ifrange :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
-ifrange reqidx size mtime = do
+ifrange :: IndexedHeader -> Integer -> HTTPDate -> Maybe ByteString -> Maybe StatusAux
+ifrange reqidx size mtime mrange = do
     date <- ifRange reqidx
-    rng  <- range reqidx
+    rng  <- mrange
     if date == mtime
        then parseRange size rng
        else Just (Full ok200)
 
-unconditional :: IndexedHeader -> Integer -> HTTPDate -> Maybe StatusAux
-unconditional reqidx size _ =
-    maybe (Just (Full ok200)) (parseRange size) $ range reqidx
+unconditional :: IndexedHeader -> Integer -> HTTPDate -> Maybe ByteString -> Maybe StatusAux
+unconditional reqidx size _ mrange =
+    maybe (Just (Full ok200)) (parseRange size) mrange
 
 parseRange :: Integer -> ByteString -> Maybe StatusAux
 parseRange size rng = case skipAndSize rng size of
