@@ -10,7 +10,7 @@ import qualified Data.ByteString as BS
 import Data.ByteString.Char8 ()
 import Data.Conduit
 import qualified Data.Conduit.List as CL
-import qualified Network.HTTP.Client.Body as H
+import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.Conduit as HC
 
 lineBreak :: ByteString -> Int -> Maybe Int

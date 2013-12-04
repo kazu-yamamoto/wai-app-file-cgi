@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
-import qualified Network.HTTP.Client.Manager as H
+import qualified Network.HTTP.Client as H
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai

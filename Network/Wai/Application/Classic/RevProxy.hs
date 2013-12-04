@@ -12,9 +12,7 @@ import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
 import Data.Default
 import qualified Network.HTTP.Client as H
-import qualified Network.HTTP.Client.Body as H
 import qualified Network.HTTP.Client.Conduit as H
-import qualified Network.HTTP.Client.Types as H
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Conduit
@@ -67,7 +65,7 @@ reqToHReq req route = def {
   , H.requestBody    = bodyToHBody len body
   , H.method         = requestMethod req
   , H.proxy          = Nothing
-  , H.rawBody        = False
+--  , H.rawBody        = False
   , H.decompress     = const True
   , H.checkStatus    = \_ _ _ -> Nothing -- FIXME
   , H.redirectCount  = 0
