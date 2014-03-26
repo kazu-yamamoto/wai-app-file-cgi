@@ -43,7 +43,7 @@ Library
                       , case-insensitive
                       , conduit >= 0.5
                       , containers
-                      , data-default
+                      , data-default-class
                       , directory
                       , filepath
                       , http-client

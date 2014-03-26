@@ -10,7 +10,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS (uncons)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
-import Data.Default
+import Data.Default.Class
 import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.Conduit as H
 import Network.HTTP.Types
