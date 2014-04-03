@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                2.0.2
+Version:                2.0.3
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -41,13 +41,14 @@ Library
                       , blaze-html
                       , bytestring
                       , case-insensitive
-                      , conduit >= 0.5
+                      , conduit >= 1.1
+                      , conduit-extra
                       , containers
                       , data-default-class
                       , directory
                       , filepath
-                      , http-client
-                      , http-client-conduit
+                      , http-client >= 0.3
+                      , http-conduit >= 2.1
                       , http-date
                       , http-types >= 0.7
                       , io-choice
@@ -81,7 +82,8 @@ Test-Suite spec
   Other-Modules:        ClassicSpec
   Build-Depends:        base
                       , bytestring
-                      , conduit
+                      , conduit >= 1.1
+                      , conduit-extra
                       , directory
                       , filepath
                       , hspec >= 1.3
