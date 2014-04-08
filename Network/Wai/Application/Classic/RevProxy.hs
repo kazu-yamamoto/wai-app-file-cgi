@@ -45,8 +45,10 @@ revProxyApp cspec spec route req = responseSourceBracket setup teardown proxy
     mlen = case requestBodyLength req of
         ChunkedBody     -> Nothing
         KnownLength len -> Just len
-    fixHeader = addVia cspec req . filter p
-    p (k,_)
+    fixHeader = addVia cspec req . filter headerToBeRelay
+
+headerToBeRelay :: Header -> Bool
+headerToBeRelay (k,_)
       | k == hTransferEncoding = False
       | k == hContentLength    = False
       | k == hContentEncoding  = False -- See H.decompress.
@@ -59,7 +61,7 @@ reqToHReq req route = def {
     H.host           = revProxyDomain route
   , H.port           = revProxyPort route
   , H.secure         = isSecure req
-  , H.requestHeaders = addForwardedFor req hdr
+  , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
   , H.path           = pathByteString path'
   , H.queryString    = dropQuestion query
   , H.requestBody    = bodyToHBody len body
