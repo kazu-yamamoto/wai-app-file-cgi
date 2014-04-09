@@ -31,6 +31,10 @@ hVia = "via"
 hTransferEncoding :: HeaderName
 hTransferEncoding = "transfer-encoding"
 
+-- | Lookup key for Accept-Encoding.
+hAcceptEncoding :: HeaderName
+hAcceptEncoding = "accept-encoding"
+
 ----------------------------------------------------------------
 
 hostPort :: Request -> (ByteString, ByteString)

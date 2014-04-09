@@ -50,6 +50,7 @@ revProxyApp cspec spec route req = responseSourceBracket setup teardown proxy
 headerToBeRelay :: Header -> Bool
 headerToBeRelay (k,_)
       | k == hTransferEncoding = False
+      | k == hAcceptEncoding   = False
       | k == hContentLength    = False
       | k == hContentEncoding  = False -- See H.decompress.
       | otherwise              = True
