@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                2.0.4
+Version:                2.0.5
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -61,7 +61,7 @@ Library
                       , text
                       , transformers
                       , unix
-                      , wai >= 2.0
+                      , wai >= 2.0 && < 3.0
                       , word8
 
 Test-Suite doctest
