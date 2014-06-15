@@ -4,7 +4,6 @@ module Network.Wai.Application.Classic.Redirect (
     redirectApp
   ) where
 
-import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.Char8
 import Network.HTTP.Types
 import Network.Wai
@@ -13,9 +12,9 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 redirectApp :: ClassicAppSpec -> RedirectRoute -> Application
-redirectApp cspec route req = do
-    liftIO $ logger cspec req status Nothing
-    return $ responseLBS status hdr ""
+redirectApp cspec route req respond = do
+    logger cspec req status Nothing
+    respond $ responseLBS status hdr ""
   where
     path = fromByteString $ rawPathInfo req
     src = redirectSrc route

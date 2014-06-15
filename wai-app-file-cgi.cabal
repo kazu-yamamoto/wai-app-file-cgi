@@ -61,7 +61,8 @@ Library
                       , text
                       , transformers
                       , unix
-                      , wai >= 2.0 && < 3.0
+                      , wai >= 3.0 && < 3.1
+                      , wai-conduit
                       , word8
 
 Test-Suite doctest

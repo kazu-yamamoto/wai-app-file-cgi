@@ -5,8 +5,8 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import Blaze.ByteString.Builder (Builder)
-import qualified Control.Exception as E (SomeException, IOException, try, catch)
-import Control.Monad (when)
+import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
+import Control.Monad (when, (<=<))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
 import Data.Conduit
@@ -15,6 +15,7 @@ import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.SockAddr
 import Network.Wai
+import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
@@ -41,15 +42,15 @@ The program to link this library must ignore SIGCHLD as follows:
 >   installHandler sigCHLD Ignore Nothing
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp cspec spec cgii req = case method of
-    Right GET  -> cgiApp' False cspec spec cgii req
-    Right POST -> cgiApp' True  cspec spec cgii req
-    _          -> return $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
+cgiApp cspec spec cgii req respond = case method of
+    Right GET  -> cgiApp' False cspec spec cgii req respond
+    Right POST -> cgiApp' True  cspec spec cgii req respond
+    _          -> respond $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
   where
     method = parseMethod $ requestMethod req
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp' body cspec spec cgii req = responseSourceBracket setup teardown cgi
+cgiApp' body cspec spec cgii req respond = E.bracket setup teardown (respond <=< cgi)
   where
     setup = execProcess cspec spec cgii req
     teardown (rhdl,whdl,pid) = do
@@ -66,9 +67,9 @@ cgiApp' body cspec spec cgii req = responseSourceBracket setup teardown cgi
 type TRYPATH = Either E.IOException String
 
 toCGI :: Handle -> Request -> IO ()
-toCGI whdl req = requestBody req $$ CB.sinkHandle whdl
+toCGI whdl req = sourceRequestBody req $$ CB.sinkHandle whdl
 
-fromCGI :: Handle -> ClassicAppSpec -> Request -> IO (Status, RequestHeaders, Source IO (Flush Builder))
+fromCGI :: Handle -> ClassicAppSpec -> Request -> IO Response
 fromCGI rhdl cspec req = do
     (src', hs) <- cgiHeader `E.catch` recover
     let (st, hdr, hasBody) = case check hs of
@@ -78,7 +79,7 @@ fromCGI rhdl cspec req = do
     logger cspec req st Nothing
     let src | hasBody   = src'
             | otherwise = CL.sourceNull
-    return (st, hdr', src)
+    return $ responseSource st hdr' src
   where
     check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)
