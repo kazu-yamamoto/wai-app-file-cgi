@@ -4,7 +4,6 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import Blaze.ByteString.Builder (Builder)
 import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
 import Control.Monad (when, (<=<))
 import Data.ByteString (ByteString)

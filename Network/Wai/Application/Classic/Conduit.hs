@@ -9,7 +9,7 @@ module Network.Wai.Application.Classic.Conduit (
 import Blaze.ByteString.Builder (Builder)
 import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
-import Data.Attoparsec
+import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit

@@ -13,7 +13,6 @@ import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
 import Data.Default.Class
 import qualified Network.HTTP.Client as H
-import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Types
 import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
