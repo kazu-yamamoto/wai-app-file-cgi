@@ -57,7 +57,7 @@ If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 -}
 
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
-fileApp cspec spec filei req = do
+fileApp cspec spec filei req respond = do
     RspSpec st body <- case method of
         Right GET  -> processGET  hinfo ishtml rfile
         Right HEAD -> processHEAD hinfo ishtml rfile
@@ -67,8 +67,8 @@ fileApp cspec spec filei req = do
             BodyStatus             -> bodyStatus st
             BodyFileNoBody hdr     -> bodyFileNoBody st hdr
             BodyFile hdr afile rng -> bodyFile st hdr afile rng
-    liftIO $ logger cspec req st mlen
-    return response
+    logger cspec req st mlen
+    respond response
   where
     reqidx = indexRequestHeader (requestHeaders req)
     hinfo = HandlerInfo spec req reqidx file langs

@@ -4,6 +4,7 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Blaze.ByteString.Builder (Builder)
 import Control.Applicative
+import Control.Exception (bracket)
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
@@ -14,7 +15,7 @@ import Data.Default.Class
 import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Conduit as H
 import Network.HTTP.Types
-import Network.Wai
+import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
@@ -27,7 +28,7 @@ import Network.Wai.Application.Classic.Types
 -- |  Relaying any requests as reverse proxy.
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req = responseSourceBracket setup teardown proxy
+revProxyApp cspec spec route req respond = bracket setup teardown proxy
   where
     setup = H.responseOpen httpClientRequest mgr
     teardown = H.responseClose
@@ -38,7 +39,7 @@ revProxyApp cspec spec route req = responseSourceBracket setup teardown proxy
             ct         = lookup hContentType hdr
             src        = toSource ct clientBody
         logger cspec req status (fromIntegral <$> mlen)
-        return (status, hdr, src)
+        respond $ responseSource status hdr src
 
     httpClientRequest = reqToHReq req route
     mgr = revProxyManager spec
@@ -86,9 +87,9 @@ reqToHReq req route = def {
         Just (63, q') -> q' -- '?' is 63
         _             -> q
 
-bodyToHBody :: RequestBodyLength -> Source IO ByteString -> H.RequestBody
-bodyToHBody ChunkedBody src       = H.requestBodySourceChunkedIO src
-bodyToHBody (KnownLength len) src = H.requestBodySourceIO (fromIntegral len) src
+bodyToHBody :: RequestBodyLength -> IO ByteString -> H.RequestBody
+bodyToHBody ChunkedBody src       = H.RequestBodyStreamChunked ($ src)
+bodyToHBody (KnownLength len) src = H.RequestBodyStream (fromIntegral len) ($ src)
 
 ----------------------------------------------------------------
 
