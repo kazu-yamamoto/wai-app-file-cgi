@@ -26,7 +26,9 @@ import Network.Wai.Conduit
 -- |  Relaying any requests as reverse proxy.
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr proxy
+revProxyApp cspec spec route req respond = do
+    httpClientRequest <- reqToHReq req route
+    H.withResponse httpClientRequest mgr proxy
   where
     proxy hrsp = do
         let status     = H.responseStatus hrsp
@@ -37,7 +39,6 @@ revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr 
         logger cspec req status (fromIntegral <$> mlen)
         respond $ responseSource status hdr src
 
-    httpClientRequest = reqToHReq req route
     mgr = revProxyManager spec
     mlen = case requestBodyLength req of
         ChunkedBody     -> Nothing
@@ -54,23 +55,24 @@ headerToBeRelay (k,_)
 
 ----------------------------------------------------------------
 
-reqToHReq :: Request -> RevProxyRoute -> H.Request
-reqToHReq req route = def {
-    H.host           = revProxyDomain route
-  , H.port           = revProxyPort route
-  , H.secure         = isSecure req
-  , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
-  , H.path           = pathByteString path'
-  , H.queryString    = dropQuestion query
-  , H.requestBody    = bodyToHBody len body
-  , H.method         = requestMethod req
-  , H.proxy          = Nothing
---  , H.rawBody        = False
-  , H.decompress     = const True
-  , H.checkStatus    = \_ _ _ -> Nothing -- FIXME
-  , H.redirectCount  = 0
-  }
+reqToHReq :: Request -> RevProxyRoute -> IO H.Request
+reqToHReq req route = toReq <$> H.cacheRequestBody 4096 (bodyToHBody len body)
   where
+    toReq hbody = def {
+        H.host           = revProxyDomain route
+      , H.port           = revProxyPort route
+      , H.secure         = isSecure req
+      , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
+      , H.path           = pathByteString path'
+      , H.queryString    = dropQuestion query
+      , H.requestBody    = hbody
+      , H.method         = requestMethod req
+      , H.proxy          = Nothing
+      --  , H.rawBody        = False
+      , H.decompress     = const True
+      , H.checkStatus    = \_ _ _ -> Nothing -- FIXME
+      , H.redirectCount  = 0
+      }
     path = fromByteString $ rawPathInfo req
     src = revProxySrc route
     dst = revProxyDst route
