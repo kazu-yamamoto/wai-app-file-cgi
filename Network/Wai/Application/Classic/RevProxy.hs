@@ -4,7 +4,6 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
 import Blaze.ByteString.Builder (Builder)
 import Control.Applicative
-import Control.Exception (bracket)
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
@@ -14,23 +13,21 @@ import Data.Conduit
 import Data.Default.Class
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types
-import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Conduit
 
 ----------------------------------------------------------------
 
 -- |  Relaying any requests as reverse proxy.
 
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req respond = bracket setup teardown proxy
+revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr proxy
   where
-    setup = H.responseOpen httpClientRequest mgr
-    teardown = H.responseClose
     proxy hrsp = do
         let status     = H.responseStatus hrsp
             hdr        = fixHeader $ H.responseHeaders hrsp
