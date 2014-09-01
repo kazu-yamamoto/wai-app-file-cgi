@@ -24,7 +24,9 @@ main = do
 testServer :: IO ()
 testServer = do
     dir <- getCurrentDirectory
-    run 2345 $ testApp dir
+    runSettings settings $ testApp dir
+  where
+    settings = setPort 2345 $ setHost "127.0.0.1" defaultSettings
 
 testApp :: FilePath -> Application
 testApp dir req
