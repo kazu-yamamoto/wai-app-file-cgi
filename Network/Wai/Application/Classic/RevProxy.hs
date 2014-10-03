@@ -58,7 +58,7 @@ reqToHReq :: Request -> RevProxyRoute -> H.Request
 reqToHReq req route = def {
     H.host           = revProxyDomain route
   , H.port           = revProxyPort route
-  , H.secure         = isSecure req
+  , H.secure         = False -- FIXME: upstream is HTTP only
   , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
   , H.path           = pathByteString path'
   , H.queryString    = dropQuestion query
