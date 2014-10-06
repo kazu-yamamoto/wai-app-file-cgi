@@ -74,11 +74,10 @@ fromCGI rhdl cspec req = do
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
-        hdr' = addServer cspec hdr
     logger cspec req st Nothing
     let src | hasBody   = src'
             | otherwise = CL.sourceNull
-    return $ responseSource st hdr' src
+    return $ responseSource st hdr src
   where
     check hs = lookup hContentType hs >> case lookup hStatus hs of
         Nothing -> Just (ok200, hs)

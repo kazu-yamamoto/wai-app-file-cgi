@@ -78,7 +78,7 @@ fileApp cspec spec filei req respond = do
     ishtml = isHTML spec file
     rfile = redirectPath spec path
     langs = langSuffixes reqidx
-    noBody st = return (responseLBS st (addServer cspec []) "", Nothing)
+    noBody st = return (responseLBS st [] "", Nothing)
     bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
@@ -86,17 +86,17 @@ fileApp cspec spec filei req respond = do
         return (responseLBS st hdr bd, Just (len bd))
       where
         len = fromIntegral . BL.length
-        hdr = addServer cspec textPlainHeader
+        hdr = textPlainHeader
     statusBody st (StatusFile afile len) =
         return (ResponseFile st hdr fl mfp, Just len)
       where
         mfp = Just (FilePart 0 len len)
         fl = pathString afile
-        hdr = addServer cspec textHtmlHeader
+        hdr = textHtmlHeader
     bodyFileNoBody st hdr =
-        return (responseLBS st (addServer cspec hdr) "", Nothing)
+        return (responseLBS st hdr "", Nothing)
     bodyFile st hdr afile rng =
-        return (ResponseFile st (addServer cspec hdr) fl mfp, Just len)
+        return (ResponseFile st hdr fl mfp, Just len)
       where
         (len, mfp) = case rng of
             -- sendfile of Linux does not support the entire file

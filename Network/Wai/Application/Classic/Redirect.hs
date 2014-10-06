@@ -20,5 +20,5 @@ redirectApp cspec route req respond = do
     src = redirectSrc route
     dst = redirectDst route
     rurl = "http://" `append` pathByteString (dst </> (path <\> src))
-    hdr = addServer cspec $ locationHeader rurl
+    hdr = locationHeader rurl
     status = movedPermanently301

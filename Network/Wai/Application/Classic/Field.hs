@@ -47,9 +47,6 @@ textHtmlHeader = [(hContentType,"text/html")]
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [(hLocation, url)]
 
-addServer :: ClassicAppSpec -> ResponseHeaders -> ResponseHeaders
-addServer cspec hdr = (hServer, softwareName cspec) : hdr
-
 -- FIXME: the case where "Via:" already exists
 addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
 addVia cspec req hdr = (hVia, val) : hdr
