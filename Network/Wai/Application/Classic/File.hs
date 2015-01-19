@@ -182,7 +182,9 @@ redirectHeader = locationHeader . redirectURL
 
 redirectURL :: Request -> ByteString
 redirectURL req = BS.concat [
-    "http://"
+  -- Scheme must not be included because of no way to tell
+  -- http or https.
+    "//"
   -- Host includes ":<port>" if it is not 80.
   , host
   , rawPathInfo req

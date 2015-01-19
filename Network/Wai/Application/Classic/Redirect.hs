@@ -19,6 +19,8 @@ redirectApp cspec route req respond = do
     path = fromByteString $ rawPathInfo req
     src = redirectSrc route
     dst = redirectDst route
-    rurl = "http://" `append` pathByteString (dst </> (path <\> src))
+    -- Scheme must not be included because of no way to tell
+    -- http or https.
+    rurl = "//" `append` pathByteString (dst </> (path <\> src))
     hdr = locationHeader rurl
     status = movedPermanently301
