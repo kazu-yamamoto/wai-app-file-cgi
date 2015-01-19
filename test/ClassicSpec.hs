@@ -71,7 +71,7 @@ spec = do
                 hdr = rspHeaders rsp
                 Just lm = lookupHeader HdrLocation hdr
             sc `shouldBe` (3,0,1)
-            lm `shouldBe` "http://127.0.0.1:2345/redirect/"
+            lm `shouldBe` "//127.0.0.1:2345/redirect/"
 
 ----------------------------------------------------------------
 
