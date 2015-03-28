@@ -2,10 +2,11 @@
 
 module Network.Wai.Application.Classic.Range (skipAndSize) where
 
-import Control.Applicative hiding (optional)
+import Control.Applicative ((<|>), many)
 import Data.Attoparsec.ByteString hiding (satisfy)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
-import Data.ByteString.Char8 hiding (map, count, take, elem)
+import Data.ByteString.Char8 (ByteString)
+import qualified Data.ByteString.Char8 as B8
 import Network.HTTP.Types
 
 -- |
@@ -59,4 +60,4 @@ spcs :: Parser ()
 spcs = () <$ many spc
 
 spc :: Parser Char
-spc = satisfy (`elem` " \t")
+spc = satisfy (`B8.elem` " \t")
