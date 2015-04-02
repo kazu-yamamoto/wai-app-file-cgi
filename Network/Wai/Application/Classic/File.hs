@@ -60,7 +60,7 @@ fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do
     RspSpec st body <- case method of
         Right GET  -> processGET  hinfo ishtml rfile
-        Right HEAD -> processHEAD hinfo ishtml rfile
+        Right HEAD -> processGET  hinfo ishtml rfile
         _          -> return notAllowed
     (response, mlen) <- case body of
             NoBody                 -> noBody st
@@ -134,32 +134,6 @@ tryGetFile (HandlerInfo spec req reqidx file _) ishtml lang = do
           | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
           | otherwise    -> return $ RspSpec st (BodyFileNoBody hdr)
         Partial skip len -> return $ RspSpec partialContent206 (BodyFile hdr sfile (Part skip len size))
-
-----------------------------------------------------------------
-
-processHEAD :: HandlerInfo -> Bool -> Maybe Path -> Rsp
-processHEAD hinfo ishtml rfile = tryHead     hinfo ishtml
-                             ||> tryRedirect hinfo rfile
-                             ||> return notFoundNoBody
-
-tryHead :: HandlerInfo -> Bool -> Rsp
-tryHead hinfo@(HandlerInfo _ _ _ _ langs) True =
-    runAnyOne $ map (tryHeadFile hinfo True) langs
-tryHead hinfo False= tryHeadFile hinfo False id
-
-tryHeadFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryHeadFile (HandlerInfo spec req reqidx file _) ishtml lang = do
-    finfo <- liftIO $ getFileInfo spec (lang file)
-    let mtime = fileInfoTime finfo
-        size  = fileInfoSize finfo
-        date  = fileInfoDate finfo
-        hdr = newHeader ishtml (pathByteString file) date
-        mrange = requestHeaderRange req
-        Just pst = ifmodified reqidx size mtime mrange
-               <|> Just (Full ok200)
-    case pst of
-        Full st -> return $ RspSpec st (BodyFileNoBody hdr)
-        _       -> goNext -- never reached
 
 ----------------------------------------------------------------
 
