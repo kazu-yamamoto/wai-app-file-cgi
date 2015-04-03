@@ -172,8 +172,5 @@ redirectURL req = BS.concat [
 notFound :: RspSpec
 notFound = RspSpec notFound404 BodyStatus
 
-notFoundNoBody :: RspSpec
-notFoundNoBody = RspSpec notFound404 NoBody
-
 notAllowed :: RspSpec
 notAllowed = RspSpec methodNotAllowed405 BodyStatus
