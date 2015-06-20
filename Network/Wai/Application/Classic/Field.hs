@@ -6,9 +6,9 @@ import Control.Arrow (first)
 import Control.Monad (mplus)
 import Data.Array ((!))
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS hiding (pack)
-import Data.ByteString.Char8 as BS (pack)
-import qualified Data.Map as Map (toList)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.Map as Map
 import Data.Maybe
 import Data.StaticHash (StaticHash)
 import qualified Data.StaticHash as SH
@@ -67,7 +67,7 @@ addVia cspec req hdr = (hVia, val) : hdr
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
 addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
   where
-    addr = BS.pack . showSockAddr . remoteHost $ req
+    addr = B8.pack . showSockAddr . remoteHost $ req
 
 newHeader :: Bool -> ByteString -> ByteString -> ResponseHeaders
 newHeader ishtml file date
@@ -85,13 +85,13 @@ mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
 extensions :: ByteString -> [ByteString]
 extensions file = exts
   where
-    entire = case BS.breakByte 46 file of -- '.'
+    entire = case BS.break (== 46) file of -- '.'
         (_,"") -> ""
         (_,x)  -> BS.tail x
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
-defaultMimeTypes' = SH.fromList $ map (first (BS.pack . T.unpack)) $ Map.toList defaultMimeMap
+defaultMimeTypes' = SH.fromList $ map (first (B8.pack . T.unpack)) $ Map.toList defaultMimeMap
 
 showBS :: Show a => a -> ByteString
-showBS = BS.pack . show
+showBS = B8.pack . show

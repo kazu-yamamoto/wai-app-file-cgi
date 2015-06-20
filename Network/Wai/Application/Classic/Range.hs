@@ -1,8 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 module Network.Wai.Application.Classic.Range (skipAndSize) where
 
-import Control.Applicative ((<|>), many, (<$>), (<$), (<*), (*>))
+#if __GLASGOW_HASKELL__ < 709
+import Control.Applicative ((<$>), (<$), (<*), (*>))
+#endif
+import Control.Applicative ((<|>), many)
 import Data.Attoparsec.ByteString hiding (satisfy)
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.ByteString.Char8 (ByteString)

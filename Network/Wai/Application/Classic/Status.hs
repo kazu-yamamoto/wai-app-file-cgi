@@ -1,8 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 module Network.Wai.Application.Classic.Status (getStatusInfo) where
 
+#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+#endif
 import Control.Arrow
 import Control.Exception
 import Control.Exception.IOChoice

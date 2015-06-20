@@ -9,11 +9,11 @@ module Network.Wai.Application.Classic.Path (
   ) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS (null, head, tail, last, concat, append, drop, length, breakByte, isSuffixOf)
-import qualified Data.ByteString.Char8 as BS (pack, unpack)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as B8
+import Data.Function
 import Data.String
 import Data.Word
-import Data.Function
 
 ----------------------------------------------------------------
 
@@ -26,7 +26,7 @@ data Path = Path {
 instance IsString Path where
     fromString path = Path {
         pathString = path
-      , pathByteString = BS.pack path
+      , pathByteString = B8.pack path
       }
 
 instance Show Path where
@@ -39,7 +39,7 @@ instance Eq Path where
 
 fromByteString :: ByteString -> Path
 fromByteString path = Path {
-    pathString = BS.unpack path
+    pathString = B8.unpack path
   , pathByteString = path
   }
 
@@ -166,7 +166,7 @@ breakAtSeparator :: Path -> (Path,Path)
 breakAtSeparator p = (fromByteString r1, fromByteString r2)
   where
     p' = pathByteString p
-    (r1,r2) = BS.breakByte pathSep p'
+    (r1,r2) = BS.break (== pathSep) p'
 
 isSuffixOf :: Path -> Path -> Bool
 isSuffixOf p1 p2 = p1' `BS.isSuffixOf` p2'

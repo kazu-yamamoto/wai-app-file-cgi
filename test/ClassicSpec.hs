@@ -1,8 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 module ClassicSpec where
 
+#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+#endif
 import Network.HTTP
 import Network.Stream
 import System.IO
