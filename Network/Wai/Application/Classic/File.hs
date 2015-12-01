@@ -21,6 +21,7 @@ import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Handler.Warp (getFileInfo)
 
 ----------------------------------------------------------------
 
@@ -79,7 +80,7 @@ fileApp cspec spec filei req respond = do
     rfile = redirectPath spec path
     langs = langSuffixes reqidx
     noBody st = return (responseLBS st [] "", Nothing)
-    bodyStatus st = liftIO (getStatusInfo cspec spec langs st)
+    bodyStatus st = liftIO (getStatusInfo cspec req langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) =
@@ -117,12 +118,13 @@ tryGet hinfo@(HandlerInfo _ _ _ _ langs) True =
 tryGet hinfo False = tryGetFile hinfo False id
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryGetFile (HandlerInfo spec req reqidx file _) ishtml lang = do
-    finfo <- liftIO $ getFileInfo spec (lang file)
-    let mtime = fileInfoTime finfo
-        size  = fileInfoSize finfo
-        sfile = fileInfoName finfo
-        date  = fileInfoDate finfo
+tryGetFile (HandlerInfo _ req reqidx file _) ishtml lang = do
+    let file' = pathString $ lang file
+    finfo <- fromFileInfo <$> liftIO (getFileInfo req file')
+    let mtime = fileinfoTime finfo
+        size  = fileinfoSize finfo
+        sfile = fileinfoName finfo
+        date  = fileinfoDate finfo
         mrange = requestHeaderRange req
         hdr = newHeader ishtml (pathByteString file) date
         Just pst = ifmodified    reqidx size mtime mrange
@@ -145,8 +147,9 @@ tryRedirect (HandlerInfo spec req reqidx _ langs) (Just file) =
     hinfo = HandlerInfo spec req reqidx file langs
 
 tryRedirectFile :: HandlerInfo -> Lang -> Rsp
-tryRedirectFile (HandlerInfo spec req _ file _) lang = do
-    _ <- liftIO $ getFileInfo spec (lang file)
+tryRedirectFile (HandlerInfo _ req _ file _) lang = do
+    let file' = pathString $ lang file
+    _ <- liftIO $ getFileInfo req file' -- expecting an error
     return $ RspSpec movedPermanently301 (BodyFileNoBody hdr)
   where
     hdr = redirectHeader req

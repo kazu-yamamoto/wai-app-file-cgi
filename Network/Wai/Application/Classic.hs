@@ -12,7 +12,6 @@ module Network.Wai.Application.Classic (
   -- * Files
   , FileAppSpec(..)
   , defaultFileAppSpec
-  , FileInfo(..)
   , FileRoute(..)
   , fileApp
   -- * Redirect

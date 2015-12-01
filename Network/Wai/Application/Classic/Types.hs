@@ -8,6 +8,7 @@ import qualified Network.HTTP.Client as H
 import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Wai
+import Network.Wai.Handler.Warp (FileInfo(..))
 import Network.Wai.Application.Classic.Path
 
 ----------------------------------------------------------------
@@ -37,17 +38,22 @@ data FileAppSpec = FileAppSpec {
     indexFile :: Path
     -- | Whether this is an HTML or not.
   , isHTML :: Path -> Bool
-    -- | A function to obtain information about a file.
-    --   If information is not obtained, an IO exception should be raised.
-  , getFileInfo :: Path -> IO FileInfo
   }
 
-data FileInfo = FileInfo {
-    fileInfoName :: !Path
-  , fileInfoSize :: !Integer
-  , fileInfoTime :: !HTTPDate
-  , fileInfoDate :: !ByteString
+data Fileinfo = Fileinfo {
+    fileinfoName :: !Path
+  , fileinfoSize :: !Integer
+  , fileinfoTime :: !HTTPDate
+  , fileinfoDate :: !ByteString
   } deriving (Eq, Show)
+
+fromFileInfo :: FileInfo -> Fileinfo
+fromFileInfo x = Fileinfo {
+    fileinfoName = fromString $ fileInfoName x
+  , fileinfoSize = fileInfoSize x
+  , fileinfoTime = fileInfoTime x
+  , fileinfoDate = fileInfoDate x
+  }
 
 data FileRoute = FileRoute {
     -- | Path prefix to be matched to 'rawPathInfo'.

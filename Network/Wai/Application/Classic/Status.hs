@@ -13,18 +13,20 @@ import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
 import qualified Data.StaticHash as M
 import Network.HTTP.Types
+import Network.Wai (Request)
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
+import Network.Wai.Handler.Warp
 
 ----------------------------------------------------------------
 
-getStatusInfo :: ClassicAppSpec -> FileAppSpec -> [Lang] -> Status -> IO StatusInfo
-getStatusInfo cspec spec langs st = getStatusFile getF dir code langs
-                                ||> getStatusBS code
-                                ||> return StatusNone
+getStatusInfo :: ClassicAppSpec -> Request -> [Lang] -> Status -> IO StatusInfo
+getStatusInfo cspec req langs st = getStatusFile getF dir code langs
+                               ||> getStatusBS code
+                               ||> return StatusNone
   where
     dir = statusFileDir cspec
-    getF = getFileInfo spec
+    getF = getFileInfo req
     code = statusCode st
 
 ----------------------------------------------------------------
@@ -56,13 +58,15 @@ statusFileMap = M.fromList $ map (statusCode &&& toPath) statusList
   where
     toPath s = fromString $ show (statusCode s) ++ ".html"
 
-getStatusFile :: (Path -> IO FileInfo) -> Path -> Int -> [Lang] -> IO StatusInfo
+getStatusFile :: (FilePath -> IO FileInfo) -> Path -> Int -> [Lang] -> IO StatusInfo
 getStatusFile getF dir code langs = tryFile mfiles
   where
     mfiles = case M.lookup code statusFileMap of
         Nothing   -> []
         Just file -> map ($ (dir </> file)) langs
     tryFile = foldr func goNext
-    func f io = StatusFile f . fileInfoSize <$> getF f ||> io
+    func f io = StatusFile f . fileInfoSize <$> getF f' ||> io
+      where
+        f' = pathString f
 
 ----------------------------------------------------------------
