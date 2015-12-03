@@ -2,22 +2,16 @@
 
 module Network.Wai.Application.Classic.Def where
 
-import Network.HTTP.Types
-import Network.Wai
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 -- |
--- Default value for  'ClassicAppSpec'. 'softwareName' is \"Classic\". 'logger' does not log at all. 'dater' calls 'epochTime' for every request. 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
+-- Default value for  'ClassicAppSpec'. 'softwareName' is \"Classic\". 'dater' calls 'epochTime' for every request. 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
 defaultClassicAppSpec :: ClassicAppSpec
 defaultClassicAppSpec = ClassicAppSpec {
     softwareName = "Classic"
-  , logger = defaultLogger
   , statusFileDir = "/usr/local/share/html/status/"
   }
-
-defaultLogger :: Request -> Status -> Maybe Integer -> IO ()
-defaultLogger _ _ _ = return ()
 
 ----------------------------------------------------------------
 

@@ -59,7 +59,7 @@ cgiApp' body cspec spec cgii req respond = E.bracket setup teardown (respond <=<
     cgi (rhdl,whdl,_) = do
         when body $ toCGI whdl req
         hClose whdl -- telling EOF
-        fromCGI rhdl cspec req
+        fromCGI rhdl
 
 ----------------------------------------------------------------
 
@@ -68,13 +68,12 @@ type TRYPATH = Either E.IOException String
 toCGI :: Handle -> Request -> IO ()
 toCGI whdl req = sourceRequestBody req $$ CB.sinkHandle whdl
 
-fromCGI :: Handle -> ClassicAppSpec -> Request -> IO Response
-fromCGI rhdl cspec req = do
+fromCGI :: Handle -> IO Response
+fromCGI rhdl = do
     (src', hs) <- cgiHeader `E.catch` recover
     let (st, hdr, hasBody) = case check hs of
             Nothing    -> (internalServerError500,[],False)
             Just (s,h) -> (s,h,True)
-    logger cspec req st Nothing
     let src | hasBody   = src'
             | otherwise = CL.sourceNull
     return $ responseSource st hdr src

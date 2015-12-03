@@ -12,8 +12,7 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 redirectApp :: ClassicAppSpec -> RedirectRoute -> Application
-redirectApp cspec route req respond = do
-    logger cspec req status Nothing
+redirectApp _ route req respond =
     respond $ responseLBS status hdr ""
   where
     path = fromByteString $ rawPathInfo req

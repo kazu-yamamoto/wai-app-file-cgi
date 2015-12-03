@@ -37,14 +37,10 @@ revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr 
             clientBody = H.responseBody hrsp
             ct         = lookup hContentType hdr
             src        = toSource ct clientBody
-        logger cspec req status (fromIntegral <$> mlen)
         respond $ responseSource status hdr src
 
     httpClientRequest = reqToHReq req route
     mgr = revProxyManager spec
-    mlen = case requestBodyLength req of
-        ChunkedBody     -> Nothing
-        KnownLength len -> Just len
     fixHeader = addVia cspec req . filter headerToBeRelay
 
 headerToBeRelay :: Header -> Bool
@@ -108,8 +104,7 @@ bodyToSource br = loop
 
 FIXME:
 badGateway :: ClassicAppSpec -> Request-> SomeException -> IO Response
-badGateway cspec req _ = do
-    logger cspec req st Nothing -- FIXME body length
+badGateway cspec req _ =
     return $ responseBuilder st hdr bdy
   where
     hdr = addServer cspec textPlainHeader

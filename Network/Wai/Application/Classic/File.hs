@@ -63,12 +63,11 @@ fileApp cspec spec filei req respond = do
         Right GET  -> processGET  hinfo ishtml rfile
         Right HEAD -> processGET  hinfo ishtml rfile
         _          -> return notAllowed
-    (response, mlen) <- case body of
+    (response, _) <- case body of
             NoBody                 -> noBody st
             BodyStatus             -> bodyStatus st
             BodyFileNoBody hdr     -> bodyFileNoBody st hdr
             BodyFile hdr afile rng -> bodyFile st hdr afile rng
-    logger cspec req st mlen
     respond response
   where
     reqidx = indexRequestHeader (requestHeaders req)

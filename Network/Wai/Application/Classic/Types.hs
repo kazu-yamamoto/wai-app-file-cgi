@@ -7,7 +7,6 @@ import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Date
 import Network.HTTP.Types
-import Network.Wai
 import Network.Wai.Handler.Warp (FileInfo(..))
 import Network.Wai.Application.Classic.Path
 
@@ -16,8 +15,6 @@ import Network.Wai.Application.Classic.Path
 data ClassicAppSpec = ClassicAppSpec {
     -- | Name specified to Server: in HTTP response.
     softwareName :: ByteString
-    -- | A function for logging. The third argument is a body size.
-  , logger :: Request -> Status -> Maybe Integer -> IO ()
     -- | A function to get HTTP's GMT Date.
   , statusFileDir :: Path
   }
