@@ -27,7 +27,6 @@ Library
                         Network.Wai.Application.Classic.Header
                         Network.Wai.Application.Classic.Lang
                         Network.Wai.Application.Classic.Path
-                        Network.Wai.Application.Classic.Range
                         Network.Wai.Application.Classic.Redirect
                         Network.Wai.Application.Classic.Status
                         Network.Wai.Application.Classic.Types

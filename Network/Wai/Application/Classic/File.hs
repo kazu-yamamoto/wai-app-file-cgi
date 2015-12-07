@@ -1,23 +1,23 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, CPP #-}
 
 module Network.Wai.Application.Classic.File (
     fileApp
   , redirectHeader
   ) where
 
+#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+#endif
 import Control.Exception.IOChoice.Lifted
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import Data.Maybe
 import qualified Data.ByteString.Char8 as BS (concat)
-import qualified Data.ByteString.Lazy.Char8 as BL (length)
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Internal
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
-import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
@@ -25,16 +25,19 @@ import Network.Wai.Handler.Warp (getFileInfo)
 
 ----------------------------------------------------------------
 
-type Rsp = IO RspSpec
+data RspSpec = NoBody    Status
+             | NoBodyHdr Status ResponseHeaders
+             | BodyFile  Status ResponseHeaders FilePath
+             deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
-data HandlerInfo = HandlerInfo FileAppSpec Request IndexedHeader Path [Lang]
+data HandlerInfo = HandlerInfo FileAppSpec Request Path [Lang]
 
-langSuffixes :: IndexedHeader -> [Lang]
-langSuffixes reqidx = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
+langSuffixes :: RequestHeaders -> [Lang]
+langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
   where
-    langs = map fromByteString $ languages reqidx
+    langs = map fromByteString $ languages hdr
 
 ----------------------------------------------------------------
 
@@ -59,97 +62,72 @@ If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do
-    RspSpec st body <- case method of
+    rspspec <- case method of
         Right GET  -> processGET  hinfo ishtml rfile
         Right HEAD -> processGET  hinfo ishtml rfile
         _          -> return notAllowed
-    (response, _) <- case body of
-            NoBody                 -> noBody st
-            BodyStatus             -> bodyStatus st
-            BodyFileNoBody hdr     -> bodyFileNoBody st hdr
-            BodyFile hdr afile rng -> bodyFile st hdr afile rng
+    response <- case rspspec of
+            NoBody    st        -> bodyStatus st
+            NoBodyHdr st hdr    -> return $ responseLBS st hdr ""
+            BodyFile  st hdr fl -> return $ ResponseFile st hdr fl Nothing
     respond response
   where
-    reqidx = indexRequestHeader (requestHeaders req)
-    hinfo = HandlerInfo spec req reqidx file langs
+    hinfo = HandlerInfo spec req file langs
     method = parseMethod $ requestMethod req
     path = pathinfoToFilePath req filei
     file = addIndex spec path
     ishtml = isHTML spec file
     rfile = redirectPath spec path
-    langs = langSuffixes reqidx
-    noBody st = return (responseLBS st [] "", Nothing)
+    langs = langSuffixes $ requestHeaders req
+    noBody st = return $ responseLBS st [] ""
     bodyStatus st = liftIO (getStatusInfo cspec req langs st)
                 >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) =
-        return (responseLBS st hdr bd, Just (len bd))
+        return $ responseLBS st hdr bd
       where
-        len = fromIntegral . BL.length
         hdr = textPlainHeader
     statusBody st (StatusFile afile len) =
-        return (ResponseFile st hdr fl mfp, Just len)
+        return $ ResponseFile st hdr fl mfp
       where
         mfp = Just (FilePart 0 len len)
         fl = pathString afile
         hdr = textHtmlHeader
-    bodyFileNoBody st hdr =
-        return (responseLBS st hdr "", Nothing)
-    bodyFile st hdr afile rng =
-        return (ResponseFile st hdr fl mfp, Just len)
-      where
-        (len, mfp) = case rng of
-            -- sendfile of Linux does not support the entire file
-            Entire bytes          -> (bytes, Just (FilePart 0 bytes bytes))
-            Part skip bytes total -> (bytes, Just (FilePart skip bytes total))
-        fl = pathString afile
 
 ----------------------------------------------------------------
 
-processGET :: HandlerInfo -> Bool -> Maybe Path -> Rsp
+processGET :: HandlerInfo -> Bool -> Maybe Path -> IO RspSpec
 processGET hinfo ishtml rfile = tryGet      hinfo ishtml
                             ||> tryRedirect hinfo rfile
                             ||> return notFound
 
-tryGet :: HandlerInfo -> Bool -> Rsp
-tryGet hinfo@(HandlerInfo _ _ _ _ langs) True =
+tryGet :: HandlerInfo -> Bool -> IO RspSpec
+tryGet hinfo@(HandlerInfo _ _ _ langs) True =
     runAnyOne $ map (tryGetFile hinfo True) langs
 tryGet hinfo False = tryGetFile hinfo False id
 
-tryGetFile :: HandlerInfo -> Bool -> Lang -> Rsp
-tryGetFile (HandlerInfo _ req reqidx file _) ishtml lang = do
+tryGetFile :: HandlerInfo -> Bool -> Lang -> IO RspSpec
+tryGetFile (HandlerInfo _ req file _) ishtml lang = do
     let file' = pathString $ lang file
-    finfo <- fromFileInfo <$> liftIO (getFileInfo req file')
-    let mtime = fileinfoTime finfo
-        size  = fileinfoSize finfo
-        sfile = fileinfoName finfo
-        date  = fileinfoDate finfo
-        mrange = requestHeaderRange req
-        hdr = newHeader ishtml (pathByteString file) date
-        Just pst = ifmodified    reqidx size mtime mrange
-               <|> ifunmodified  reqidx size mtime mrange
-               <|> ifrange       reqidx size mtime mrange
-               <|> unconditional reqidx size mtime mrange
-    case pst of
-        Full st
-          | st == ok200  -> return $ RspSpec ok200 (BodyFile hdr sfile (Entire size))
-          | otherwise    -> return $ RspSpec st (BodyFileNoBody hdr)
-        Partial skip len -> return $ RspSpec partialContent206 (BodyFile hdr sfile (Part skip len size))
+        hdr = newHeader ishtml $ pathByteString file
+    finfo <- fromFileInfo <$> liftIO (getFileInfo req file') -- expecting an error
+    let afile = pathString $ fileinfoName finfo
+    return $ BodyFile ok200 hdr afile
 
 ----------------------------------------------------------------
 
-tryRedirect  :: HandlerInfo -> Maybe Path -> Rsp
+tryRedirect  :: HandlerInfo -> Maybe Path -> IO RspSpec
 tryRedirect _ Nothing = goNext
-tryRedirect (HandlerInfo spec req reqidx _ langs) (Just file) =
+tryRedirect (HandlerInfo spec req _ langs) (Just file) =
     runAnyOne $ map (tryRedirectFile hinfo) langs
   where
-    hinfo = HandlerInfo spec req reqidx file langs
+    hinfo = HandlerInfo spec req file langs
 
-tryRedirectFile :: HandlerInfo -> Lang -> Rsp
-tryRedirectFile (HandlerInfo _ req _ file _) lang = do
+tryRedirectFile :: HandlerInfo -> Lang -> IO RspSpec
+tryRedirectFile (HandlerInfo _ req file _) lang = do
     let file' = pathString $ lang file
     _ <- liftIO $ getFileInfo req file' -- expecting an error
-    return $ RspSpec movedPermanently301 (BodyFileNoBody hdr)
+    return $ NoBodyHdr movedPermanently301 hdr
   where
     hdr = redirectHeader req
 
@@ -172,7 +150,7 @@ redirectURL req = BS.concat [
 ----------------------------------------------------------------
 
 notFound :: RspSpec
-notFound = RspSpec notFound404 BodyStatus
+notFound = NoBody notFound404
 
 notAllowed :: RspSpec
-notAllowed = RspSpec methodNotAllowed405 BodyStatus
+notAllowed = NoBody methodNotAllowed405

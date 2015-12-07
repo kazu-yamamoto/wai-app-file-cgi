@@ -4,7 +4,6 @@ module Network.Wai.Application.Classic.Field where
 
 import Control.Arrow (first)
 import Control.Monad (mplus)
-import Data.Array ((!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
@@ -13,7 +12,6 @@ import Data.Maybe
 import Data.StaticHash (StaticHash)
 import qualified Data.StaticHash as SH
 import qualified Data.Text as T
-import Network.HTTP.Date
 import Network.HTTP.Types
 import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
 import Network.SockAddr
@@ -24,17 +22,8 @@ import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 
-languages :: IndexedHeader -> [ByteString]
-languages reqidx = maybe [] parseLang $ reqidx ! idxAcceptLanguage
-
-ifModifiedSince :: IndexedHeader -> Maybe HTTPDate
-ifModifiedSince reqidx = reqidx ! idxIfModifiedSince >>= parseHTTPDate
-
-ifUnmodifiedSince :: IndexedHeader -> Maybe HTTPDate
-ifUnmodifiedSince reqidx = reqidx ! idxIfUnmodifiedSince >>= parseHTTPDate
-
-ifRange :: IndexedHeader -> Maybe HTTPDate
-ifRange reqidx = reqidx ! idxIfRange >>= parseHTTPDate
+languages :: RequestHeaders -> [ByteString]
+languages = maybe [] parseLang . lookup hAcceptLanguage
 
 ----------------------------------------------------------------
 
@@ -69,12 +58,10 @@ addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
   where
     addr = B8.pack . showSockAddr . remoteHost $ req
 
-newHeader :: Bool -> ByteString -> ByteString -> ResponseHeaders
-newHeader ishtml file date
-  | ishtml    = lastMod : textHtmlHeader
-  | otherwise = lastMod : (hContentType, mimeType file) : []
-  where
-    lastMod = (hLastModified, date)
+newHeader :: Bool -> ByteString -> ResponseHeaders
+newHeader ishtml file
+  | ishtml    =  textHtmlHeader
+  | otherwise = [(hContentType, mimeType file)]
 
 mimeType :: ByteString -> MimeType
 mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets

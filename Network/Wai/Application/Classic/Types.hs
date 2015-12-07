@@ -6,7 +6,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Date
-import Network.HTTP.Types
 import Network.Wai.Handler.Warp (FileInfo(..))
 import Network.Wai.Application.Classic.Path
 
@@ -99,31 +98,6 @@ data RevProxyRoute = RevProxyRoute {
     -- | Destination port number.
   , revProxyPort :: Int
   } deriving (Eq,Show)
-
-----------------------------------------------------------------
-
-data RspSpec = RspSpec {
-    -- | Response status.
-    rspStatus :: Status
-    -- | Response body.
-  , rspBody :: RspBody
-  } deriving (Eq,Show)
-
-data RspBody =
-    NoBody
-  | BodyStatus
-  | BodyFileNoBody ResponseHeaders
-  | BodyFile ResponseHeaders Path Range
-  deriving (Eq,Show)
-
-data Range =
-    -- | Entire file showing its file size
-    Entire Integer
-    -- | A part of a file taking offset and length
-  | Part Integer -- offset
-         Integer -- length
-         Integer -- total
-  deriving (Eq,Show)
 
 ----------------------------------------------------------------
 
