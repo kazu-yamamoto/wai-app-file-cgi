@@ -28,10 +28,10 @@ languages = maybe [] parseLang . lookup hAcceptLanguage
 ----------------------------------------------------------------
 
 textPlainHeader :: ResponseHeaders
-textPlainHeader = [(hContentType,"text/plain")]
+textPlainHeader = [(hContentType, "text/plain")]
 
 textHtmlHeader :: ResponseHeaders
-textHtmlHeader = [(hContentType,"text/html")]
+textHtmlHeader = [(hContentType, "text/html")]
 
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [(hLocation, url)]
@@ -58,13 +58,18 @@ addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
   where
     addr = B8.pack . showSockAddr . remoteHost $ req
 
+addForwardedProto :: Request -> ResponseHeaders -> ResponseHeaders
+addForwardedProto req hdr = (hXForwardedProto, proto) : hdr
+  where
+    proto = if isSecure req then "https" else "http"
+
 newHeader :: Bool -> ByteString -> ResponseHeaders
 newHeader ishtml file
   | ishtml    =  textHtmlHeader
   | otherwise = [(hContentType, mimeType file)]
 
 mimeType :: ByteString -> MimeType
-mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
+mimeType file = fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
   where
     targets = extensions file
     lok x = SH.lookup x defaultMimeTypes'
