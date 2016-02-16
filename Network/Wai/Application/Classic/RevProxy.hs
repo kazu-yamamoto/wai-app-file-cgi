@@ -58,7 +58,7 @@ reqToHReq req route = def {
     H.host           = revProxyDomain route
   , H.port           = revProxyPort route
   , H.secure         = False -- FIXME: upstream is HTTP only
-  , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
+  , H.requestHeaders = addForwardedHeaders $ filter headerToBeRelay hdr
   , H.path           = pathByteString path'
   , H.queryString    = dropQuestion query
   , H.requestBody    = bodyToHBody len body
@@ -81,6 +81,9 @@ reqToHReq req route = def {
     dropQuestion q = case BS.uncons q of
         Just (63, q') -> q' -- '?' is 63
         _             -> q
+    addForwardedHeaders
+        = addForwardedFor req
+        . addForwardedProto req
 
 bodyToHBody :: RequestBodyLength -> IO ByteString -> H.RequestBody
 bodyToHBody ChunkedBody src       = H.RequestBodyStreamChunked ($ src)

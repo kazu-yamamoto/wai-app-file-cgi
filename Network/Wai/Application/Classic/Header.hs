@@ -21,6 +21,10 @@ hStatus = "status"
 hXForwardedFor :: HeaderName
 hXForwardedFor = "x-forwarded-for"
 
+-- | Lookup key for X-Forwarded-Proto.
+hXForwardedProto :: HeaderName
+hXForwardedProto = "x-forwarded-proto"
+
 -- | Look-up key for Via.
 hVia :: HeaderName
 hVia = "via"
