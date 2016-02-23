@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Path (
-    Path(..)
+    Path
+  , pathString, pathByteString
   , fromString, fromByteString
   , (+++), (</>), (<\>), (<.>)
   , breakAtSeparator, hasLeadingPathSeparator, hasTrailingPathSeparator
@@ -11,37 +12,30 @@ module Network.Wai.Application.Classic.Path (
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
-import Data.Function
 import Data.String
 import Data.Word
 
 ----------------------------------------------------------------
 
 -- | Smart file path.
-data Path = Path {
-    pathString :: FilePath
-  , pathByteString :: ByteString
-  }
-
-instance IsString Path where
-    fromString path = Path {
-        pathString = path
-      , pathByteString = B8.pack path
-      }
+newtype Path = Path ByteString deriving Eq
 
 instance Show Path where
-    show = show . pathByteString
+    show (Path path) = show path
 
-instance Eq Path where
-    (==) = (==) `on` pathByteString
+instance IsString Path where
+    fromString path = Path $ B8.pack path
+
+pathByteString :: Path -> ByteString
+pathByteString (Path bs) = bs
+
+pathString :: Path -> String
+pathString (Path bs) = B8.unpack bs
 
 ----------------------------------------------------------------
 
 fromByteString :: ByteString -> Path
-fromByteString path = Path {
-    pathString = B8.unpack path
-  , pathByteString = path
-  }
+fromByteString path = Path path
 
 -- pathDot :: Word8
 -- pathDot = 46
