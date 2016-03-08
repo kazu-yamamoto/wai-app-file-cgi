@@ -59,7 +59,7 @@ reqToHReq req route = def {
   , H.port           = revProxyPort route
   , H.secure         = False -- FIXME: upstream is HTTP only
   , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
-  , H.path           = pathByteString path'
+  , H.path           = path'
   , H.queryString    = dropQuestion query
   , H.requestBody    = bodyToHBody len body
   , H.method         = requestMethod req
@@ -70,7 +70,7 @@ reqToHReq req route = def {
   , H.redirectCount  = 0
   }
   where
-    path = fromByteString $ rawPathInfo req
+    path = rawPathInfo req
     src = revProxySrc route
     dst = revProxyDst route
     hdr = requestHeaders req

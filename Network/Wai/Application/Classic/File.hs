@@ -37,7 +37,7 @@ data HandlerInfo = HandlerInfo FileAppSpec Request Path [Lang]
 langSuffixes :: RequestHeaders -> [Lang]
 langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
   where
-    langs = map fromByteString $ languages hdr
+    langs = languages hdr
 
 ----------------------------------------------------------------
 
@@ -109,7 +109,7 @@ tryGet hinfo False = tryGetFile hinfo False id
 tryGetFile :: HandlerInfo -> Bool -> Lang -> IO RspSpec
 tryGetFile (HandlerInfo _ req file _) ishtml lang = do
     let file' = pathString $ lang file
-        hdr = newHeader ishtml $ pathByteString file
+        hdr = newHeader ishtml file
     finfo <- fromFileInfo <$> liftIO (getFileInfo req file') -- expecting an error
     let afile = pathString $ fileinfoName finfo
     return $ BodyFile ok200 hdr afile

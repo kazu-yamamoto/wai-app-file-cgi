@@ -9,7 +9,7 @@ import Network.Wai.Application.Classic.Types
 pathinfoToFilePath :: Request -> FileRoute -> Path
 pathinfoToFilePath req filei = path'
   where
-    path = fromByteString $ rawPathInfo req
+    path = rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
     path' = dst </> (path <\> src)

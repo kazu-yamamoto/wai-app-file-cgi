@@ -120,7 +120,7 @@ execProcess cspec spec cgii req = do
     (prog, scriptName, pathinfo) =
         pathinfoToCGI (cgiSrc cgii)
                       (cgiDst cgii)
-                      (fromByteString (rawPathInfo req))
+                      (rawPathInfo req)
                       (indexCgi spec)
 
 makeEnv :: Request -> String -> String -> String -> ByteString ->
