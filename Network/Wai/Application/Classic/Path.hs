@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.Path (
     Path
   , pathString
   , fromString
-  , (+++), (</>), (<\>), (<.>)
+  , (</>), (<\>), (<.>)
   , breakAtSeparator, hasLeadingPathSeparator, hasTrailingPathSeparator
   , isSuffixOf
   ) where
@@ -21,7 +21,7 @@ import Data.Word
 type Path = ByteString
 
 pathString :: Path -> String
-pathString bs = B8.unpack bs
+pathString = B8.unpack
 
 ----------------------------------------------------------------
 
@@ -67,17 +67,6 @@ hasTrailingPathSeparator bs
   | otherwise             = False
 {-# INLINE hasTrailingPathSeparator #-}
 
-infixr +++
-
-{-|
-  Appending.
--}
-
-(+++) :: Path -> Path -> Path
-p1 +++ p2 = p
-  where
-    !p = p1 `BS.append` p2
-
 {-|
   Appending with the file separator.
 
@@ -93,13 +82,14 @@ p1 +++ p2 = p
 
 (</>) :: Path -> Path -> Path
 p1 </> p2
-  | has1 && not has2 = p1 +++ p2
-  | not has1 && has2 = p1 +++ p2
+  | has1 && not has2 = p1 `BS.append` p2
+  | not has1 && has2 = p1 `BS.append` p2
   | has1      = p1 `BS.append` BS.tail p2
   | otherwise = BS.concat [p1,pathSepBS,p2]
   where
     !has1 = hasTrailingPathSeparator p1
     !has2 = hasLeadingPathSeparator p2
+{-# INLINE (</>) #-}
 
 {-|
   Removing prefix. The prefix of the second argument is removed
@@ -116,6 +106,7 @@ p1 </> p2
 p1 <\> p2 = p
   where
     !p = BS.drop (BS.length p2) p1
+{-# INLINE (<\>) #-}
 
 {-|
   Adding suffix.
@@ -124,6 +115,7 @@ p1 <\> p2 = p
 p1 <.> p2 = p
   where
     !p = BS.concat [p1,pathDotBS,p2]
+{-# INLINE (<.>) #-}
 
 {-|
   Breaking at the first path separator.
@@ -137,6 +129,8 @@ p1 <.> p2 = p
 -}
 breakAtSeparator :: Path -> (Path,Path)
 breakAtSeparator p = BS.break (== pathSep) p
+{-# INLINE breakAtSeparator #-}
 
 isSuffixOf :: Path -> Path -> Bool
-isSuffixOf p1 p2 = p1 `BS.isSuffixOf` p2
+isSuffixOf = BS.isSuffixOf
+
