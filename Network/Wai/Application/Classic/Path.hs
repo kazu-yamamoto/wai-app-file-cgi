@@ -81,14 +81,14 @@ hasTrailingPathSeparator bs
 -}
 
 (</>) :: Path -> Path -> Path
-p1 </> p2
-  | has1 && not has2 = p1 `BS.append` p2
-  | not has1 && has2 = p1 `BS.append` p2
-  | has1      = p1 `BS.append` BS.tail p2
-  | otherwise = BS.concat [p1,pathSepBS,p2]
+p1 </> p2 = p
   where
     !has1 = hasTrailingPathSeparator p1
     !has2 = hasLeadingPathSeparator p2
+    !p | has1 && not has2 = p1 `BS.append` p2
+       | not has1 && has2 = p1 `BS.append` p2
+       | has1             = p1 `BS.append` BS.tail p2
+       | otherwise        = BS.concat [p1,pathSepBS,p2]
 {-# INLINE (</>) #-}
 
 {-|
