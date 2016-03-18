@@ -5,8 +5,6 @@ module Network.Wai.Application.Classic.Types where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Network.HTTP.Client as H
-import Network.HTTP.Date
-import Network.Wai.Handler.Warp (FileInfo(..))
 import Network.Wai.Application.Classic.Path
 
 ----------------------------------------------------------------
@@ -34,21 +32,6 @@ data FileAppSpec = FileAppSpec {
     indexFile :: Path
     -- | Whether this is an HTML or not.
   , isHTML :: Path -> Bool
-  }
-
-data Fileinfo = Fileinfo {
-    fileinfoName :: !Path
-  , fileinfoSize :: !Integer
-  , fileinfoTime :: !HTTPDate
-  , fileinfoDate :: !ByteString
-  } deriving (Eq, Show)
-
-fromFileInfo :: FileInfo -> Fileinfo
-fromFileInfo x = Fileinfo {
-    fileinfoName = fromString $ fileInfoName x
-  , fileinfoSize = fileInfoSize x
-  , fileinfoTime = fileInfoTime x
-  , fileinfoDate = fileInfoDate x
   }
 
 data FileRoute = FileRoute {

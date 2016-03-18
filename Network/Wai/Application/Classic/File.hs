@@ -110,9 +110,8 @@ tryGetFile :: HandlerInfo -> Bool -> Lang -> IO RspSpec
 tryGetFile (HandlerInfo _ req file _) ishtml lang = do
     let file' = pathString $ file <.> lang
         hdr = newHeader ishtml file
-    finfo <- fromFileInfo <$> liftIO (getFileInfo req file') -- expecting an error
-    let afile = pathString $ fileinfoName finfo
-    return $ BodyFile ok200 hdr afile
+    _ <- liftIO (getFileInfo req file') -- expecting an error
+    return $ BodyFile ok200 hdr file'
 
 ----------------------------------------------------------------
 
