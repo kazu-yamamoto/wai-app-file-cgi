@@ -82,4 +82,6 @@ data RevProxyRoute = RevProxyRoute {
   , revProxyPort :: Int
   } deriving (Eq,Show)
 
-type Lang = Path
+----------------------------------------------------------------
+
+type Lang = Path -> Path
