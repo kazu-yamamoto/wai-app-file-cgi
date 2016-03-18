@@ -12,7 +12,7 @@ pathinfoToFilePath req filei = path'
     path = rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    path' = dst </> (path <\> src)
+    path' = dst </> (path <\> src) -- fixme
 
 addIndex :: FileAppSpec -> Path -> Path
 addIndex spec path
