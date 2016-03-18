@@ -35,7 +35,7 @@ data RspSpec = NoBody    Status
 data HandlerInfo = HandlerInfo FileAppSpec Request Path [Lang]
 
 langSuffixes :: RequestHeaders -> [Lang]
-langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
+langSuffixes hdr = langs ++ ["", "en"]
   where
     langs = languages hdr
 
@@ -104,11 +104,11 @@ processGET hinfo ishtml rfile = tryGet      hinfo ishtml
 tryGet :: HandlerInfo -> Bool -> IO RspSpec
 tryGet hinfo@(HandlerInfo _ _ _ langs) True =
     runAnyOne $ map (tryGetFile hinfo True) langs
-tryGet hinfo False = tryGetFile hinfo False id
+tryGet hinfo False = tryGetFile hinfo False ""
 
 tryGetFile :: HandlerInfo -> Bool -> Lang -> IO RspSpec
 tryGetFile (HandlerInfo _ req file _) ishtml lang = do
-    let file' = pathString $ lang file
+    let file' = pathString $ file <.> lang
         hdr = newHeader ishtml file
     finfo <- fromFileInfo <$> liftIO (getFileInfo req file') -- expecting an error
     let afile = pathString $ fileinfoName finfo
@@ -125,7 +125,7 @@ tryRedirect (HandlerInfo spec req _ langs) (Just file) =
 
 tryRedirectFile :: HandlerInfo -> Lang -> IO RspSpec
 tryRedirectFile (HandlerInfo _ req file _) lang = do
-    let file' = pathString $ lang file
+    let file' = pathString $ file <.> lang
     _ <- liftIO $ getFileInfo req file' -- expecting an error
     return $ NoBodyHdr movedPermanently301 hdr
   where

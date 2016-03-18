@@ -63,7 +63,7 @@ getStatusFile getF dir code langs = tryFile mfiles
   where
     mfiles = case M.lookup code statusFileMap of
         Nothing   -> []
-        Just file -> map ($ (dir </> file)) langs
+        Just file -> map (\x -> dir </> file <.> x) langs
     tryFile = foldr func goNext
     func f io = StatusFile f . fileInfoSize <$> getF f' ||> io
       where
