@@ -50,6 +50,7 @@ hasLeadingPathSeparator bs
   | BS.null bs            = False
   | BS.head bs == pathSep = True
   | otherwise             = False
+{-# INLINE hasLeadingPathSeparator #-}
 
 {-|
   Checking if the path ends with the path separator.
@@ -64,6 +65,7 @@ hasTrailingPathSeparator bs
   | BS.null bs            = False
   | BS.last bs == pathSep = True
   | otherwise             = False
+{-# INLINE hasTrailingPathSeparator #-}
 
 infixr +++
 
@@ -91,14 +93,13 @@ p1 +++ p2 = p
 
 (</>) :: Path -> Path -> Path
 p1 </> p2
-  | has1 && not has2 || not has1 && has2 = p1 +++ p2
-  | has1      = pp1
-  | otherwise = pp2
+  | has1 && not has2 = p1 +++ p2
+  | not has1 && has2 = p1 +++ p2
+  | has1      = p1 `BS.append` BS.tail p2
+  | otherwise = BS.concat [p1,pathSepBS,p2]
   where
-    has1 = hasTrailingPathSeparator p1
-    has2 = hasLeadingPathSeparator p2
-    pp1 = p1 `BS.append` BS.tail p2
-    pp2 = BS.concat [p1,pathSepBS,p2]
+    !has1 = hasTrailingPathSeparator p1
+    !has2 = hasLeadingPathSeparator p2
 
 {-|
   Removing prefix. The prefix of the second argument is removed
