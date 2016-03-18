@@ -8,7 +8,7 @@ module Network.Wai.Application.Classic.File (
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 #endif
-import Control.Exception.IOChoice.Lifted
+import Control.Exception.IOChoice
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import Data.Maybe
