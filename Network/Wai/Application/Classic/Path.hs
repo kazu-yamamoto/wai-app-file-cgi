@@ -22,6 +22,7 @@ type Path = ByteString
 
 pathString :: Path -> String
 pathString = B8.unpack
+{-# INLINE pathString #-}
 
 ----------------------------------------------------------------
 
@@ -133,4 +134,4 @@ breakAtSeparator p = BS.break (== pathSep) p
 
 isSuffixOf :: Path -> Path -> Bool
 isSuffixOf = BS.isSuffixOf
-
+{-# INLINE isSuffixOf #-}
