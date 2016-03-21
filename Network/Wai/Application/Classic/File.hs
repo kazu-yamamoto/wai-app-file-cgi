@@ -9,7 +9,6 @@ module Network.Wai.Application.Classic.File (
 import Control.Applicative
 #endif
 import Control.Exception.IOChoice
-import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import Data.Maybe
 import qualified Data.ByteString.Char8 as BS (concat)
@@ -80,7 +79,7 @@ fileApp cspec spec filei req respond = do
     rfile = redirectPath spec path
     langs = langSuffixes $ requestHeaders req
     noBody st = return $ responseLBS st [] ""
-    bodyStatus st = liftIO (getStatusInfo cspec req langs st)
+    bodyStatus st = getStatusInfo cspec req langs st
                 >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) =
@@ -110,7 +109,7 @@ tryGetFile :: HandlerInfo -> Bool -> Lang -> IO RspSpec
 tryGetFile (HandlerInfo _ req file _) ishtml lang = do
     let file' = pathString $ lang file
         hdr = newHeader ishtml file
-    _ <- liftIO (getFileInfo req file') -- expecting an error
+    _ <- getFileInfo req file' -- expecting an error
     return $ BodyFile ok200 hdr file'
 
 ----------------------------------------------------------------
@@ -125,7 +124,7 @@ tryRedirect (HandlerInfo spec req _ langs) (Just file) =
 tryRedirectFile :: HandlerInfo -> Lang -> IO RspSpec
 tryRedirectFile (HandlerInfo _ req file _) lang = do
     let file' = pathString $ lang file
-    _ <- liftIO $ getFileInfo req file' -- expecting an error
+    _ <- getFileInfo req file' -- expecting an error
     return $ NoBodyHdr movedPermanently301 hdr
   where
     hdr = redirectHeader req
