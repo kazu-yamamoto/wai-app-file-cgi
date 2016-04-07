@@ -1,5 +1,5 @@
 Name:                   wai-app-file-cgi
-Version:                3.1.0
+Version:                3.1.1
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -62,7 +62,7 @@ Library
                       , unix
                       , wai >= 3.2 && < 3.3
                       , wai-conduit
-                      , warp >= 3.2 && < 3.3
+                      , warp >= 3.2.6 && < 3.3
                       , word8
 
 Test-Suite doctest
@@ -92,7 +92,7 @@ Test-Suite spec
                       , unix
                       , wai >= 3.2 && < 3.3
                       , wai-app-file-cgi
-                      , warp >= 3.2 && < 3.3
+                      , warp >= 3.2.6 && < 3.3
                       , HTTP
 
 Source-Repository head
