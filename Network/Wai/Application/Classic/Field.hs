@@ -64,7 +64,7 @@ newHeader ishtml file
   | otherwise = [(hContentType, mimeType file)]
 
 mimeType :: ByteString -> MimeType
-mimeType file =fromMaybe defaultMimeType . foldr1 mplus . map lok $ targets
+mimeType file = fromMaybe defaultMimeType . foldr mplus Nothing . map lok $ targets
   where
     targets = extensions file
     lok x = SH.lookup x defaultMimeTypes'
