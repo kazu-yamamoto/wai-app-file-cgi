@@ -29,6 +29,11 @@ spec = do
             bdy <- rspBody <$> sendGET url
             ans <- readFileAscii "test/html/index.html"
             bdy `shouldBe` ans
+        it "works with files that lack a file extension" $ do
+            let url = "http://127.0.0.1:2345/no_extension"
+            bdy <- rspBody <$> sendGET url
+            ans <- readFileAscii "test/html/no_extension"
+            bdy `shouldBe` ans
         it "returns 400 if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendGET url
