@@ -12,7 +12,13 @@ Homepage:               http://www.mew.org/~kazu/proj/mighttpd/
 Category:               Web, Yesod
 Cabal-Version:          >= 1.10
 Build-Type:             Simple
-
+Extra-Source-Files:     test/cgi-bin/broken
+                        test/cgi-bin/echo-env
+                        test/data/post
+                        test/html/index.html
+                        test/html/ja/index.html.ja
+                        test/html/no_extension
+                        test/html/redirect/index.html
 Library
   Default-Language:     Haskell2010
   GHC-Options:          -Wall
