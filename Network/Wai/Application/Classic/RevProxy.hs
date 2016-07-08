@@ -13,7 +13,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS (uncons)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
-import Data.Default.Class
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Conduit
@@ -54,7 +53,7 @@ headerToBeRelay (k,_)
 ----------------------------------------------------------------
 
 reqToHReq :: Request -> RevProxyRoute -> H.Request
-reqToHReq req route = def {
+reqToHReq req route = H.defaultRequest {
     H.host           = revProxyDomain route
   , H.port           = revProxyPort route
   , H.secure         = False -- FIXME: upstream is HTTP only
@@ -66,7 +65,7 @@ reqToHReq req route = def {
   , H.proxy          = Nothing
 --  , H.rawBody        = False
   , H.decompress     = const True
-  , H.checkStatus    = \_ _ _ -> Nothing -- FIXME
+  , H.checkResponse  = \_ _ -> return ()
   , H.redirectCount  = 0
   }
   where

@@ -52,7 +52,7 @@ Library
                       , data-default-class
                       , directory
                       , filepath
-                      , http-client >= 0.3
+                      , http-client >= 0.5
                       , http-conduit >= 2.1
                       , http-date
                       , http-types >= 0.7
