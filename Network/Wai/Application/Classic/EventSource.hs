@@ -46,7 +46,7 @@ splitDoubleLineBreak str = go str 0
                                     in xs:go ys 0
             | otherwise = [bs]
 
-eventSourceConduit :: Conduit ByteString IO (Flush Builder)
+eventSourceConduit :: ConduitT ByteString (Flush Builder) IO ()
 eventSourceConduit = CL.concatMapAccum f ""
   where
     f input rest = (last xs, concatMap addFlush $ init xs)
@@ -55,5 +55,5 @@ eventSourceConduit = CL.concatMapAccum f ""
         xs = splitDoubleLineBreak (rest `BS.append` input)
 
 -- insert Flush if exists a double line-break
-bodyToEventSource :: H.BodyReader -> Source IO (Flush Builder)
-bodyToEventSource br = HC.bodyReaderSource br $= eventSourceConduit
+bodyToEventSource :: H.BodyReader -> ConduitT () (Flush Builder) IO ()
+bodyToEventSource br = HC.bodyReaderSource br .| eventSourceConduit
