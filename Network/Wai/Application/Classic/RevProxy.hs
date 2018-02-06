@@ -87,11 +87,11 @@ bodyToHBody (KnownLength len) src = H.RequestBodyStream (fromIntegral len) ($ sr
 
 ----------------------------------------------------------------
 
-toSource :: Maybe ByteString -> H.BodyReader -> Source IO (Flush Builder)
+toSource :: Maybe ByteString -> H.BodyReader -> ConduitT () (Flush Builder) IO ()
 toSource (Just "text/event-stream") = bodyToEventSource
 toSource _                          = bodyToSource
 
-bodyToSource :: H.BodyReader -> Source IO (Flush Builder)
+bodyToSource :: H.BodyReader -> ConduitT () (Flush Builder) IO ()
 bodyToSource br = loop
   where
     loop = do
