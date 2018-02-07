@@ -66,7 +66,11 @@ cgiApp' body cspec spec cgii req respond = E.bracket setup teardown (respond <=<
 type TRYPATH = Either E.IOException String
 
 toCGI :: Handle -> Request -> IO ()
+#if MIN_VERSION_conduit(1,3,0)
+toCGI whdl req = runConduit (sourceRequestBody req .| CB.sinkHandle whdl)
+#else
 toCGI whdl req = sourceRequestBody req $$ CB.sinkHandle whdl
+#endif
 
 fromCGI :: Handle -> IO Response
 fromCGI rhdl = do

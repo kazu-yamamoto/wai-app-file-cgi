@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, CPP #-}
 
 module Network.Wai.Application.Classic.Conduit (
     byteStringToBuilder
@@ -25,11 +25,19 @@ byteStringToBuilder = BB.fromByteString
 
 ----------------------------------------------------------------
 
+#if MIN_VERSION_conduit(1,3,0)
+toResponseSource :: SealedConduitT () ByteString IO ()
+                 -> IO (ConduitT () (Flush Builder) IO ())
+toResponseSource rsrc = do
+    let src = unsealConduitT rsrc
+    return $ src .| CL.map (Chunk . byteStringToBuilder)
+#else
 toResponseSource :: ResumableSource IO ByteString
                  -> IO (Source IO (Flush Builder))
 toResponseSource rsrc = do
     (src,_) <- unwrapResumable rsrc
     return $ src $= CL.map (Chunk . byteStringToBuilder)
+#endif
 
 ----------------------------------------------------------------
 
