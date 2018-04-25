@@ -41,7 +41,7 @@ toResponseSource rsrc = do
 
 ----------------------------------------------------------------
 
-parseHeader :: Sink ByteString IO RequestHeaders
+parseHeader :: ConduitM ByteString o IO RequestHeaders
 parseHeader = sinkParser parseHeader'
 
 parseHeader' :: Parser RequestHeaders
