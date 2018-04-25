@@ -3,7 +3,6 @@
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
-import Blaze.ByteString.Builder (Builder)
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 #endif
@@ -11,6 +10,7 @@ import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS (uncons)
+import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
 import qualified Network.HTTP.Client as H

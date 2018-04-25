@@ -42,7 +42,6 @@ Library
                       , array
                       , attoparsec >= 0.10.0.0
                       , attoparsec-conduit
-                      , blaze-builder
                       , blaze-html
                       , bytestring
                       , case-insensitive

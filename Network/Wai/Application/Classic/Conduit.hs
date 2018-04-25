@@ -6,11 +6,11 @@ module Network.Wai.Application.Classic.Conduit (
   , parseHeader
   ) where
 
-import Blaze.ByteString.Builder (Builder)
-import qualified Blaze.ByteString.Builder as BB (fromByteString)
 import Control.Applicative
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
+import Data.ByteString.Builder (Builder)
+import qualified Data.ByteString.Builder as BB (byteString)
 import Data.CaseInsensitive (CI(..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
@@ -21,7 +21,7 @@ import Network.HTTP.Types
 ----------------------------------------------------------------
 
 byteStringToBuilder :: ByteString -> Builder
-byteStringToBuilder = BB.fromByteString
+byteStringToBuilder = BB.byteString
 
 ----------------------------------------------------------------
 

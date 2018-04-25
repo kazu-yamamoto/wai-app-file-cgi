@@ -4,9 +4,9 @@ module Network.Wai.Application.Classic.EventSource (
     bodyToEventSource
   ) where
 
-import Blaze.ByteString.Builder
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import Data.ByteString.Builder
 import Data.ByteString.Char8 ()
 import Data.Conduit
 import qualified Data.Conduit.List as CL
@@ -55,7 +55,7 @@ eventSourceConduit = CL.concatMapAccum f ""
   where
     f input rest = (last xs, concatMap addFlush $ init xs)
       where
-        addFlush x = [Chunk (fromByteString x), Flush]
+        addFlush x = [Chunk (byteString x), Flush]
         xs = splitDoubleLineBreak (rest `BS.append` input)
 
 -- insert Flush if exists a double line-break
