@@ -66,7 +66,7 @@ Library
                       , unix
                       , wai >= 3.2 && < 3.3
                       , wai-conduit
-                      , warp >= 3.2.6 && < 3.3
+                      , warp >= 3.2.20 && < 3.3
                       , word8
 
 Test-Suite doctest
