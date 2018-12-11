@@ -43,6 +43,11 @@ spec = do
             bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]
             ans <- readFileAscii "test/html/ja/index.html.ja"
             bdy `shouldBe` ans
+        it "returns English HTML even if language is specified" $ do
+            let url = "http://127.0.0.1:2345/"
+            bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]
+            ans <- readFileAscii "test/html/index.html"
+            bdy `shouldBe` ans
         it "returns 304 if not changed" $ do
             let url = "http://127.0.0.1:2345/"
             hdr <- rspHeaders <$> sendGET url
