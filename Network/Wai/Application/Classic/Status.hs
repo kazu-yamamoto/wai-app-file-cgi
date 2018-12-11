@@ -3,12 +3,9 @@
 
 module Network.Wai.Application.Classic.Status (getStatusInfo) where
 
-#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
-#endif
 import Control.Arrow
 import Control.Exception
-import Control.Exception.IOChoice
 import qualified Data.ByteString.Lazy as BL
 import Data.ByteString.Lazy.Char8 ()
 import qualified Data.StaticHash as M
@@ -22,8 +19,8 @@ import Network.Wai.Handler.Warp
 
 getStatusInfo :: ClassicAppSpec -> Request -> [Lang] -> Status -> IO StatusInfo
 getStatusInfo cspec req langs st = getStatusFile getF dir code langs
-                               ||> getStatusBS code
-                               ||> return StatusNone
+                               <|> getStatusBS code
+                               <|> return StatusNone
   where
     dir = statusFileDir cspec
     getF = getFileInfo req
@@ -64,8 +61,8 @@ getStatusFile getF dir code langs = tryFile mfiles
     mfiles = case M.lookup code statusFileMap of
         Nothing   -> []
         Just file -> map ($ (dir </> file)) langs
-    tryFile = foldr func goNext
-    func f io = StatusFile f . fileInfoSize <$> getF f' ||> io
+    tryFile = foldr func empty
+    func f io = StatusFile f . fileInfoSize <$> getF f' <|> io
       where
         f' = pathString f
 

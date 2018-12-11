@@ -38,7 +38,7 @@ Library
                         Network.Wai.Application.Classic.Types
                         Network.Wai.Application.Classic.RevProxy
 
-  Build-Depends:        base >= 4 && < 5
+  Build-Depends:        base >= 4.9 && < 5
                       , array
                       , attoparsec >= 0.10.0.0
                       , attoparsec-conduit
@@ -54,8 +54,6 @@ Library
                       , http-conduit >= 2.1
                       , http-date
                       , http-types >= 0.7
-                      , io-choice
-                      , lifted-base
                       , mime-types
                       , network
                       , process

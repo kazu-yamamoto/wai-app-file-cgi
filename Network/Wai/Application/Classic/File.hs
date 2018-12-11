@@ -5,10 +5,7 @@ module Network.Wai.Application.Classic.File (
   , redirectHeader
   ) where
 
-#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
-#endif
-import Control.Exception.IOChoice
 import Data.ByteString (ByteString)
 import Data.Maybe
 import qualified Data.ByteString.Char8 as BS (concat)
@@ -97,8 +94,8 @@ fileApp cspec spec filei req respond = do
 
 processGET :: HandlerInfo -> Bool -> Maybe Path -> IO RspSpec
 processGET hinfo ishtml rfile = tryGet      hinfo ishtml
-                            ||> tryRedirect hinfo rfile
-                            ||> return notFound
+                            <|> tryRedirect hinfo rfile
+                            <|> return notFound
 
 tryGet :: HandlerInfo -> Bool -> IO RspSpec
 tryGet hinfo@(HandlerInfo _ _ _ langs) True =
@@ -115,7 +112,7 @@ tryGetFile (HandlerInfo _ req file _) ishtml lang = do
 ----------------------------------------------------------------
 
 tryRedirect  :: HandlerInfo -> Maybe Path -> IO RspSpec
-tryRedirect _ Nothing = goNext
+tryRedirect _ Nothing = empty
 tryRedirect (HandlerInfo spec req _ langs) (Just file) =
     runAnyOne $ map (tryRedirectFile hinfo) langs
   where
@@ -152,3 +149,8 @@ notFound = NoBody notFound404
 
 notAllowed :: RspSpec
 notAllowed = NoBody methodNotAllowed405
+
+----------------------------------------------------------------
+
+runAnyOne :: [IO a] -> IO a
+runAnyOne = foldr (<|>) empty
