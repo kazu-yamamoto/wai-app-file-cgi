@@ -127,6 +127,9 @@ execProcess cspec spec cgii req = do
       , child_group = Nothing
       , child_user = Nothing
 #endif
+#if __GLASGOW_HASKELL__ >= 802
+      , use_process_jobs = False
+#endif
       }
     (prog, scriptName, pathinfo) =
         pathinfoToCGI (cgiSrc cgii)
