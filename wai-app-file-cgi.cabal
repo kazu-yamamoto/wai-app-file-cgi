@@ -66,6 +66,8 @@ Library
                       , wai-conduit
                       , warp >= 3.2.21 && < 3.3
                       , word8
+  if impl(ghc >= 8)
+    Default-Extensions:  Strict StrictData
 
 Test-Suite doctest
   Type:                 exitcode-stdio-1.0
@@ -75,6 +77,8 @@ Test-Suite doctest
   Main-Is:              doctests.hs
   Build-Depends:        base
                       , doctest >= 0.9.3
+  if impl(ghc >= 8)
+    Default-Extensions:  Strict StrictData
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
@@ -96,6 +100,8 @@ Test-Suite spec
                       , wai-app-file-cgi
                       , warp >= 3.2.6 && < 3.3
                       , HTTP
+  if impl(ghc >= 8)
+    Default-Extensions:  Strict StrictData
 
 Source-Repository head
   Type:                 git
