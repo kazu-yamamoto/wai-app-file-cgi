@@ -75,7 +75,7 @@ reqToHReq req route = H.defaultRequest {
     hdr = requestHeaders req
     query = rawQueryString req
     len = requestBodyLength req
-    body = requestBody req
+    body = getRequestBodyChunk req
     path' = dst </> (path <\> src)
     dropQuestion q = case BS.uncons q of
         Just (63, q') -> q' -- '?' is 63
