@@ -41,7 +41,6 @@ Library
   Build-Depends:        base >= 4.9 && < 5
                       , array
                       , attoparsec >= 0.10.0.0
-                      , attoparsec-conduit
                       , bytestring
                       , case-insensitive
                       , conduit >= 1.1
