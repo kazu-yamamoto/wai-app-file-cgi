@@ -104,4 +104,4 @@ Test-Suite spec
 
 Source-Repository head
   Type:                 git
-  Location:             git://github.com/kazu-yamamoto/wai-app-file-cgi
+  Location:             https://github.com/kazu-yamamoto/wai-app-file-cgi
