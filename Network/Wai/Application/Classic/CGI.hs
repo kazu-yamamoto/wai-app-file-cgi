@@ -24,6 +24,9 @@ import System.Environment
 import System.IO
 import System.Process
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+
 ----------------------------------------------------------------
 
 type ENVVARS = [(String,String)]
