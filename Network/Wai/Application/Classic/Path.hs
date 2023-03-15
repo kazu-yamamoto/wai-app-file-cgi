@@ -15,6 +15,9 @@ import qualified Data.ByteString.Char8 as B8
 import Data.String
 import Data.Word
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+
 ----------------------------------------------------------------
 
 -- | File path.
