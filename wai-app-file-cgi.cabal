@@ -1,6 +1,6 @@
 cabal-version:      >=1.10
 name:               wai-app-file-cgi
-version:            3.1.10
+version:            3.1.11
 license:            BSD3
 license-file:       LICENSE
 maintainer:         Kazu Yamamoto <kazu@iij.ad.jp>
