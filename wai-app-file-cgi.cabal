@@ -73,7 +73,7 @@ library
         unix,
         wai >=3.2 && <3.3,
         wai-conduit,
-        warp >=3.3 && <3.4,
+        warp >=3.4 && <3.5,
         word8
 
     if impl(ghc >=8)
@@ -98,7 +98,7 @@ test-suite spec
         unix,
         wai >=3.2 && <3.3,
         wai-app-file-cgi,
-        warp >=3.3 && <3.4,
+        warp >=3.4 && <3.5,
         HTTP
 
     if impl(ghc >=8)
