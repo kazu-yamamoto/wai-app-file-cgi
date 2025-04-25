@@ -56,7 +56,6 @@ library
         conduit >=1.1,
         conduit-extra,
         containers,
-        data-default-class,
         directory,
         filepath,
         http-client >=0.5,
