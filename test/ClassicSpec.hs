@@ -89,6 +89,11 @@ spec = do
                 Just lm = lookupHeader HdrLocation hdr
             sc `shouldBe` (3,0,1)
             lm `shouldBe` "//127.0.0.1:2345/redirect/"
+        it "returns index.html for /exact-route.html matching exactRoute" $ do
+            let url = "http://127.0.0.1:2345/exact-route.html"
+            bdy <- rspBody <$> sendGET url
+            ans <- readFileAscii "test/html/index.html"
+            bdy `shouldBe` ans
 
 ----------------------------------------------------------------
 
