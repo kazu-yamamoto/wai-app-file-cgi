@@ -19,7 +19,7 @@ spec = do
             bdy <- rspBody <$> sendPOST url "foo bar.\nbaz!\n"
             ans <- readFileAscii "test/data/post"
             bdy `shouldBe` ans
-        it "causes 500 if the CGI script does not exist" $ do
+        it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` (5,0,0)
