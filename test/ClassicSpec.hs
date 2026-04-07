@@ -14,12 +14,16 @@ import Test.Hspec
 spec :: Spec
 spec = do
     describe "cgiApp" $ do
+        it "returns index.cgi with empty PATH_INFO for /cgi-bin/" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/"
+            bdy <- rspBody <$> sendGET url
+            bdy `shouldBe` "index.cgi\n"
         it "accepts POST" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/echo-env/pathinfo?query=foo"
             bdy <- rspBody <$> sendPOST url "foo bar.\nbaz!\n"
             ans <- readFileAscii "test/data/post"
             bdy `shouldBe` ans
-        it "causes 500 if the CGI script does not exist" $ do
+        it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` (5,0,0)
