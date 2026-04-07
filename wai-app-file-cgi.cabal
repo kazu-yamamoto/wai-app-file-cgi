@@ -15,6 +15,7 @@ description:
 category:           Web, Yesod
 build-type:         Simple
 extra-source-files:
+    test/cgi-bin/index.cgi
     test/cgi-bin/broken
     test/cgi-bin/echo-env
     test/data/post
