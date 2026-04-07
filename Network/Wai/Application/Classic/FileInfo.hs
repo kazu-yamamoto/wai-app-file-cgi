@@ -1,5 +1,6 @@
 module Network.Wai.Application.Classic.FileInfo where
 
+import qualified Data.ByteString as BS
 import Network.Wai
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
@@ -12,7 +13,7 @@ import Network.Wai.Application.Classic.Types
 >>> import Network.Wai.Internal (Request (..))
 >>> mkReq p = defaultRequest { rawPathInfo = p }
 >>> pathinfoToFilePath (mkReq "/") (FileRoute "/" "/srv/http")
-"/srv/http/"
+"/srv/http"
 >>> pathinfoToFilePath (mkReq "/") (FileRoute "/" "/srv/http/")
 "/srv/http/"
 >>> pathinfoToFilePath (mkReq "/hello") (FileRoute "/" "/srv/http/")
@@ -28,19 +29,21 @@ import Network.Wai.Application.Classic.Types
 >>> pathinfoToFilePath (mkReq "/sub/dir/test.html") (FileRoute "/sub/dir/" "/var/root/")
 "/var/root/test.html"
 >>> pathinfoToFilePath (mkReq "/exact/match") (FileRoute "/exact/match" "/tmp/dst")
-"/tmp/dst/"
+"/tmp/dst"
 >>> pathinfoToFilePath (mkReq "/exact/match/") (FileRoute "/exact/match" "/tmp/dst")
 "/tmp/dst/"
 >>> pathinfoToFilePath (mkReq "/exact/match/more.html") (FileRoute "/exact/match" "/tmp/dst")
 "/tmp/dst/more.html"
 -}
 pathinfoToFilePath :: Request -> FileRoute -> Path
-pathinfoToFilePath req filei = path'
+pathinfoToFilePath req filei
+  | BS.null path' = dst
+  | otherwise     = dst </> path'
   where
     path = rawPathInfo req
     src = fileSrc filei
     dst = fileDst filei
-    path' = dst </> (path <\> src) -- fixme
+    path' = path <\> src
 
 addIndex :: FileAppSpec -> Path -> Path
 addIndex spec path
