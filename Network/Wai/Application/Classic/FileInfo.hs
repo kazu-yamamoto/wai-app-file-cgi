@@ -7,11 +7,15 @@ import Network.Wai.Application.Classic.Types
 
 ----------------------------------------------------------------
 
-{- |
+{- $setup
 >>> :set -XOverloadedStrings
 >>> import Network.Wai (defaultRequest)
 >>> import Network.Wai.Internal (Request (..))
 >>> mkReq p = defaultRequest { rawPathInfo = p }
+>>> import Network.Wai.Application.Classic.Def (defaultFileAppSpec)
+-}
+
+{- |
 >>> pathinfoToFilePath (mkReq "/") (FileRoute "/" "/srv/http")
 "/srv/http"
 >>> pathinfoToFilePath (mkReq "/") (FileRoute "/" "/srv/http/")
@@ -45,6 +49,17 @@ pathinfoToFilePath req filei
     dst = fileDst filei
     path' = path <\> src
 
+{- |
+
+It matters to 'pathinfoToFilePath' whether the 'FileRoute' has trailing slashes
+which also influences 'addIndex':
+
+>>> addIndex defaultFileAppSpec (pathinfoToFilePath (mkReq "/exact/match.html") (FileRoute "/exact/match.html" "/some/file.html"))
+"/some/file.html"
+>>> addIndex defaultFileAppSpec (pathinfoToFilePath (mkReq "/some/dir") (FileRoute "/some/dir/" "/target/dir/"))
+"/target/dir/index.html"
+
+-}
 addIndex :: FileAppSpec -> Path -> Path
 addIndex spec path
   | hasTrailingPathSeparator path = path </> indexFile spec
