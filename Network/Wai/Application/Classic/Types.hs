@@ -34,10 +34,33 @@ data FileAppSpec = FileAppSpec {
   , isHTML :: Path -> Bool
   }
 
+-- | 'FileRoute' describes the relationship between Paths requested via HTTP
+--   and paths to serve on disk. Specifically, it maps a /single/ path
+--   prefix to a destination path, so the 'FileRoute' needs to be applicable
+--   to the current request,
+--   e.g. @FileRoute "\/static\/" "\/var\/www\/static\/"@ will yield a 404 if
+--   @"/page.html"@ is requested.
+--   In the simplest case @FileRoute "\/" "\/var\/www\/"@ routes everything
+--   to a single destination path.
+--
+--   When resolving routes, no filesystem reads are performed, so path
+--   type needs to be inferred from the path.
+--
+--   * If 'fileSrc' and 'fileDst' have a trailing slash, source and
+--     destination are assumed to be directories (this e.g. enables
+--     fallback to index files).
+--
+--   * If 'fileSrc' and 'fileDst' lack a trailing slash, they are
+--     assumed to be files. This is supported since 3.2.0.
+--
+--   If the path type inferrable from 'FileRoute' does not match
+--   the type of the destination path on disk, routes will not
+--   resolve correctly. If the inferrable type doesn't match
+--   between 'fileSrc' and 'fileDst', routing may also misbehave.
 data FileRoute = FileRoute {
-    -- | Path prefix to be matched to 'rawPathInfo'.
+    -- | Path (prefix) to be matched to 'rawPathInfo'.
     fileSrc :: Path
-    -- | Path prefix to an actual file system.
+    -- | Path to the target directory or file.
   , fileDst :: Path
   } deriving (Eq,Show)
 
