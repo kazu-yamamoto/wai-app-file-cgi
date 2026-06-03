@@ -22,18 +22,6 @@ hStatus = "status"
 hXForwardedFor :: HeaderName
 hXForwardedFor = "x-forwarded-for"
 
--- | Look-up key for Via.
-hVia :: HeaderName
-hVia = "via"
-
--- | Lookup key for Transfer-Encoding.
-hTransferEncoding :: HeaderName
-hTransferEncoding = "transfer-encoding"
-
--- | Lookup key for Accept-Encoding.
-hAcceptEncoding :: HeaderName
-hAcceptEncoding = "accept-encoding"
-
 ----------------------------------------------------------------
 
 hostPort :: Request -> (ByteString, ByteString)

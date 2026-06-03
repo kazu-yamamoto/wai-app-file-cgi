@@ -65,7 +65,7 @@ library
         http-client >=0.5,
         http-conduit >=2.1,
         http-date,
-        http-types >=0.7,
+        http-types >=0.12.5,
         mime-types,
         network,
         process,
