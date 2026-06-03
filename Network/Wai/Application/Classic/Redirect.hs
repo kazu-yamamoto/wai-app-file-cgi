@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Redirect (
-    redirectApp
-  ) where
+    redirectApp,
+) where
 
 import Data.ByteString.Char8
 import Network.HTTP.Types

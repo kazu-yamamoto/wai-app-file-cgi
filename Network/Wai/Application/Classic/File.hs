@@ -1,30 +1,32 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.File (
-    fileApp
-  , redirectHeader
-  ) where
+    fileApp,
+    redirectHeader,
+) where
 
 import Control.Applicative
 import Data.ByteString (ByteString)
-import Data.Maybe
 import qualified Data.ByteString.Char8 as BS (concat)
+import Data.Maybe
 import Network.HTTP.Types
 import Network.Wai
-import Network.Wai.Internal
 import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.FileInfo
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Status
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Handler.Warp (getFileInfo)
+import Network.Wai.Internal
 
 ----------------------------------------------------------------
 
-data RspSpec = NoBody    Status
-             | NoBodyHdr Status ResponseHeaders
-             | BodyFile  Status ResponseHeaders FilePath
-             deriving (Eq,Show)
+data RspSpec
+    = NoBody Status
+    | NoBodyHdr Status ResponseHeaders
+    | BodyFile Status ResponseHeaders FilePath
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
@@ -37,35 +39,33 @@ langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
 
 ----------------------------------------------------------------
 
-{-|
-  Handle GET and HEAD for a static file.
-
-If 'pathInfo' ends with \'/\', 'indexFile' is automatically
-added. In this case, "Acceptable-Language:" is also handled.  Suppose
-'indexFile' is "index.html" and if the value is "ja,en", then
-\"index.html.ja\", \"index.html.en\", and \"index.html\" are tried to be
-opened in order.
-
-If 'pathInfo' does not end with \'/\' and a corresponding index file
-exist, redirection is specified in HTTP response.
-
-Directory contents are NOT automatically listed. To list directory
-contents, an index file must be created beforehand.
-
-The following HTTP headers are handled: Acceptable-Language:,
-If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
--}
-
+-- |
+--   Handle GET and HEAD for a static file.
+--
+-- If 'pathInfo' ends with \'/\', 'indexFile' is automatically
+-- added. In this case, "Acceptable-Language:" is also handled.  Suppose
+-- 'indexFile' is "index.html" and if the value is "ja,en", then
+-- \"index.html.ja\", \"index.html.en\", and \"index.html\" are tried to be
+-- opened in order.
+--
+-- If 'pathInfo' does not end with \'/\' and a corresponding index file
+-- exist, redirection is specified in HTTP response.
+--
+-- Directory contents are NOT automatically listed. To list directory
+-- contents, an index file must be created beforehand.
+--
+-- The following HTTP headers are handled: Acceptable-Language:,
+-- If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do
     rspspec <- case method of
-        Right GET  -> processGET  hinfo ishtml rfile
-        Right HEAD -> processGET  hinfo ishtml rfile
-        _          -> return notAllowed
+        Right GET -> processGET hinfo ishtml rfile
+        Right HEAD -> processGET hinfo ishtml rfile
+        _ -> return notAllowed
     response <- case rspspec of
-            NoBody    st        -> bodyStatus st
-            NoBodyHdr st hdr    -> return $ responseLBS st hdr ""
-            BodyFile  st hdr fl -> return $ ResponseFile st hdr fl Nothing
+        NoBody st -> bodyStatus st
+        NoBodyHdr st hdr -> return $ responseLBS st hdr ""
+        BodyFile st hdr fl -> return $ ResponseFile st hdr fl Nothing
     respond response
   where
     hinfo = HandlerInfo spec req file langs
@@ -76,8 +76,9 @@ fileApp cspec spec filei req respond = do
     rfile = redirectPath spec path
     langs = langSuffixes $ requestHeaders req
     noBody st = return $ responseLBS st [] ""
-    bodyStatus st = getStatusInfo cspec req langs st
-                >>= statusBody st
+    bodyStatus st =
+        getStatusInfo cspec req langs st
+            >>= statusBody st
     statusBody st StatusNone = noBody st
     statusBody st (StatusByteString bd) =
         return $ responseLBS st hdr bd
@@ -93,9 +94,10 @@ fileApp cspec spec filei req respond = do
 ----------------------------------------------------------------
 
 processGET :: HandlerInfo -> Bool -> Maybe Path -> IO RspSpec
-processGET hinfo ishtml rfile = tryGet      hinfo ishtml
-                            <|> tryRedirect hinfo rfile
-                            <|> return notFound
+processGET hinfo ishtml rfile =
+    tryGet hinfo ishtml
+        <|> tryRedirect hinfo rfile
+        <|> return notFound
 
 tryGet :: HandlerInfo -> Bool -> IO RspSpec
 tryGet hinfo@(HandlerInfo _ _ _ langs) True =
@@ -111,7 +113,7 @@ tryGetFile (HandlerInfo _ req file _) ishtml lang = do
 
 ----------------------------------------------------------------
 
-tryRedirect  :: HandlerInfo -> Maybe Path -> IO RspSpec
+tryRedirect :: HandlerInfo -> Maybe Path -> IO RspSpec
 tryRedirect _ Nothing = empty
 tryRedirect (HandlerInfo spec req _ langs) (Just file) =
     runAnyOne $ map (tryRedirectFile hinfo) langs
@@ -130,15 +132,16 @@ redirectHeader :: Request -> ResponseHeaders
 redirectHeader = locationHeader . redirectURL
 
 redirectURL :: Request -> ByteString
-redirectURL req = BS.concat [
-  -- Scheme must not be included because of no way to tell
-  -- http or https.
-    "//"
-  -- Host includes ":<port>" if it is not 80.
-  , host
-  , rawPathInfo req
-  , "/"
-  ]
+redirectURL req =
+    BS.concat
+        [ -- Scheme must not be included because of no way to tell
+          -- http or https.
+          "//"
+        , -- Host includes ":<port>" if it is not 80.
+          host
+        , rawPathInfo req
+        , "/"
+        ]
   where
     host = fromMaybe "" $ requestHeaderHost req
 

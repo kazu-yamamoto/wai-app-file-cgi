@@ -1,37 +1,41 @@
 {-# LANGUAGE CPP #-}
 
-{-|
-  WAI (Web Application Interface) Application for static files and CGI.
--}
-
+-- |
+--   WAI (Web Application Interface) Application for static files and CGI.
 module Network.Wai.Application.Classic (
-  -- * Common
-    ClassicAppSpec(..)
-  , defaultClassicAppSpec
-  , StatusInfo(..)
-  -- * Files
-  , FileAppSpec(..)
-  , defaultFileAppSpec
-  , FileRoute(..)
-  , fileApp
-  -- * Redirect
-  , RedirectRoute(..)
-  , redirectApp
-  -- * CGI
-  , CgiAppSpec(..)
-  , defaultCgiAppSpec
-  , CgiRoute(..)
-  , cgiApp
-  -- * Reverse Proxy
-  , RevProxyAppSpec(..)
-  , RevProxyRoute(..)
-  , revProxyApp
-  -- * Path
-  , module Network.Wai.Application.Classic.Path
-  -- * Misc
-  , redirectHeader
-  , hostPort
-  ) where
+    -- * Common
+    ClassicAppSpec (..),
+    defaultClassicAppSpec,
+    StatusInfo (..),
+
+    -- * Files
+    FileAppSpec (..),
+    defaultFileAppSpec,
+    FileRoute (..),
+    fileApp,
+
+    -- * Redirect
+    RedirectRoute (..),
+    redirectApp,
+
+    -- * CGI
+    CgiAppSpec (..),
+    defaultCgiAppSpec,
+    CgiRoute (..),
+    cgiApp,
+
+    -- * Reverse Proxy
+    RevProxyAppSpec (..),
+    RevProxyRoute (..),
+    revProxyApp,
+
+    -- * Path
+    module Network.Wai.Application.Classic.Path,
+
+    -- * Misc
+    redirectHeader,
+    hostPort,
+) where
 
 import Network.Wai.Application.Classic.CGI
 import Network.Wai.Application.Classic.Def

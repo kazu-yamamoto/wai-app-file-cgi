@@ -3,9 +3,17 @@
 module Network.Wai.Application.Classic.Lang (parseLang) where
 
 import Control.Applicative hiding (optional)
-import Data.Attoparsec.ByteString (Parser, takeWhile, parseOnly)
-import Data.Attoparsec.ByteString.Char8 (char, string, count, space, digit, option, sepBy1)
-import Data.ByteString.Char8 hiding (map, count, take, takeWhile, notElem)
+import Data.Attoparsec.ByteString (Parser, parseOnly, takeWhile)
+import Data.Attoparsec.ByteString.Char8 (
+    char,
+    count,
+    digit,
+    option,
+    sepBy1,
+    space,
+    string,
+ )
+import Data.ByteString.Char8 hiding (count, map, notElem, take, takeWhile)
 import Data.List (sortBy)
 import Data.Ord
 import Prelude hiding (takeWhile)
@@ -13,20 +21,19 @@ import Prelude hiding (takeWhile)
 -- |
 -- >>> parseLang "en-gb;q=0.8, en;q=0.7, da"
 -- ["da","en-gb","en"]
-
 parseLang :: ByteString -> [ByteString]
 parseLang bs = case parseOnly acceptLanguage bs of
     Right ls -> map fst $ sortBy detrimental ls
-    _        -> []
+    _ -> []
   where
     detrimental = flip (comparing snd)
 
 ----------------------------------------------------------------
 
-acceptLanguage :: Parser [(ByteString,Int)]
+acceptLanguage :: Parser [(ByteString, Int)]
 acceptLanguage = rangeQvalue `sepBy1` (spaces *> char ',' *> spaces)
 
-rangeQvalue :: Parser (ByteString,Int)
+rangeQvalue :: Parser (ByteString, Int)
 rangeQvalue = (,) <$> languageRange <*> quality
 
 languageRange :: Parser ByteString
@@ -36,8 +43,9 @@ quality :: Parser Int
 quality = option 1000 (string ";q=" *> qvalue)
 
 qvalue :: Parser Int
-qvalue = 1000  <$  (char '1' *> optional (char '.' *> range 0 3 digit))
-     <|> read3 <$> (char '0' *> option "0" (char '.' *> range 0 3 digit))
+qvalue =
+    1000 <$ (char '1' *> optional (char '.' *> range 0 3 digit))
+        <|> read3 <$> (char '0' *> option "0" (char '.' *> range 0 3 digit))
   where
     read3 n = read . take 3 $ n ++ repeat '0'
     optional p = () <$ p <|> return ()

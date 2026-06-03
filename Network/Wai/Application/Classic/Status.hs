@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Status (getStatusInfo) where
 
@@ -18,9 +18,10 @@ import Network.Wai.Handler.Warp
 ----------------------------------------------------------------
 
 getStatusInfo :: ClassicAppSpec -> Request -> [Lang] -> Status -> IO StatusInfo
-getStatusInfo cspec req langs st = getStatusFile getF dir code langs
-                               <|> getStatusBS code
-                               <|> return StatusNone
+getStatusInfo cspec req langs st =
+    getStatusFile getF dir code langs
+        <|> getStatusBS code
+        <|> return StatusNone
   where
     dir = statusFileDir cspec
     getF = getFileInfo req
@@ -29,12 +30,12 @@ getStatusInfo cspec req langs st = getStatusFile getF dir code langs
 ----------------------------------------------------------------
 
 statusList :: [Status]
-statusList = [
-    methodNotAllowed405    -- File
-  , notFound404            -- File
-  , internalServerError500 -- CGI
-  , badGateway502          -- RevProxy
-  ]
+statusList =
+    [ methodNotAllowed405 -- File
+    , notFound404 -- File
+    , internalServerError500 -- CGI
+    , badGateway502 -- RevProxy
+    ]
 
 ----------------------------------------------------------------
 
@@ -46,7 +47,7 @@ statusBSMap = M.fromList $ map (statusCode &&& toRspBody) statusList
 getStatusBS :: Int -> IO StatusInfo
 getStatusBS code = case M.lookup code statusBSMap of
     Nothing -> throwIO $ userError "getStatusBS"
-    Just x  -> return x
+    Just x -> return x
 
 ----------------------------------------------------------------
 
@@ -55,11 +56,12 @@ statusFileMap = M.fromList $ map (statusCode &&& toPath) statusList
   where
     toPath s = fromString $ show (statusCode s) ++ ".html"
 
-getStatusFile :: (FilePath -> IO FileInfo) -> Path -> Int -> [Lang] -> IO StatusInfo
+getStatusFile
+    :: (FilePath -> IO FileInfo) -> Path -> Int -> [Lang] -> IO StatusInfo
 getStatusFile getF dir code langs = tryFile mfiles
   where
     mfiles = case M.lookup code statusFileMap of
-        Nothing   -> []
+        Nothing -> []
         Just file -> map ($ (dir </> file)) langs
     tryFile = foldr func empty
     func f io = StatusFile f . fileInfoSize <$> getF f' <|> io

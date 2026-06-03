@@ -1,17 +1,18 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Conduit (
-    byteStringToBuilder
-  , toResponseSource
-  , parseHeader
-  ) where
+    byteStringToBuilder,
+    toResponseSource,
+    parseHeader,
+) where
 
 import Control.Applicative
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Builder as BB (byteString)
-import Data.CaseInsensitive (CI(..), mk)
+import Data.CaseInsensitive (CI (..), mk)
 import Data.Conduit
 import Data.Conduit.Attoparsec
 import qualified Data.Conduit.List as CL
@@ -54,10 +55,10 @@ type RequestHeader = (CI ByteString, ByteString)
 
 keyVal :: Parser RequestHeader
 keyVal = do
-    key <- takeTill (wcollon==)
+    key <- takeTill (wcollon ==)
     _ <- word8 wcollon
     skipWhile (wspace ==)
-    val <- takeTill (`elem` [wlf,wcr])
+    val <- takeTill (`elem` [wlf, wcr])
     crlf
     return (mk key, val)
 

@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 
@@ -26,16 +26,15 @@ import Network.Wai.Conduit
 ----------------------------------------------------------------
 
 -- |  Relaying any requests as reverse proxy.
-
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
 revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr proxy
   where
     proxy hrsp = do
-        let status     = H.responseStatus hrsp
-            hdr        = fixHeader $ H.responseHeaders hrsp
+        let status = H.responseStatus hrsp
+            hdr = fixHeader $ H.responseHeaders hrsp
             clientBody = H.responseBody hrsp
-            ct         = lookup hContentType hdr
-            src        = toSource ct clientBody
+            ct = lookup hContentType hdr
+            src = toSource ct clientBody
         respond $ responseSource status hdr src
 
     httpClientRequest = reqToHReq req route
@@ -43,31 +42,32 @@ revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr 
     fixHeader = addVia cspec req . filter headerToBeRelay
 
 headerToBeRelay :: Header -> Bool
-headerToBeRelay (k,_)
-      | k == hTransferEncoding = False
-      | k == hAcceptEncoding   = False
-      | k == hContentLength    = False
-      | k == hContentEncoding  = False -- See H.decompress.
-      | otherwise              = True
+headerToBeRelay (k, _)
+    | k == hTransferEncoding = False
+    | k == hAcceptEncoding = False
+    | k == hContentLength = False
+    | k == hContentEncoding = False -- See H.decompress.
+    | otherwise = True
 
 ----------------------------------------------------------------
 
 reqToHReq :: Request -> RevProxyRoute -> H.Request
-reqToHReq req route = H.defaultRequest {
-    H.host           = revProxyDomain route
-  , H.port           = revProxyPort route
-  , H.secure         = False -- FIXME: upstream is HTTP only
-  , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
-  , H.path           = path'
-  , H.queryString    = dropQuestion query
-  , H.requestBody    = bodyToHBody len body
-  , H.method         = requestMethod req
-  , H.proxy          = Nothing
---  , H.rawBody        = False
-  , H.decompress     = const True
-  , H.checkResponse  = \_ _ -> return ()
-  , H.redirectCount  = 0
-  }
+reqToHReq req route =
+    H.defaultRequest
+        { H.host = revProxyDomain route
+        , H.port = revProxyPort route
+        , H.secure = False -- FIXME: upstream is HTTP only
+        , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
+        , H.path = path'
+        , H.queryString = dropQuestion query
+        , H.requestBody = bodyToHBody len body
+        , H.method = requestMethod req
+        , H.proxy = Nothing
+        , --  , H.rawBody        = False
+          H.decompress = const True
+        , H.checkResponse = \_ _ -> return ()
+        , H.redirectCount = 0
+        }
   where
     path = rawPathInfo req
     src = revProxySrc route
@@ -79,10 +79,10 @@ reqToHReq req route = H.defaultRequest {
     path' = dst </> (path <\> src)
     dropQuestion q = case BS.uncons q of
         Just (63, q') -> q' -- '?' is 63
-        _             -> q
+        _ -> q
 
 bodyToHBody :: RequestBodyLength -> IO ByteString -> H.RequestBody
-bodyToHBody ChunkedBody src       = H.RequestBodyStreamChunked ($ src)
+bodyToHBody ChunkedBody src = H.RequestBodyStreamChunked ($ src)
 bodyToHBody (KnownLength len) src = H.RequestBodyStream (fromIntegral len) ($ src)
 
 ----------------------------------------------------------------
@@ -93,7 +93,7 @@ toSource :: Maybe ByteString -> H.BodyReader -> ConduitT () (Flush Builder) IO (
 toSource :: Maybe ByteString -> H.BodyReader -> Source IO (Flush Builder)
 #endif
 toSource (Just "text/event-stream") = bodyToEventSource
-toSource _                          = bodyToSource
+toSource _ = bodyToSource
 
 #if MIN_VERSION_conduit(1,3,0)
 bodyToSource :: H.BodyReader -> ConduitT () (Flush Builder) IO ()
@@ -107,6 +107,7 @@ bodyToSource br = loop
         unless (BS.null bs) $ do
             yield $ Chunk $ byteStringToBuilder bs
             loop
+
 {-
 
 FIXME:

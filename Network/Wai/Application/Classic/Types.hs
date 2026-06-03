@@ -9,30 +9,30 @@ import Network.Wai.Application.Classic.Path
 
 ----------------------------------------------------------------
 
-data ClassicAppSpec = ClassicAppSpec {
-    -- | Name specified to Server: in HTTP response.
-    softwareName :: ByteString
-    -- | A function to get HTTP's GMT Date.
-  , statusFileDir :: Path
-  }
+data ClassicAppSpec = ClassicAppSpec
+    { softwareName :: ByteString
+    -- ^ Name specified to Server: in HTTP response.
+    , statusFileDir :: Path
+    -- ^ A function to get HTTP's GMT Date.
+    }
 
-data StatusInfo =
-  -- | HTTP status body is created from 'LB.ByteString'.
-    StatusByteString BL.ByteString
-  -- | HTTP status body is created from 'FilePath'.
-  | StatusFile Path Integer
-  -- | No HTTP status body.
-  | StatusNone
-  deriving (Eq,Show)
+data StatusInfo
+    = -- | HTTP status body is created from 'LB.ByteString'.
+      StatusByteString BL.ByteString
+    | -- | HTTP status body is created from 'FilePath'.
+      StatusFile Path Integer
+    | -- | No HTTP status body.
+      StatusNone
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
-data FileAppSpec = FileAppSpec {
-    -- | A file name of an index file.
-    indexFile :: Path
-    -- | Whether this is an HTML or not.
-  , isHTML :: Path -> Bool
-  }
+data FileAppSpec = FileAppSpec
+    { indexFile :: Path
+    -- ^ A file name of an index file.
+    , isHTML :: Path -> Bool
+    -- ^ Whether this is an HTML or not.
+    }
 
 -- | 'FileRoute' describes the relationship between Paths requested via HTTP
 --   and paths to serve on disk. Specifically, it maps a /single/ path
@@ -57,53 +57,58 @@ data FileAppSpec = FileAppSpec {
 --   the type of the destination path on disk, routes will not
 --   resolve correctly. If the inferrable type doesn't match
 --   between 'fileSrc' and 'fileDst', routing may also misbehave.
-data FileRoute = FileRoute {
-    -- | Path (prefix) to be matched to 'rawPathInfo'.
-    fileSrc :: Path
-    -- | Path to the target directory or file.
-  , fileDst :: Path
-  } deriving (Eq,Show)
+data FileRoute = FileRoute
+    { fileSrc :: Path
+    -- ^ Path (prefix) to be matched to 'rawPathInfo'.
+    , fileDst :: Path
+    -- ^ Path to the target directory or file.
+    }
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
-data RedirectRoute = RedirectRoute {
-    -- | Path prefix to be matched to 'rawPathInfo'.
-    redirectSrc :: Path
-    -- | Path prefix to an actual file system.
-  , redirectDst :: Path
-  } deriving (Eq,Show)
+data RedirectRoute = RedirectRoute
+    { redirectSrc :: Path
+    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    , redirectDst :: Path
+    -- ^ Path prefix to an actual file system.
+    }
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
-data CgiAppSpec = CgiAppSpec {
-    -- | A file name of the default CGI.
-    indexCgi :: Path
-  } deriving (Eq,Show)
+data CgiAppSpec = CgiAppSpec
+    { indexCgi :: Path
+    -- ^ A file name of the default CGI.
+    }
+    deriving (Eq, Show)
 
-data CgiRoute = CgiRoute {
-    -- | Path prefix to be matched to 'rawPathInfo'.
-    cgiSrc :: Path
-    -- | Path prefix to an actual file system.
-  , cgiDst :: Path
-  } deriving (Eq,Show)
+data CgiRoute = CgiRoute
+    { cgiSrc :: Path
+    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    , cgiDst :: Path
+    -- ^ Path prefix to an actual file system.
+    }
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 
-data RevProxyAppSpec = RevProxyAppSpec {
-    -- | Connection manager
-    revProxyManager :: H.Manager
-  }
+data RevProxyAppSpec = RevProxyAppSpec
+    { revProxyManager :: H.Manager
+    -- ^ Connection manager
+    }
 
-data RevProxyRoute = RevProxyRoute {
-    -- | Path prefix to be matched to 'rawPathInfo'.
-    revProxySrc :: Path
-    -- | Destination path prefix.
-  , revProxyDst :: Path
-    -- | Destination domain name.
-  , revProxyDomain :: ByteString
-    -- | Destination port number.
-  , revProxyPort :: Int
-  } deriving (Eq,Show)
+data RevProxyRoute = RevProxyRoute
+    { revProxySrc :: Path
+    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    , revProxyDst :: Path
+    -- ^ Destination path prefix.
+    , revProxyDomain :: ByteString
+    -- ^ Destination domain name.
+    , revProxyPort :: Int
+    -- ^ Destination port number.
+    }
+    deriving (Eq, Show)
 
 ----------------------------------------------------------------
 

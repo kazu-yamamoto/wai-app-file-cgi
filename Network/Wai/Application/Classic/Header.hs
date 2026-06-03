@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Wai.Application.Classic.Header where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (tail,break)
+import qualified Data.ByteString.Char8 as BS (break, tail)
 import Network.HTTP.Types.Header
 import Network.Wai
 
@@ -37,7 +38,7 @@ hAcceptEncoding = "accept-encoding"
 
 hostPort :: Request -> (ByteString, ByteString)
 hostPort req = case requestHeaderHost req of
-    Nothing -> ("Unknown","80")
+    Nothing -> ("Unknown", "80")
     Just hostport -> case BS.break (== ':') hostport of
-        (host,"")   -> (host,"80")
-        (host,port) -> (host, BS.tail port)
+        (host, "") -> (host, "80")
+        (host, port) -> (host, BS.tail port)

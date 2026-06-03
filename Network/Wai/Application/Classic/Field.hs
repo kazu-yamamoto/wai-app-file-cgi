@@ -13,7 +13,7 @@ import Data.StaticHash (StaticHash)
 import qualified Data.StaticHash as SH
 import qualified Data.Text as T
 import Network.HTTP.Types
-import Network.Mime (defaultMimeMap, defaultMimeType, MimeType)
+import Network.Mime (MimeType, defaultMimeMap, defaultMimeType)
 import Network.SockAddr
 import Network.Wai
 import Network.Wai.Application.Classic.Header
@@ -28,10 +28,10 @@ languages = maybe [] parseLang . lookup hAcceptLanguage
 ----------------------------------------------------------------
 
 textPlainHeader :: ResponseHeaders
-textPlainHeader = [(hContentType,"text/plain")]
+textPlainHeader = [(hContentType, "text/plain")]
 
 textHtmlHeader :: ResponseHeaders
-textHtmlHeader = [(hContentType,"text/html")]
+textHtmlHeader = [(hContentType, "text/html")]
 
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [(hLocation, url)]
@@ -41,16 +41,17 @@ addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
 addVia cspec req hdr = (hVia, val) : hdr
   where
     ver = httpVersion req
-    val = BS.concat [
-        showBS (httpMajor ver)
-      , "."
-      , showBS (httpMinor ver)
-      , " "
-      , host
-      , " ("
-      , softwareName cspec
-      , ")"
-      ]
+    val =
+        BS.concat
+            [ showBS (httpMajor ver)
+            , "."
+            , showBS (httpMinor ver)
+            , " "
+            , host
+            , " ("
+            , softwareName cspec
+            , ")"
+            ]
     host = fromMaybe "" $ requestHeaderHost req
 
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
@@ -60,8 +61,8 @@ addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
 
 newHeader :: Bool -> ByteString -> ResponseHeaders
 newHeader ishtml file
-  | ishtml    =  textHtmlHeader
-  | otherwise = [(hContentType, mimeType file)]
+    | ishtml = textHtmlHeader
+    | otherwise = [(hContentType, mimeType file)]
 
 mimeType :: ByteString -> MimeType
 mimeType file = fromMaybe defaultMimeType . foldr mplus Nothing . map lok $ targets
@@ -73,8 +74,8 @@ extensions :: ByteString -> [ByteString]
 extensions file = exts
   where
     entire = case BS.break (== 46) file of -- '.'
-        (_,"") -> ""
-        (_,x)  -> BS.tail x
+        (_, "") -> ""
+        (_, x) -> BS.tail x
     exts = if entire == "" then [] else entire : BS.split 46 file
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
