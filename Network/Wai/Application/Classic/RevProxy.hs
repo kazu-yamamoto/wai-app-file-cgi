@@ -6,6 +6,7 @@ module Network.Wai.Application.Classic.RevProxy (revProxyApp) where
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 #endif
+import qualified Control.Exception as E
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString (ByteString)
@@ -13,6 +14,7 @@ import qualified Data.ByteString as BS (uncons)
 import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
 import Data.Conduit
+import Data.IORef
 import qualified Network.HTTP.Client as H
 import Network.HTTP.Types
 import Network.Wai.Application.Classic.Conduit
@@ -26,15 +28,26 @@ import Network.Wai.Conduit
 
 -- |  Relaying any requests as reverse proxy.
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req respond = H.withResponse httpClientRequest mgr proxy
+revProxyApp cspec spec route req respond = do
+    responded <- newIORef False
+    H.withResponse httpClientRequest mgr (proxy responded)
+        `E.catch` badGateway responded
   where
-    proxy hrsp = do
+    proxy responded hrsp = do
         let status = H.responseStatus hrsp
             hdr = fixHeader $ H.responseHeaders hrsp
             clientBody = H.responseBody hrsp
             ct = lookup hContentType hdr
             src = toSource ct clientBody
+        writeIORef responded True
         respond $ responseSource status hdr src
+
+    -- The response cannot be replaced once it has been started.
+    badGateway responded e = do
+        started <- readIORef responded
+        if started
+            then E.throwIO (e :: H.HttpException)
+            else respond $ responseLBS badGateway502 textPlainHeader "Bad Gateway\r\n"
 
     httpClientRequest = reqToHReq req route
     mgr = revProxyManager spec
@@ -106,15 +119,3 @@ bodyToSource br = loop
         unless (BS.null bs) $ do
             yield $ Chunk $ byteStringToBuilder bs
             loop
-
-{-
-
-FIXME:
-badGateway :: ClassicAppSpec -> Request-> SomeException -> IO Response
-badGateway cspec req _ =
-    return $ responseBuilder st hdr bdy
-  where
-    hdr = addServer cspec textPlainHeader
-    bdy = byteStringToBuilder "Bad Gateway\r\n"
-    st = badGateway502
--}

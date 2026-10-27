@@ -131,6 +131,11 @@ spec = do
             bdy <- rspBody <$> sendGET url
             ans <- readFileAscii "test/html/index.html"
             bdy `shouldBe` ans
+    describe "revProxyApp" $ do
+        it "returns 502 if the upstream is not available" $ do
+            let url = "http://127.0.0.1:2345/revproxy/"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (5, 0, 2)
 
 ----------------------------------------------------------------
 
