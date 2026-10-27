@@ -1,6 +1,6 @@
 cabal-version:      1.18
 name:               wai-app-file-cgi
-version:            3.2.1
+version:            3.2.2
 license:            BSD3
 license-file:       LICENSE
 maintainer:         Kazu Yamamoto <kazu@iij.ad.jp>
@@ -20,7 +20,11 @@ extra-doc-files:
 extra-source-files:
     test/cgi-bin/index.cgi
     test/cgi-bin/broken
+    test/cgi-bin/cat
     test/cgi-bin/echo-env
+    test/cgi-bin/http-env
+    test/cgi-bin/not-found
+    test/cgi-bin/redirect
     test/data/post
     test/html/index.html
     test/html/ja/index.html.ja

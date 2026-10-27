@@ -1,6 +1,6 @@
 # ChangeLog for wai-app-file-cgi
 
-## Unreleased
+## 3.2.2
 
 - Security: request paths containing `..` segments are rejected
   with 400 in `fileApp` and `cgiApp`. Previously, files outside
