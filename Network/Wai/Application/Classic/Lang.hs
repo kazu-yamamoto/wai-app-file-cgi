@@ -13,20 +13,34 @@ import Data.Attoparsec.ByteString.Char8 (
     space,
     string,
  )
-import Data.ByteString.Char8 hiding (count, map, notElem, take, takeWhile)
+import Data.ByteString.Char8 hiding (
+    count,
+    filter,
+    map,
+    notElem,
+    take,
+    takeWhile,
+ )
+import qualified Data.ByteString.Char8 as B8 (all, null)
+import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.List (sortBy)
 import Data.Ord
 import Prelude hiding (takeWhile)
 
--- |
+-- | Languages are used as file suffixes, so only safe ones are kept.
+--
 -- >>> parseLang "en-gb;q=0.8, en;q=0.7, da"
 -- ["da","en-gb","en"]
+-- >>> parseLang "ja;q=0, ../../x, *, en"
+-- ["en"]
 parseLang :: ByteString -> [ByteString]
 parseLang bs = case parseOnly acceptLanguage bs of
-    Right ls -> map fst $ sortBy detrimental ls
+    Right ls -> map fst $ sortBy detrimental $ filter acceptable ls
     _ -> []
   where
     detrimental = flip (comparing snd)
+    acceptable (l, q) = q > 0 && not (B8.null l) && B8.all isLangChar l
+    isLangChar c = isAsciiUpper c || isAsciiLower c || isDigit c || c == '-'
 
 ----------------------------------------------------------------
 
