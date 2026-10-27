@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.CGI (
     cgiApp
   ) where
 
-import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
+import qualified Control.Exception as E (SomeException, SomeAsyncException, IOException, try, catch, bracket, fromException, throwIO)
 import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (mplus)
 import Data.ByteString (ByteString)
@@ -102,7 +102,12 @@ fromCGI rhdl = do
         hs' = filter (\(k,_) -> k /= hStatus) hs
     toStatus s = BS.readInt s >>= \(code,msg) -> Just (Status code (BS.dropWhile (== ' ') msg))
     emptyHeader = []
-    recover (_ :: E.SomeException) = return (CL.sourceNull, emptyHeader)
+    recover (e :: E.SomeException)
+      | isAsync e = E.throwIO e
+      | otherwise = return (CL.sourceNull, emptyHeader)
+    isAsync e = case E.fromException e of
+        Just (_ :: E.SomeAsyncException) -> True
+        Nothing                          -> False
     cgiHeader = do
         (rsrc,hs) <- CB.sourceHandle rhdl $$+ parseHeader
         src <- toResponseSource rsrc
