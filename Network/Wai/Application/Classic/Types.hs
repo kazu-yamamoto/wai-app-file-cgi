@@ -13,7 +13,7 @@ data ClassicAppSpec = ClassicAppSpec
     { softwareName :: ByteString
     -- ^ Name specified to Server: in HTTP response.
     , statusFileDir :: Path
-    -- ^ A function to get HTTP's GMT Date.
+    -- ^ A directory containing HTML files for HTTP status (e.g. 404.html).
     }
 
 data StatusInfo

@@ -6,7 +6,7 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 -- |
--- Default value for  'ClassicAppSpec'. 'softwareName' is \"Classic\". 'dater' calls 'epochTime' for every request. 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
+-- Default value for 'ClassicAppSpec'. 'softwareName' is \"Classic\". 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
 defaultClassicAppSpec :: ClassicAppSpec
 defaultClassicAppSpec =
     ClassicAppSpec
@@ -17,7 +17,7 @@ defaultClassicAppSpec =
 ----------------------------------------------------------------
 
 -- |
--- Default value for 'defaultFileAppSpec'. 'indexFile' is \"index.html\". 'isHTML' matches \"*.html\" and \"*.html\".
+-- Default value for 'defaultFileAppSpec'. 'indexFile' is \"index.html\". 'isHTML' matches \"*.html\" and \"*.htm\".
 defaultFileAppSpec :: FileAppSpec
 defaultFileAppSpec =
     FileAppSpec

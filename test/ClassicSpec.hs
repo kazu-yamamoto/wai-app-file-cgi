@@ -72,7 +72,7 @@ spec = do
             bdy <- rspBody <$> sendGET url
             ans <- readFileAscii "test/html/no_extension"
             bdy `shouldBe` ans
-        it "returns 400 if not exist" $ do
+        it "returns 404 if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (4, 0, 4)
