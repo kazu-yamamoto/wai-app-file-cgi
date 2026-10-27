@@ -39,7 +39,7 @@ splitDoubleLineBreak :: ByteString -> [ByteString]
 splitDoubleLineBreak str = go str 0
   where
     go bs n
-        | n < BS.length str =
+        | n < BS.length bs =
             case lineBreak bs n of
                 Nothing -> go bs (n + 1)
                 Just n' ->
