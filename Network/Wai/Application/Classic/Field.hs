@@ -7,6 +7,7 @@ import Control.Monad (mplus)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
+import Data.Char (toLower)
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.StaticHash (StaticHash)
@@ -19,6 +20,9 @@ import Network.Wai
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Lang
 import Network.Wai.Application.Classic.Types
+
+-- $setup
+-- >>> :set -XOverloadedStrings
 
 ----------------------------------------------------------------
 
@@ -64,19 +68,32 @@ newHeader ishtml file
     | ishtml = textHtmlHeader
     | otherwise = [(hContentType, mimeType file)]
 
+-- |
+-- >>> mimeType "/var/www/a.html.d/pic.png"
+-- "image/png"
+-- >>> mimeType "/var/www/www.example.org/README"
+-- "application/octet-stream"
+-- >>> mimeType "/var/www/PIC.PNG"
+-- "image/png"
 mimeType :: ByteString -> MimeType
 mimeType file = fromMaybe defaultMimeType . foldr mplus Nothing . map lok $ targets
   where
     targets = extensions file
     lok x = SH.lookup x defaultMimeTypes'
 
+-- | Extensions of the file name, the longest first.
+--
+-- >>> extensions "/var/www.d/foo.tar.gz"
+-- ["tar.gz","gz"]
+-- >>> extensions "/var/www.d/foo"
+-- []
 extensions :: ByteString -> [ByteString]
-extensions file = exts
+extensions file = go name
   where
-    entire = case BS.break (== 46) file of -- '.'
-        (_, "") -> ""
-        (_, x) -> BS.tail x
-    exts = if entire == "" then [] else entire : BS.split 46 file
+    name = B8.map toLower $ snd $ BS.breakEnd (== 47) file -- '/'
+    go x = case BS.break (== 46) x of -- '.'
+        (_, "") -> []
+        (_, ext) -> let ext' = BS.tail ext in ext' : go ext'
 
 defaultMimeTypes' :: StaticHash ByteString MimeType
 defaultMimeTypes' = SH.fromList $ map (first (B8.pack . T.unpack)) $ Map.toList defaultMimeMap
