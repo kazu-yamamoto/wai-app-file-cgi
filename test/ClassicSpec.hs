@@ -39,6 +39,14 @@ spec = do
             rspCode rsp `shouldBe` (3, 0, 2)
             lookupHeader HdrLocation (rspHeaders rsp)
                 `shouldBe` Just "http://example.com/"
+        it "passes request headers as HTTP_* except Proxy" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/http-env"
+                hdr =
+                    [ Header (HdrCustom "X-Foo") "foo"
+                    , Header (HdrCustom "Proxy") "http://evil.example/"
+                    ]
+            bdy <- rspBody <$> sendGETwH url hdr
+            lines bdy `shouldBe` ["HTTP_X_FOO: foo", "HTTP_PROXY: ", "REMOTE_PORT: yes"]
         it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"

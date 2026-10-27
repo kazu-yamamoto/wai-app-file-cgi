@@ -8,12 +8,16 @@ import qualified Control.Exception as E (SomeException, IOException, try, catch,
 import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (mplus, when)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (dropWhile, readInt, unpack, tail)
+import Data.CaseInsensitive (foldedCase)
+import Data.Char (toUpper)
+import Data.List (nub)
+import qualified Data.ByteString.Char8 as BS (dropWhile, intercalate, pack, readInt, unpack, tail)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
 import Network.HTTP.Types
 import Network.SockAddr
+import Network.Socket (SockAddr (..))
 import Network.Wai
 import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
@@ -125,7 +129,7 @@ execProcess cspec spec cgii req = do
     proSpec naddr epath = CreateProcess {
         cmdspec = RawCommand prog []
       , cwd = Nothing
-      , env = Just $ makeEnv req naddr scriptName pathinfo (softwareName cspec) epath
+      , env = Just $ makeEnv req naddr prog scriptName pathinfo (softwareName cspec) epath
       , std_in = CreatePipe
       , std_out = CreatePipe
       , std_err = Inherit
@@ -153,13 +157,15 @@ execProcess cspec spec cgii req = do
                       (rawPathInfo req)
                       (indexCgi spec)
 
-makeEnv :: Request -> String -> String -> String -> ByteString ->
+makeEnv :: Request -> String -> FilePath -> String -> String -> ByteString ->
            TRYPATH -> ENVVARS
-makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . addType . addCookie $ baseEnv
+makeEnv req naddr prog scriptName pathinfo sname epath =
+    addPath epath . addLen . addType . addPort . addHttps $ baseEnv ++ httpEnv
   where
     baseEnv = [
         ("GATEWAY_INTERFACE", gatewayInterface)
       , ("SCRIPT_NAME",       scriptName)
+      , ("SCRIPT_FILENAME",   prog)
       , ("REQUEST_METHOD",    BS.unpack . requestMethod $ req)
       , ("SERVER_NAME",       BS.unpack host)
       , ("SERVER_PORT",       BS.unpack port)
@@ -172,7 +178,10 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
     headers = requestHeaders req
     addLen    = addLength "CONTENT_LENGTH" $ requestBodyLength req
     addType   = addEnv "CONTENT_TYPE"   $ lookup hContentType   headers
-    addCookie = addEnv "HTTP_COOKIE"    $ lookup hCookie        headers
+    addPort   = addEnv "REMOTE_PORT"    $ remotePort $ remoteHost req
+    addHttps ev | isSecure req = ("HTTPS", "on") : ev
+                | otherwise    = ev
+    httpEnv = httpHeadersToEnv headers
     addPath (Left _)     ev = ev
     addPath (Right path) ev = ("PATH", path) : ev
     query = BS.unpack . safeTail . rawQueryString
@@ -184,6 +193,31 @@ makeEnv req naddr scriptName pathinfo sname epath = addPath epath . addLen . add
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
 addEnv key (Just val) envs = (key,BS.unpack val) : envs
+
+remotePort :: SockAddr -> Maybe ByteString
+remotePort (SockAddrInet p _)       = Just $ BS.pack $ show p
+remotePort (SockAddrInet6 p _ _ _)  = Just $ BS.pack $ show p
+remotePort _                        = Nothing
+
+{-|
+  Converting request headers to HTTP_* variables.
+  Values of the same header are joined.
+
+>>> httpHeadersToEnv [("User-Agent","foo"),("Accept","a"),("accept","b"),("Proxy","x"),("Authorization","y"),("Content-Type","z")]
+[("HTTP_USER_AGENT","foo"),("HTTP_ACCEPT","a, b")]
+-}
+httpHeadersToEnv :: RequestHeaders -> ENVVARS
+httpHeadersToEnv hdrs = map toEnv $ nub $ map fst relayed
+  where
+    relayed = filter (\(k,_) -> k `notElem` excluded) hdrs
+    -- "Proxy" is excluded to prevent httpoxy.
+    excluded = [hContentType, hContentLength, hAuthorization, hProxyAuthorization, "proxy"]
+    toEnv k = (envName k, BS.unpack $ BS.intercalate (sep k) [v | (k',v) <- relayed, k' == k])
+    sep k | k == hCookie = "; "
+          | otherwise    = ", "
+    envName k = "HTTP_" ++ map conv (BS.unpack $ foldedCase k)
+    conv '-' = '_'
+    conv c   = toUpper c
 
 addLength :: String -> RequestBodyLength -> ENVVARS -> ENVVARS
 addLength _   ChunkedBody       envs = envs
