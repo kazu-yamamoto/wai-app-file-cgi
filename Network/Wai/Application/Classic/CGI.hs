@@ -224,6 +224,10 @@ addLength key (KnownLength len) envs = (key, show len) : envs
 ("/User/cgi-bin/foo","/cgi-bin/foo","/bar")
 >>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin/" "index.cgi"
 ("/User/cgi-bin/index.cgi","/cgi-bin/index.cgi","")
+>>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin" "index.cgi"
+("/User/cgi-bin/index.cgi","/cgi-bin/index.cgi","")
+>>> pathinfoToCGI "/cgi-bin/" "/User/cgi-bin/" "/cgi-bin//foo" "index.cgi"
+("/User/cgi-bin/index.cgi","/cgi-bin/index.cgi","/foo")
 
 -}
 
@@ -231,9 +235,9 @@ pathinfoToCGI :: Path -> Path -> Path -> Path -> (FilePath, String, String)
 pathinfoToCGI src dst path index = (prog, scriptName, pathinfo)
   where
     path' = path <\> src
-    (prog',pathinfo')
-        | src == path = (index, "")
-        | otherwise   = breakAtSeparator path'
+    (prog',pathinfo') = case breakAtSeparator path' of
+        ("", pinfo) -> (index, pinfo)
+        x           -> x
     prog = pathString (dst </> prog')
     scriptName = pathString (src </> prog')
     pathinfo = pathString pathinfo'
