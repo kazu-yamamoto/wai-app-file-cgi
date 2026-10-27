@@ -6,7 +6,7 @@ module Network.Wai.Application.Classic.CGI (
 
 import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
 import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (mplus, when)
+import Control.Monad (mplus)
 import Data.ByteString (ByteString)
 import Data.CaseInsensitive (foldedCase)
 import Data.Char (toUpper)
@@ -42,24 +42,17 @@ gatewayInterface = "CGI/1.1"
 ----------------------------------------------------------------
 
 {-|
-  Handle GET and POST for CGI.
+  Handle any methods for CGI.
 
 The program to link this library must ignore SIGCHLD as follows:
 
 >   installHandler sigCHLD Ignore Nothing
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp cspec spec cgii req respond = case method of
-    _ | hasDotDotSegment (rawPathInfo req)
-               -> respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
-    Right GET  -> cgiApp' False cspec spec cgii req respond
-    Right POST -> cgiApp' True  cspec spec cgii req respond
-    _          -> respond $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx
-  where
-    method = parseMethod $ requestMethod req
-
-cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp' body cspec spec cgii req respond = E.bracket setup teardown cgi
+cgiApp cspec spec cgii req respond
+  | hasDotDotSegment (rawPathInfo req) =
+      respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
+  | otherwise = E.bracket setup teardown cgi
   where
     setup = execProcess cspec spec cgii req
     teardown (rhdl,whdl,pid) = do
@@ -72,7 +65,7 @@ cgiApp' body cspec spec cgii req respond = E.bracket setup teardown cgi
         respond =<< fromCGI rhdl
     forkWriter whdl = do
         done <- newEmptyMVar
-        tid <- forkFinally (when body $ toCGI whdl req) $ \_ -> do
+        tid <- forkFinally (toCGI whdl req) $ \_ -> do
             hClose whdl `E.catch` ignore -- telling EOF
             putMVar done ()
         return (tid, done)

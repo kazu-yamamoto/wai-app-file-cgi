@@ -47,6 +47,11 @@ spec = do
                     ]
             bdy <- rspBody <$> sendGETwH url hdr
             lines bdy `shouldBe` ["HTTP_X_FOO: foo", "HTTP_PROXY: ", "REMOTE_PORT: yes"]
+        it "accepts HEAD" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/"
+            rsp <- sendHEAD url
+            rspCode rsp `shouldBe` (2, 0, 0)
+            rspBody rsp `shouldBe` ""
         it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
