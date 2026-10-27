@@ -23,6 +23,11 @@ spec = do
             bdy <- rspBody <$> sendPOST url "foo bar.\nbaz!\n"
             ans <- readFileAscii "test/data/post"
             bdy `shouldBe` ans
+        it "accepts a large POST echoed back by the CGI" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/cat"
+                body = replicate 1000000 'x'
+            bdy <- rspBody <$> sendPOST url body
+            bdy `shouldBe` body
         it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"

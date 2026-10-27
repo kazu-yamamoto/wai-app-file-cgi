@@ -5,7 +5,8 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
-import Control.Monad (when, (<=<))
+import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
+import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
 import Data.Conduit
@@ -54,17 +55,25 @@ cgiApp cspec spec cgii req respond = case method of
     method = parseMethod $ requestMethod req
 
 cgiApp' :: Bool -> ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
-cgiApp' body cspec spec cgii req respond = E.bracket setup teardown (respond <=< cgi)
+cgiApp' body cspec spec cgii req respond = E.bracket setup teardown cgi
   where
     setup = execProcess cspec spec cgii req
     teardown (rhdl,whdl,pid) = do
         terminateProcess pid -- SIGTERM
         hClose rhdl
         hClose whdl
-    cgi (rhdl,whdl,_) = do
-        when body $ toCGI whdl req
-        hClose whdl -- telling EOF
-        fromCGI rhdl
+    -- The body is written in another thread so that the CGI output
+    -- can be read concurrently. Otherwise, both pipes may fill up.
+    cgi (rhdl,whdl,_) = E.bracket (forkWriter whdl) stopWriter $ \_ ->
+        respond =<< fromCGI rhdl
+    forkWriter whdl = do
+        done <- newEmptyMVar
+        tid <- forkFinally (when body $ toCGI whdl req) $ \_ -> do
+            hClose whdl `E.catch` ignore -- telling EOF
+            putMVar done ()
+        return (tid, done)
+    stopWriter (tid, done) = killThread tid >> takeMVar done
+    ignore (_ :: E.IOException) = return ()
 
 ----------------------------------------------------------------
 
