@@ -13,6 +13,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS (uncons)
 import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Char8 as BS hiding (uncons)
+import Data.CaseInsensitive (mk)
 import Data.Conduit
 import Data.IORef
 import qualified Network.HTTP.Client as H
@@ -23,6 +24,9 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Conduit
+
+-- $setup
+-- >>> :set -XOverloadedStrings
 
 ----------------------------------------------------------------
 
@@ -51,15 +55,36 @@ revProxyApp cspec spec route req respond = do
 
     httpClientRequest = reqToHReq req route
     mgr = revProxyManager spec
-    fixHeader = addVia cspec req . filter headerToBeRelay
+    fixHeader = addVia cspec req . filterHeaders
 
-headerToBeRelay :: Header -> Bool
-headerToBeRelay (k, _)
-    | k == hTransferEncoding = False
-    | k == hAcceptEncoding = False
-    | k == hContentLength = False
-    | k == hContentEncoding = False -- See H.decompress.
-    | otherwise = True
+-- | Removing hop-by-hop headers and ones handled by http-client.
+--
+-- >>> filterHeaders [("Connection","close, X-Foo"),("X-Foo","1"),("Keep-Alive","5"),("X-Bar","2")]
+-- [("X-Bar","2")]
+filterHeaders :: [Header] -> [Header]
+filterHeaders hdr = filter (\(k, _) -> k `notElem` excluded) hdr
+  where
+    excluded = connectionTokens ++ hopByHop
+    connectionTokens =
+        [ mk $ BS.dropWhile (== ' ') $ BS.dropWhileEnd (== ' ') t
+        | (k, v) <- hdr
+        , k == hConnection
+        , t <- BS.split ',' v
+        ]
+    hopByHop =
+        [ hConnection
+        , "keep-alive"
+        , "proxy-connection"
+        , hProxyAuthenticate
+        , hProxyAuthorization
+        , hTE
+        , "trailer"
+        , hTransferEncoding
+        , hUpgrade
+        , hAcceptEncoding
+        , hContentLength
+        , hContentEncoding -- See H.decompress.
+        ]
 
 ----------------------------------------------------------------
 
@@ -69,7 +94,7 @@ reqToHReq req route =
         { H.host = revProxyDomain route
         , H.port = revProxyPort route
         , H.secure = False -- FIXME: upstream is HTTP only
-        , H.requestHeaders = addForwardedFor req $ filter headerToBeRelay hdr
+        , H.requestHeaders = addForwardedFor req $ filterHeaders hdr
         , H.path = path'
         , H.queryString = dropQuestion query
         , H.requestBody = bodyToHBody len body

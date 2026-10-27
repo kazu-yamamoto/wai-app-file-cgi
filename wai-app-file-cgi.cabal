@@ -92,6 +92,7 @@ test-suite spec
     build-depends:
         base >=4.9 && <5,
         bytestring,
+        case-insensitive,
         conduit >=1.1,
         conduit-extra,
         directory,

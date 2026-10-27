@@ -6,6 +6,7 @@ module ClassicSpec where
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 #endif
+import Data.List (isPrefixOf)
 import Network.HTTP
 import Network.Stream
 import System.IO
@@ -136,6 +137,20 @@ spec = do
             let url = "http://127.0.0.1:2345/revproxy/"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (5, 0, 2)
+        it "removes hop-by-hop headers and appends X-Forwarded-For" $ do
+            let url = "http://127.0.0.1:2345/upstream/"
+                hdr =
+                    [ Header HdrProxyAuthorization "secret"
+                    , Header (HdrCustom "X-Forwarded-For") "192.0.2.1"
+                    ]
+            rsp <- sendGETwH url hdr
+            let ls = lines $ rspBody rsp
+                rhdr = rspHeaders rsp
+            ls `shouldContain` ["x-forwarded-for: 192.0.2.1, 127.0.0.1"]
+            filter (isPrefixOf "proxy-authorization") ls `shouldBe` []
+            lookupHeader (HdrCustom "X-Up") rhdr `shouldBe` Nothing
+            lookupHeader (HdrCustom "Keep-Alive") rhdr `shouldBe` Nothing
+            lookupHeader HdrVia rhdr `shouldSatisfy` (/= Nothing)
 
 ----------------------------------------------------------------
 

@@ -40,9 +40,8 @@ textHtmlHeader = [(hContentType, "text/html")]
 locationHeader :: ByteString -> ResponseHeaders
 locationHeader url = [(hLocation, url)]
 
--- FIXME: the case where "Via:" already exists
 addVia :: ClassicAppSpec -> Request -> ResponseHeaders -> ResponseHeaders
-addVia cspec req hdr = (hVia, val) : hdr
+addVia cspec req = appendHeader hVia val
   where
     ver = httpVersion req
     val =
@@ -59,9 +58,20 @@ addVia cspec req hdr = (hVia, val) : hdr
     host = fromMaybe "" $ requestHeaderHost req
 
 addForwardedFor :: Request -> ResponseHeaders -> ResponseHeaders
-addForwardedFor req hdr = (hXForwardedFor, addr) : hdr
+addForwardedFor req = appendHeader hXForwardedFor addr
   where
     addr = B8.pack . showSockAddr . remoteHost $ req
+
+-- | Appending a value to the existing header if any.
+--
+-- >>> appendHeader "X-Forwarded-For" "192.0.2.2" [("Host","a"),("X-Forwarded-For","192.0.2.1")]
+-- [("X-Forwarded-For","192.0.2.1, 192.0.2.2"),("Host","a")]
+-- >>> appendHeader "X-Forwarded-For" "192.0.2.2" [("Host","a")]
+-- [("X-Forwarded-For","192.0.2.2"),("Host","a")]
+appendHeader :: HeaderName -> ByteString -> [Header] -> [Header]
+appendHeader key val hdr = case [v | (k, v) <- hdr, k == key] of
+    [] -> (key, val) : hdr
+    vs -> (key, BS.intercalate ", " (vs ++ [val])) : filter ((/= key) . fst) hdr
 
 newHeader :: Bool -> ByteString -> ResponseHeaders
 newHeader ishtml file
