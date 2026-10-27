@@ -12,6 +12,7 @@ module Network.Wai.Application.Classic.Path (
     hasLeadingPathSeparator,
     hasTrailingPathSeparator,
     isSuffixOf,
+    hasDotDotSegment,
 ) where
 
 import Data.ByteString (ByteString)
@@ -137,3 +138,19 @@ breakAtSeparator p = BS.break (== pathSep) p
 isSuffixOf :: Path -> Path -> Bool
 isSuffixOf = BS.isSuffixOf
 {-# INLINE isSuffixOf #-}
+
+-- |
+--   Checking if the path contains a ".." segment.
+--
+-- >>> hasDotDotSegment "/foo/../bar"
+-- True
+-- >>> hasDotDotSegment "/foo/.."
+-- True
+-- >>> hasDotDotSegment "/foo\\..\\bar"
+-- True
+-- >>> hasDotDotSegment "/foo/..bar/baz.."
+-- False
+hasDotDotSegment :: Path -> Bool
+hasDotDotSegment = any (== "..") . BS.splitWith isSep
+  where
+    isSep w = w == pathSep || w == 92 -- '\\'

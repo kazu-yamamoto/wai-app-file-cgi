@@ -45,6 +45,8 @@ The program to link this library must ignore SIGCHLD as follows:
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req respond = case method of
+    _ | hasDotDotSegment (rawPathInfo req)
+               -> respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
     Right GET  -> cgiApp' False cspec spec cgii req respond
     Right POST -> cgiApp' True  cspec spec cgii req respond
     _          -> respond $ responseLBS methodNotAllowed405 textPlainHeader "Method Not Allowed\r\n" -- xxx

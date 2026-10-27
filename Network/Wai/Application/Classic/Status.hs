@@ -31,7 +31,8 @@ getStatusInfo cspec req langs st =
 
 statusList :: [Status]
 statusList =
-    [ methodNotAllowed405 -- File
+    [ badRequest400 -- File, CGI
+    , methodNotAllowed405 -- File
     , notFound404 -- File
     , internalServerError500 -- CGI
     , badGateway502 -- RevProxy

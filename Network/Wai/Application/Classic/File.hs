@@ -59,6 +59,7 @@ langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do
     rspspec <- case method of
+        _ | hasDotDotSegment (rawPathInfo req) -> return badRequest
         Right GET -> processGET hinfo ishtml rfile
         Right HEAD -> processGET hinfo ishtml rfile
         _ -> return notAllowed
@@ -146,6 +147,9 @@ redirectURL req =
     host = fromMaybe "" $ requestHeaderHost req
 
 ----------------------------------------------------------------
+
+badRequest :: RspSpec
+badRequest = NoBody badRequest400
 
 notFound :: RspSpec
 notFound = NoBody notFound404

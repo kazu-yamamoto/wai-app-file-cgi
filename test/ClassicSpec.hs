@@ -27,6 +27,10 @@ spec = do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` (5, 0, 0)
+        it "returns 400 if the path contains .." $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/../cgi-bin/index.cgi"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 0)
     describe "fileApp" $ do
         it "returns index.html for /" $ do
             let url = "http://127.0.0.1:2345/"
@@ -42,6 +46,10 @@ spec = do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (4, 0, 4)
+        it "returns 400 if the path contains .." $ do
+            let url = "http://127.0.0.1:2345/../../../../../../etc/hosts"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 0)
         it "returns Japanese HTML if language is specified" $ do
             let url = "http://127.0.0.1:2345/ja/"
             bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]
