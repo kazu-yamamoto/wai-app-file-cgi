@@ -8,7 +8,7 @@ import qualified Control.Exception as E (SomeException, IOException, try, catch,
 import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (readInt, unpack, tail)
+import qualified Data.ByteString.Char8 as BS (dropWhile, readInt, unpack, tail)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
@@ -101,7 +101,7 @@ fromCGI rhdl = do
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
         hs' = filter (\(k,_) -> k /= hStatus) hs
-    toStatus s = BS.readInt s >>= \x -> Just (Status (fst x) s)
+    toStatus s = BS.readInt s >>= \(code,msg) -> Just (Status code (BS.dropWhile (== ' ') msg))
     emptyHeader = []
     recover (_ :: E.SomeException) = return (CL.sourceNull, emptyHeader)
     cgiHeader = do

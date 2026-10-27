@@ -28,6 +28,11 @@ spec = do
                 body = replicate 1000000 'x'
             bdy <- rspBody <$> sendPOST url body
             bdy `shouldBe` body
+        it "relays the status of the CGI" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/not-found"
+            rsp <- sendGET url
+            rspCode rsp `shouldBe` (4, 0, 4)
+            words (rspReason rsp) `shouldBe` ["Not", "Found"]
         it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
