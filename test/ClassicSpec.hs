@@ -33,6 +33,12 @@ spec = do
             rsp <- sendGET url
             rspCode rsp `shouldBe` (4, 0, 4)
             words (rspReason rsp) `shouldBe` ["Not", "Found"]
+        it "redirects if the CGI returns Location only" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/redirect"
+            rsp <- sendGET url
+            rspCode rsp `shouldBe` (3, 0, 2)
+            lookupHeader HdrLocation (rspHeaders rsp)
+                `shouldBe` Just "http://example.com/"
         it "causes 500 if the CGI script does not behave correctly" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"

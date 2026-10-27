@@ -6,7 +6,7 @@ module Network.Wai.Application.Classic.CGI (
 
 import qualified Control.Exception as E (SomeException, IOException, try, catch, bracket)
 import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (when)
+import Control.Monad (mplus, when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (dropWhile, readInt, unpack, tail)
 import Data.Conduit
@@ -96,10 +96,12 @@ fromCGI rhdl = do
             | otherwise = CL.sourceNull
     return $ responseSource st hdr src
   where
-    check hs = lookup hContentType hs >> case lookup hStatus hs of
-        Nothing -> Just (ok200, hs)
+    -- A redirect response may lack Content-Type (RFC 3875 Section 6.2).
+    check hs = (lookup hContentType hs `mplus` location) >> case lookup hStatus hs of
+        Nothing -> Just (maybe ok200 (const found302) location, hs)
         Just l  -> toStatus l >>= \s -> Just (s,hs')
       where
+        location = lookup hLocation hs
         hs' = filter (\(k,_) -> k /= hStatus) hs
     toStatus s = BS.readInt s >>= \(code,msg) -> Just (Status code (BS.dropWhile (== ' ') msg))
     emptyHeader = []
