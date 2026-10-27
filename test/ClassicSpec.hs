@@ -127,6 +127,11 @@ spec = do
                 Just lm = lookupHeader HdrLocation hdr
             sc `shouldBe` (3, 0, 1)
             lm `shouldBe` "//127.0.0.1:2345/redirect/"
+        it "keeps the query string when redirecting to dir/" $ do
+            let url = "http://127.0.0.1:2345/redirect?foo=bar"
+            rsp <- sendGET url
+            lookupHeader HdrLocation (rspHeaders rsp)
+                `shouldBe` Just "//127.0.0.1:2345/redirect/?foo=bar"
         it "returns index.html for /exact-route.html matching exactRoute" $ do
             let url = "http://127.0.0.1:2345/exact-route.html"
             bdy <- rspBody <$> sendGET url

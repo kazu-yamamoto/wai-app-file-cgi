@@ -142,6 +142,7 @@ redirectURL req =
           host
         , rawPathInfo req
         , "/"
+        , rawQueryString req
         ]
   where
     host = fromMaybe "" $ requestHeaderHost req
