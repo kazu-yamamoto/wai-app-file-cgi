@@ -5,8 +5,8 @@ module Network.Wai.Application.Classic.CGI (
   ) where
 
 import qualified Control.Exception as E (SomeException, SomeAsyncException, IOException, try, catch, bracket, fromException, throwIO)
-import Control.Concurrent (forkFinally, killThread, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (mplus)
+import Control.Concurrent (forkFinally, forkIO, killThread, newEmptyMVar, putMVar, takeMVar)
+import Control.Monad (mplus, void)
 import Data.ByteString (ByteString)
 import Data.CaseInsensitive (foldedCase)
 import Data.Char (toUpper)
@@ -44,9 +44,9 @@ gatewayInterface = "CGI/1.1"
 {-|
   Handle any methods for CGI.
 
-The program to link this library must ignore SIGCHLD as follows:
-
->   installHandler sigCHLD Ignore Nothing
+CGI processes are reaped by this library. The program to link this
+library should not ignore SIGCHLD. Otherwise, the PID of a finished
+CGI process may be reused by another process before it is terminated.
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req respond
@@ -55,10 +55,13 @@ cgiApp cspec spec cgii req respond
   | otherwise = E.bracket setup teardown cgi
   where
     setup = execProcess cspec spec cgii req
+    -- An unreaped process keeps its PID, so SIGTERM cannot hit
+    -- another process. Reaping may block, hence in another thread.
     teardown (rhdl,whdl,pid) = do
         terminateProcess pid -- SIGTERM
         hClose rhdl
         hClose whdl
+        void $ forkIO $ void (waitForProcess pid) `E.catch` ignore
     -- The body is written in another thread so that the CGI output
     -- can be read concurrently. Otherwise, both pipes may fill up.
     cgi (rhdl,whdl,_) = E.bracket (forkWriter whdl) stopWriter $ \_ ->

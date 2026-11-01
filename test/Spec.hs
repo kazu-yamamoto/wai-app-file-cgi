@@ -15,12 +15,10 @@ import Network.Wai.Application.Classic hiding ((</>))
 import Network.Wai.Handler.Warp
 import System.Directory
 import System.FilePath
-import System.Posix
 import Test.Hspec
 
 main :: IO ()
 main = do
-    void $ installHandler sigCHLD Ignore Nothing
     mgr <- H.newManager H.defaultManagerSettings
     void $ forkIO $ testServer mgr
     void $ forkIO upstreamServer
