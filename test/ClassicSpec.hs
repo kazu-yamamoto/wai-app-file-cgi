@@ -114,6 +114,11 @@ spec = do
             let url = "http://127.0.0.1:2345/"
             sc <- rspCode <$> sendHEAD url
             sc `shouldBe` (2, 0, 0)
+        it "returns 405 with Allow for other methods" $ do
+            let url = "http://127.0.0.1:2345/"
+            rsp <- unResult $ simpleHTTP $ (getRequest url){rqMethod = OPTIONS}
+            rspCode rsp `shouldBe` (4, 0, 5)
+            lookupHeader HdrAllow (rspHeaders rsp) `shouldBe` Just "GET, HEAD"
         it "returns 404 for HEAD if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendHEAD url

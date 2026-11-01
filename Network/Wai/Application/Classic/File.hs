@@ -76,7 +76,11 @@ fileApp cspec spec filei req respond = do
     ishtml = isHTML spec file
     rfile = redirectPath spec path
     langs = langSuffixes $ requestHeaders req
-    noBody st = return $ responseLBS st [] ""
+    -- 405 must contain Allow:.
+    extra st
+        | st == methodNotAllowed405 = [(hAllow, "GET, HEAD")]
+        | otherwise = []
+    noBody st = return $ responseLBS st (extra st) ""
     bodyStatus st =
         getStatusInfo cspec req langs st
             >>= statusBody st
@@ -84,13 +88,13 @@ fileApp cspec spec filei req respond = do
     statusBody st (StatusByteString bd) =
         return $ responseLBS st hdr bd
       where
-        hdr = textPlainHeader
+        hdr = extra st ++ textPlainHeader
     statusBody st (StatusFile afile len) =
         return $ ResponseFile st hdr fl mfp
       where
         mfp = Just (FilePart 0 len len)
         fl = pathString afile
-        hdr = textHtmlHeader
+        hdr = extra st ++ textHtmlHeader
 
 ----------------------------------------------------------------
 
