@@ -179,7 +179,7 @@ spec = do
             let url = "http://127.0.0.1:2345/revproxy/"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (5, 0, 2)
-        it "removes hop-by-hop headers and appends X-Forwarded-For" $ do
+        it "removes hop-by-hop headers and appends X-Forwarded-For and Via" $ do
             let url = "http://127.0.0.1:2345/upstream/"
                 hdr =
                     [ Header HdrProxyAuthorization "secret"
@@ -189,6 +189,7 @@ spec = do
             let ls = lines $ rspBody rsp
                 rhdr = rspHeaders rsp
             ls `shouldContain` ["x-forwarded-for: 192.0.2.1, 127.0.0.1"]
+            ls `shouldContain` ["via: 1.1 127.0.0.1:2345 (ClassicTester)"]
             filter (isPrefixOf "proxy-authorization") ls `shouldBe` []
             lookupHeader (HdrCustom "X-Up") rhdr `shouldBe` Nothing
             lookupHeader (HdrCustom "Keep-Alive") rhdr `shouldBe` Nothing

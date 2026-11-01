@@ -53,7 +53,7 @@ revProxyApp cspec spec route req respond = do
             then E.throwIO (e :: H.HttpException)
             else respond $ responseLBS badGateway502 textPlainHeader "Bad Gateway\r\n"
 
-    httpClientRequest = reqToHReq req route
+    httpClientRequest = reqToHReq cspec req route
     mgr = revProxyManager spec
     fixHeader = addVia cspec req . filterHeaders
 
@@ -88,13 +88,13 @@ filterHeaders hdr = filter (\(k, _) -> k `notElem` excluded) hdr
 
 ----------------------------------------------------------------
 
-reqToHReq :: Request -> RevProxyRoute -> H.Request
-reqToHReq req route =
+reqToHReq :: ClassicAppSpec -> Request -> RevProxyRoute -> H.Request
+reqToHReq cspec req route =
     H.defaultRequest
         { H.host = revProxyDomain route
         , H.port = revProxyPort route
         , H.secure = False -- FIXME: upstream is HTTP only
-        , H.requestHeaders = addForwardedFor req $ filterHeaders hdr
+        , H.requestHeaders = addVia cspec req $ addForwardedFor req $ filterHeaders hdr
         , H.path = path'
         , H.queryString = dropQuestion query
         , H.requestBody = bodyToHBody len body
