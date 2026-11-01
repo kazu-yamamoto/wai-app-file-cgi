@@ -1,11 +1,7 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ClassicSpec where
 
-#if __GLASGOW_HASKELL__ < 709
-import Control.Applicative
-#endif
 import Control.Exception (bracket_)
 import Data.List (isPrefixOf)
 import qualified Network.HTTP.Client as H

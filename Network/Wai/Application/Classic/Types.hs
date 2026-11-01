@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Network.Wai.Application.Classic.Types where
 
 import Data.ByteString (ByteString)

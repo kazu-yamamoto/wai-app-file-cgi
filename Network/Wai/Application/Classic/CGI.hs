@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, CPP, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Network.Wai.Application.Classic.CGI (
     cgiApp
@@ -90,11 +90,7 @@ cgiApp cspec spec cgii req respond
 type TRYPATH = Either E.IOException String
 
 toCGI :: Handle -> Request -> IO ()
-#if MIN_VERSION_conduit(1,3,0)
 toCGI whdl req = runConduit (sourceRequestBody req .| CB.sinkHandle whdl)
-#else
-toCGI whdl req = sourceRequestBody req $$ CB.sinkHandle whdl
-#endif
 
 fromCGI :: Handle -> IO Response
 fromCGI rhdl = do
@@ -137,30 +133,12 @@ execProcess cspec (prog, scriptName, pathinfo) req = do
     hSetEncoding whdl latin1
     return (rhdl, whdl, pid)
  where
-    proSpec naddr epath = CreateProcess {
-        cmdspec = RawCommand prog []
-      , cwd = Nothing
-      , env = Just $ makeEnv req naddr prog scriptName pathinfo (softwareName cspec) epath
+    proSpec naddr epath = (proc prog []) {
+        env = Just $ makeEnv req naddr prog scriptName pathinfo (softwareName cspec) epath
       , std_in = CreatePipe
       , std_out = CreatePipe
-      , std_err = Inherit
       , close_fds = True
-#if __GLASGOW_HASKELL__ >= 702
       , create_group = True
-#endif
-#if __GLASGOW_HASKELL__ >= 707
-      , delegate_ctlc = False
-#endif
-#if __GLASGOW_HASKELL__ >= 800
-      , detach_console = False
-      , create_new_console = False
-      , new_session = False
-      , child_group = Nothing
-      , child_user = Nothing
-#endif
-#if __GLASGOW_HASKELL__ >= 802
-      , use_process_jobs = False
-#endif
       }
 
 makeEnv :: Request -> String -> FilePath -> String -> String -> ByteString ->
