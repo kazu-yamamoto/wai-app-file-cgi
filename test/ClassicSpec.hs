@@ -90,6 +90,10 @@ spec = do
             bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]
             ans <- readFileAscii "test/html/ja/index.html.ja"
             bdy `shouldBe` ans
+        it "returns Vary: Accept-Language for HTML" $ do
+            let url = "http://127.0.0.1:2345/ja/"
+            rsp <- sendGETwH url [Header HdrAcceptLanguage "ja"]
+            lookupHeader HdrVary (rspHeaders rsp) `shouldBe` Just "Accept-Language"
         it "returns English HTML even if language is specified" $ do
             let url = "http://127.0.0.1:2345/"
             bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]

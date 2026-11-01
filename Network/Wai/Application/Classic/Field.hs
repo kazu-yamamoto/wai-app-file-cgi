@@ -73,9 +73,10 @@ appendHeader key val hdr = case [v | (k, v) <- hdr, k == key] of
     [] -> (key, val) : hdr
     vs -> (key, BS.intercalate ", " (vs ++ [val])) : filter ((/= key) . fst) hdr
 
+-- | HTML files are selected by Accept-Language.
 newHeader :: Bool -> ByteString -> ResponseHeaders
 newHeader ishtml file
-    | ishtml = textHtmlHeader
+    | ishtml = (hVary, "Accept-Language") : textHtmlHeader
     | otherwise = [(hContentType, mimeType file)]
 
 -- |
