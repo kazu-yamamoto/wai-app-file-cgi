@@ -58,7 +58,6 @@ library
     ghc-options:      -Wall
     build-depends:
         base >=4.9 && <5,
-        array,
         attoparsec >=0.10.0.0,
         bytestring,
         case-insensitive,
@@ -66,10 +65,8 @@ library
         conduit-extra,
         containers,
         directory,
-        filepath,
         http-client >=0.5,
         http-conduit >=2.1,
-        http-date,
         http-types >=0.12.5,
         mime-types,
         network,
@@ -77,12 +74,9 @@ library
         sockaddr,
         static-hash,
         text,
-        transformers,
-        unix,
         wai >=3.2 && <3.3,
         wai-conduit,
-        warp >=3.4 && <3.5,
-        word8
+        warp >=3.4 && <3.5
 
 test-suite spec
     type:             exitcode-stdio-1.0
@@ -96,14 +90,11 @@ test-suite spec
         base >=4.9 && <5,
         bytestring,
         case-insensitive,
-        conduit >=1.3,
-        conduit-extra,
         directory,
         filepath,
         hspec >=1.3,
         http-client,
         http-types,
-        unix,
         wai >=3.2 && <3.3,
         wai-app-file-cgi,
         warp >=3.4 && <3.5,
