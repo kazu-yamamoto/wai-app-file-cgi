@@ -97,6 +97,15 @@ spec = do
             let url = "http://127.0.0.1:2345/../../../../../../etc/hosts"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (4, 0, 0)
+        it "returns 400 if the path contains encoded .." $ do
+            let url = "http://127.0.0.1:2345/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/hosts"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 0)
+        it "decodes percent-encoded paths" $ do
+            let url = "http://127.0.0.1:2345/no%5Fextension"
+            bdy <- rspBody <$> sendGET url
+            ans <- readFileAscii "test/html/no_extension"
+            bdy `shouldBe` ans
         it "returns Japanese HTML if language is specified" $ do
             let url = "http://127.0.0.1:2345/ja/"
             bdy <- rspBody <$> sendGETwH url [Header HdrAcceptLanguage "ja, en;q=0.7"]

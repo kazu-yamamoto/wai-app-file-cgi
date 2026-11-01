@@ -1,6 +1,7 @@
 module Network.Wai.Application.Classic.FileInfo where
 
 import qualified Data.ByteString as BS
+import Network.HTTP.Types (urlDecode)
 import Network.Wai
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
@@ -37,15 +38,34 @@ import Network.Wai.Application.Classic.Types
 -- "/tmp/dst/"
 -- >>> pathinfoToFilePath (mkReq "/exact/match/more.html") (FileRoute "/exact/match" "/tmp/dst")
 -- "/tmp/dst/more.html"
+-- >>> pathinfoToFilePath (mkReq "/no%5Fext%20ension") (FileRoute "/" "/srv/http/")
+-- "/srv/http/no_ext ension"
 pathinfoToFilePath :: Request -> FileRoute -> Path
 pathinfoToFilePath req filei
     | BS.null path' = dst
     | otherwise = dst </> path'
   where
-    path = rawPathInfo req
+    path = decodedPathInfo req
     src = fileSrc filei
     dst = fileDst filei
     path' = path <\> src
+
+-- | 'rawPathInfo' with percent-encoding decoded.
+decodedPathInfo :: Request -> Path
+decodedPathInfo = urlDecode False . rawPathInfo
+
+-- | Whether the path, once decoded, contains a ".." segment or NUL.
+--
+-- >>> isUnsafePath "/foo/%2e%2e/bar"
+-- True
+-- >>> isUnsafePath "/foo%00.html"
+-- True
+-- >>> isUnsafePath "/foo/..bar"
+-- False
+isUnsafePath :: Path -> Bool
+isUnsafePath raw = hasDotDotSegment path || BS.elem 0 path
+  where
+    path = urlDecode False raw
 
 -- |
 --
