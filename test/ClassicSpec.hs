@@ -114,7 +114,7 @@ spec = do
         it "returns 304 if not changed" $ do
             let url = "http://127.0.0.1:2345/"
             hdr <- rspHeaders <$> sendGET url
-            let Just lm = lookupHeader HdrLastModified hdr
+            lm <- maybe (fail "no Last-Modified") return $ lookupHeader HdrLastModified hdr
             sc <- rspCode <$> sendGETwH url [Header HdrIfModifiedSince lm]
             sc `shouldBe` (3, 0, 4)
         it "can handle partial request" $ do
@@ -142,17 +142,15 @@ spec = do
         it "returns 304 for HEAD if not modified" $ do
             let url = "http://127.0.0.1:2345/"
             hdr <- rspHeaders <$> sendHEAD url
-            let Just lm = lookupHeader HdrLastModified hdr
+            lm <- maybe (fail "no Last-Modified") return $ lookupHeader HdrLastModified hdr
             sc <- rspCode <$> sendHEADwH url [Header HdrIfModifiedSince lm]
             sc `shouldBe` (3, 0, 4)
         it "redirects to dir/ if trailing slash is missing" $ do
             let url = "http://127.0.0.1:2345/redirect"
             rsp <- sendGET url
-            let sc = rspCode rsp
-                hdr = rspHeaders rsp
-                Just lm = lookupHeader HdrLocation hdr
-            sc `shouldBe` (3, 0, 1)
-            lm `shouldBe` "//127.0.0.1:2345/redirect/"
+            rspCode rsp `shouldBe` (3, 0, 1)
+            lookupHeader HdrLocation (rspHeaders rsp)
+                `shouldBe` Just "//127.0.0.1:2345/redirect/"
         it "keeps the query string when redirecting to dir/" $ do
             let url = "http://127.0.0.1:2345/redirect?foo=bar"
             rsp <- sendGET url

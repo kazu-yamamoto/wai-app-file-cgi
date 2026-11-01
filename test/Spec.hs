@@ -20,17 +20,23 @@ import Test.Hspec
 main :: IO ()
 main = do
     mgr <- H.newManager H.defaultManagerSettings
-    void $ forkIO $ testServer mgr
-    void $ forkIO upstreamServer
-    threadDelay 100000
+    ready1 <- newEmptyMVar
+    ready2 <- newEmptyMVar
+    void $ forkIO $ testServer (putMVar ready1 ()) mgr
+    void $ forkIO $ upstreamServer (putMVar ready2 ())
+    takeMVar ready1
+    takeMVar ready2
     hspec spec
 
-testServer :: H.Manager -> IO ()
-testServer mgr = do
+testServer :: IO () -> H.Manager -> IO ()
+testServer ready mgr = do
     dir <- getCurrentDirectory
     runSettings settings $ testApp mgr dir
   where
-    settings = setPort 2345 $ setHost "127.0.0.1" defaultSettings
+    settings =
+        setBeforeMainLoop ready $
+            setPort 2345 $
+                setHost "127.0.0.1" defaultSettings
 
 testApp :: H.Manager -> FilePath -> Application
 testApp mgr dir req
@@ -84,10 +90,13 @@ testApp mgr dir req
             }
 
 -- | Echoing request headers with hop-by-hop response headers.
-upstreamServer :: IO ()
-upstreamServer = runSettings settings $ \req respond ->
+upstreamServer :: IO () -> IO ()
+upstreamServer ready = runSettings settings $ \req respond ->
     respond $ responseLBS ok200 hdr $ BL.unlines $ map toLine $ requestHeaders req
   where
-    settings = setPort 2346 $ setHost "127.0.0.1" defaultSettings
+    settings =
+        setBeforeMainLoop ready $
+            setPort 2346 $
+                setHost "127.0.0.1" defaultSettings
     hdr = [("Connection", "X-Up"), ("X-Up", "1"), ("Keep-Alive", "timeout=5")]
     toLine (k, v) = BL.fromStrict $ BS.concat [foldedCase k, ": ", v]
