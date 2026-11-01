@@ -58,6 +58,10 @@ spec = do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` (5, 0, 0)
+        it "returns 404 if the CGI does not exist" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/nonexistent"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 4)
         it "returns 400 if the path contains .." $ do
             let url = "http://127.0.0.1:2345/cgi-bin/../cgi-bin/index.cgi"
             sc <- rspCode <$> sendGET url

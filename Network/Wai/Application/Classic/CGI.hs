@@ -25,6 +25,7 @@ import Network.Wai.Application.Classic.Field
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
+import System.Directory (doesFileExist)
 import System.Environment
 import System.IO
 import System.Process
@@ -52,9 +53,18 @@ cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req respond
   | hasDotDotSegment (rawPathInfo req) =
       respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
-  | otherwise = E.bracket setup teardown cgi
+  | otherwise = do
+      exist <- doesFileExist prog
+      if exist
+          then E.bracket setup teardown cgi
+          else respond $ responseLBS notFound404 textPlainHeader "Not Found\r\n"
   where
-    setup = execProcess cspec spec cgii req
+    cgiPath@(prog,_,_) =
+        pathinfoToCGI (cgiSrc cgii)
+                      (cgiDst cgii)
+                      (rawPathInfo req)
+                      (indexCgi spec)
+    setup = execProcess cspec cgiPath req
     -- An unreaped process keeps its PID, so SIGTERM cannot hit
     -- another process. Reaping may block, hence in another thread.
     teardown (rhdl,whdl,pid) = do
@@ -118,8 +128,8 @@ fromCGI rhdl = do
 
 ----------------------------------------------------------------
 
-execProcess :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Request -> IO (Handle, Handle, ProcessHandle)
-execProcess cspec spec cgii req = do
+execProcess :: ClassicAppSpec -> (FilePath, String, String) -> Request -> IO (Handle, Handle, ProcessHandle)
+execProcess cspec (prog, scriptName, pathinfo) req = do
     let naddr = showSockAddr . remoteHost $ req
     epath <- E.try (getEnv "PATH") :: IO TRYPATH
     (Just whdl,Just rhdl,_,pid) <- createProcess $ proSpec naddr epath
@@ -152,11 +162,6 @@ execProcess cspec spec cgii req = do
       , use_process_jobs = False
 #endif
       }
-    (prog, scriptName, pathinfo) =
-        pathinfoToCGI (cgiSrc cgii)
-                      (cgiDst cgii)
-                      (rawPathInfo req)
-                      (indexCgi spec)
 
 makeEnv :: Request -> String -> FilePath -> String -> String -> ByteString ->
            TRYPATH -> ENVVARS
