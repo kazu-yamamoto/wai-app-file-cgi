@@ -22,6 +22,7 @@ import Network.Wai
 import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.FileInfo (decodedPathInfo, isUnsafePath)
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
@@ -51,7 +52,7 @@ CGI process may be reused by another process before it is terminated.
 -}
 cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req respond
-  | hasDotDotSegment (rawPathInfo req) =
+  | isUnsafePath (rawPathInfo req) =
       respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
   | otherwise = do
       exist <- doesFileExist prog
@@ -62,7 +63,7 @@ cgiApp cspec spec cgii req respond
     cgiPath@(prog,_,_) =
         pathinfoToCGI (cgiSrc cgii)
                       (cgiDst cgii)
-                      (rawPathInfo req)
+                      (decodedPathInfo req)
                       (indexCgi spec)
     setup = execProcess cspec cgiPath req
     -- An unreaped process keeps its PID, so SIGTERM cannot hit

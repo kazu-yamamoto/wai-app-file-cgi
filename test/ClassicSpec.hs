@@ -18,6 +18,10 @@ spec = do
             let url = "http://127.0.0.1:2345/cgi-bin/"
             bdy <- rspBody <$> sendGET url
             bdy `shouldBe` "index.cgi\n"
+        it "decodes PATH_INFO" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/index.cgi/a%20b"
+            bdy <- rspBody <$> sendGET url
+            bdy `shouldBe` "PATH_INFO: /a b\n"
         it "accepts POST" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/echo-env/pathinfo?query=foo"
             bdy <- rspBody <$> sendPOST url "foo bar.\nbaz!\n"
