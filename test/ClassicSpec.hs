@@ -6,9 +6,12 @@ module ClassicSpec where
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 #endif
+import Control.Exception (bracket_)
 import Data.List (isPrefixOf)
+import qualified Network.HTTP.Client as H
 import Network.HTTP
 import Network.Stream
+import System.Directory (removeFile)
 import System.IO
 import Test.Hspec
 
@@ -49,6 +52,10 @@ spec = do
                     ]
             bdy <- rspBody <$> sendGETwH url hdr
             lines bdy `shouldBe` ["HTTP_X_FOO: foo", "HTTP_PROXY: ", "REMOTE_PORT: yes"]
+        it "passes non-ASCII header values as is" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/http-env"
+            bdy <- rspBody <$> sendGETwH url [Header (HdrCustom "X-Foo") "\xe6\x97\xa5"]
+            take 1 (lines bdy) `shouldBe` ["HTTP_X_FOO: \xe6\x97\xa5"]
         it "accepts HEAD" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/"
             rsp <- sendHEAD url
@@ -77,6 +84,15 @@ spec = do
             bdy <- rspBody <$> sendGET url
             ans <- readFileAscii "test/html/no_extension"
             bdy `shouldBe` ans
+        it "serves files with non-ASCII names" $ do
+            -- The path is sent in raw UTF-8 as decoded by mighttpd2.
+            let file = "test/html/\26085\26412.txt"
+            mgr <- H.newManager H.defaultManagerSettings
+            hreq <- H.parseRequest "http://127.0.0.1:2345/"
+            let hreq' = hreq{H.path = "/\xe6\x97\xa5\xe6\x9c\xac.txt"}
+            bdy <- bracket_ (writeFile file "hello\n") (removeFile file) $
+                H.responseBody <$> H.httpLbs hreq' mgr
+            bdy `shouldBe` "hello\n"
         it "returns 404 if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendGET url

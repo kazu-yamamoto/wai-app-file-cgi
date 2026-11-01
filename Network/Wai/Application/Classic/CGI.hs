@@ -172,12 +172,12 @@ makeEnv req naddr prog scriptName pathinfo sname epath =
         ("GATEWAY_INTERFACE", gatewayInterface)
       , ("SCRIPT_NAME",       scriptName)
       , ("SCRIPT_FILENAME",   prog)
-      , ("REQUEST_METHOD",    BS.unpack . requestMethod $ req)
-      , ("SERVER_NAME",       BS.unpack host)
-      , ("SERVER_PORT",       BS.unpack port)
+      , ("REQUEST_METHOD",    pathString . requestMethod $ req)
+      , ("SERVER_NAME",       pathString host)
+      , ("SERVER_PORT",       pathString port)
       , ("REMOTE_ADDR",       naddr)
       , ("SERVER_PROTOCOL",   show . httpVersion $ req)
-      , ("SERVER_SOFTWARE",   BS.unpack sname)
+      , ("SERVER_SOFTWARE",   pathString sname)
       , ("PATH_INFO",         pathinfo)
       , ("QUERY_STRING",      query req)
       ]
@@ -190,7 +190,7 @@ makeEnv req naddr prog scriptName pathinfo sname epath =
     httpEnv = httpHeadersToEnv headers
     addPath (Left _)     ev = ev
     addPath (Right path) ev = ("PATH", path) : ev
-    query = BS.unpack . safeTail . rawQueryString
+    query = pathString . safeTail . rawQueryString
       where
         safeTail "" = ""
         safeTail bs = BS.tail bs
@@ -198,7 +198,7 @@ makeEnv req naddr prog scriptName pathinfo sname epath =
 
 addEnv :: String -> Maybe ByteString -> ENVVARS -> ENVVARS
 addEnv _   Nothing    envs = envs
-addEnv key (Just val) envs = (key,BS.unpack val) : envs
+addEnv key (Just val) envs = (key,pathString val) : envs
 
 remotePort :: SockAddr -> Maybe ByteString
 remotePort (SockAddrInet p _)       = Just $ BS.pack $ show p
@@ -223,7 +223,7 @@ httpHeadersToEnv hdrs = map toEnv $ nub $ map fst relayed
     hasUnderscore = BS.elem '_' . foldedCase
     -- "Proxy" is excluded to prevent httpoxy.
     excluded = [hContentType, hContentLength, hAuthorization, hProxyAuthorization, "proxy"]
-    toEnv k = (envName k, BS.unpack $ BS.intercalate (sep k) [v | (k',v) <- relayed, k' == k])
+    toEnv k = (envName k, pathString $ BS.intercalate (sep k) [v | (k',v) <- relayed, k' == k])
     sep k | k == hCookie = "; "
           | otherwise    = ", "
     envName k = "HTTP_" ++ map conv (BS.unpack $ foldedCase k)

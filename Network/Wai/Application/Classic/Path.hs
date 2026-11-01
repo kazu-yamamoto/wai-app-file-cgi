@@ -17,9 +17,11 @@ module Network.Wai.Application.Classic.Path (
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as B8
 import Data.String
 import Data.Word
+import qualified GHC.Foreign as GHC
+import GHC.IO.Encoding (getFileSystemEncoding)
+import System.IO.Unsafe (unsafeDupablePerformIO)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -29,9 +31,12 @@ import Data.Word
 -- | File path.
 type Path = ByteString
 
+-- | Converting to 'String' with the file system encoding so that
+--   the original bytes are used when it is passed to the OS.
 pathString :: Path -> String
-pathString = B8.unpack
-{-# INLINE pathString #-}
+pathString bs = unsafeDupablePerformIO $ do
+    enc <- getFileSystemEncoding
+    BS.useAsCStringLen bs $ GHC.peekCStringLen enc
 
 ----------------------------------------------------------------
 
