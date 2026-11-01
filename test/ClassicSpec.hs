@@ -40,10 +40,11 @@ spec = do
             rspCode rsp `shouldBe` (3, 0, 2)
             lookupHeader HdrLocation (rspHeaders rsp)
                 `shouldBe` Just "http://example.com/"
-        it "passes request headers as HTTP_* except Proxy" $ do
+        it "passes request headers as HTTP_* except Proxy and ones with _" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/http-env"
                 hdr =
                     [ Header (HdrCustom "X-Foo") "foo"
+                    , Header (HdrCustom "X_Foo") "evil"
                     , Header (HdrCustom "Proxy") "http://evil.example/"
                     ]
             bdy <- rspBody <$> sendGETwH url hdr

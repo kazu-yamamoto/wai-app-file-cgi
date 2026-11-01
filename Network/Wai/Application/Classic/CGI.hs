@@ -11,7 +11,7 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (foldedCase)
 import Data.Char (toUpper)
 import Data.List (nub)
-import qualified Data.ByteString.Char8 as BS (dropWhile, intercalate, pack, readInt, unpack, tail)
+import qualified Data.ByteString.Char8 as BS (dropWhile, elem, intercalate, pack, readInt, unpack, tail)
 import Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import qualified Data.Conduit.List as CL
@@ -200,14 +200,19 @@ remotePort _                        = Nothing
 {-|
   Converting request headers to HTTP_* variables.
   Values of the same header are joined.
+  Headers containing '_' are dropped since they would collide with
+  ones containing '-' (e.g. X_Forwarded_For vs X-Forwarded-For).
 
 >>> httpHeadersToEnv [("User-Agent","foo"),("Accept","a"),("accept","b"),("Proxy","x"),("Authorization","y"),("Content-Type","z")]
 [("HTTP_USER_AGENT","foo"),("HTTP_ACCEPT","a, b")]
+>>> httpHeadersToEnv [("X-Forwarded-For","192.0.2.1"),("X_Forwarded_For","192.0.2.2")]
+[("HTTP_X_FORWARDED_FOR","192.0.2.1")]
 -}
 httpHeadersToEnv :: RequestHeaders -> ENVVARS
 httpHeadersToEnv hdrs = map toEnv $ nub $ map fst relayed
   where
-    relayed = filter (\(k,_) -> k `notElem` excluded) hdrs
+    relayed = filter (\(k,_) -> k `notElem` excluded && not (hasUnderscore k)) hdrs
+    hasUnderscore = BS.elem '_' . foldedCase
     -- "Proxy" is excluded to prevent httpoxy.
     excluded = [hContentType, hContentLength, hAuthorization, hProxyAuthorization, "proxy"]
     toEnv k = (envName k, BS.unpack $ BS.intercalate (sep k) [v | (k',v) <- relayed, k' == k])
