@@ -26,12 +26,13 @@ jobs:
         # vary by compiler, so keep the oldest and newest off Linux and let
         # Linux cover the range in between.
         os:  [ 'ubuntu-latest', 'macOS-latest' ]
-        ghc: [ '9.2', '9.4', '9.6', '9.8', '9.10', '9.12' ]
+        ghc: [ '9.2', '9.4', '9.6', '9.8', '9.10', '9.12', '9.14' ]
         exclude:
           - { os: macOS-latest, ghc: '9.4' }
           - { os: macOS-latest, ghc: '9.6' }
           - { os: macOS-latest, ghc: '9.8' }
           - { os: macOS-latest, ghc: '9.10' }
+          - { os: macOS-latest, ghc: '9.12' }
 
     env:
       cache-name: cabal-ghc
