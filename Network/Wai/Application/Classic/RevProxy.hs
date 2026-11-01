@@ -17,6 +17,7 @@ import Network.HTTP.Types
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.EventSource
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.FileInfo (matchRoute)
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 import Network.Wai.Conduit
@@ -28,10 +29,13 @@ import Network.Wai.Conduit
 
 -- |  Relaying any requests as reverse proxy.
 revProxyApp :: ClassicAppSpec -> RevProxyAppSpec -> RevProxyRoute -> Application
-revProxyApp cspec spec route req respond = do
-    responded <- newIORef False
-    H.withResponse httpClientRequest mgr (proxy responded)
-        `E.catch` badGateway responded
+revProxyApp cspec spec route req respond
+    | not (matchRoute (revProxySrc route) (rawPathInfo req)) =
+        respond $ responseLBS notFound404 textPlainHeader "Not Found\r\n"
+    | otherwise = do
+        responded <- newIORef False
+        H.withResponse httpClientRequest mgr (proxy responded)
+            `E.catch` badGateway responded
   where
     proxy responded hrsp = do
         let status = H.responseStatus hrsp

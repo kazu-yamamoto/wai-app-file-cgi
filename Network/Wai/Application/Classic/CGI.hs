@@ -22,7 +22,7 @@ import Network.Wai
 import Network.Wai.Conduit
 import Network.Wai.Application.Classic.Conduit
 import Network.Wai.Application.Classic.Field
-import Network.Wai.Application.Classic.FileInfo (decodedPathInfo, isUnsafePath)
+import Network.Wai.Application.Classic.FileInfo (decodedPathInfo, isUnsafePath, matchRoute)
 import Network.Wai.Application.Classic.Header
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
@@ -54,12 +54,14 @@ cgiApp :: ClassicAppSpec -> CgiAppSpec -> CgiRoute -> Application
 cgiApp cspec spec cgii req respond
   | isUnsafePath (rawPathInfo req) =
       respond $ responseLBS badRequest400 textPlainHeader "Bad Request\r\n"
+  | not (matchRoute (cgiSrc cgii) (decodedPathInfo req)) = notFound
   | otherwise = do
       exist <- doesFileExist prog
       if exist
           then E.bracket setup teardown cgi
-          else respond $ responseLBS notFound404 textPlainHeader "Not Found\r\n"
+          else notFound
   where
+    notFound = respond $ responseLBS notFound404 textPlainHeader "Not Found\r\n"
     cgiPath@(prog,_,_) =
         pathinfoToCGI (cgiSrc cgii)
                       (cgiDst cgii)

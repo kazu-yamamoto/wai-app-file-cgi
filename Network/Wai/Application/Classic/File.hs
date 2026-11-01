@@ -59,6 +59,7 @@ fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do
     rspspec <- case method of
         _ | isUnsafePath (rawPathInfo req) -> return badRequest
+        _ | not (matchRoute (fileSrc filei) (decodedPathInfo req)) -> return notFound
         Right GET -> processGET hinfo ishtml rfile
         Right HEAD -> processGET hinfo ishtml rfile
         _ -> return notAllowed

@@ -54,6 +54,22 @@ pathinfoToFilePath req filei
 decodedPathInfo :: Request -> Path
 decodedPathInfo = urlDecode False . rawPathInfo
 
+-- | Whether the path is routed by the source of a route.
+--   A source with a trailing slash also matches the path without it.
+--
+-- >>> matchRoute "/static/" "/static/a.html"
+-- True
+-- >>> matchRoute "/static/" "/static"
+-- True
+-- >>> matchRoute "/static/" "/other/static/a.html"
+-- False
+-- >>> matchRoute "/exact/match" "/exact/match/more.html"
+-- True
+matchRoute :: Path -> Path -> Bool
+matchRoute src path =
+    src `BS.isPrefixOf` path
+        || hasTrailingPathSeparator src && path == BS.init src
+
 -- | Whether the path, once decoded, contains a ".." segment or NUL.
 --
 -- >>> isUnsafePath "/foo/%2e%2e/bar"

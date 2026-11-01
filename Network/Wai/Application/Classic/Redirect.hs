@@ -8,12 +8,14 @@ import qualified Data.ByteString.Char8 as BS
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
+import Network.Wai.Application.Classic.FileInfo (matchRoute)
 import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 redirectApp :: ClassicAppSpec -> RedirectRoute -> Application
-redirectApp _ route req respond =
-    respond $ responseLBS status hdr ""
+redirectApp _ route req respond
+    | matchRoute src path = respond $ responseLBS status hdr ""
+    | otherwise = respond $ responseLBS notFound404 textPlainHeader "Not Found\r\n"
   where
     path = rawPathInfo req
     src = redirectSrc route

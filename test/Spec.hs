@@ -50,6 +50,7 @@ testApp mgr dir req
     | upstream = revProxyApp appSpec (RevProxyAppSpec mgr) upstreamRoute req
     | redirect = redirectApp appSpec redirectRoute req
     | cgi = cgiApp appSpec defaultCgiAppSpec cgiRoute req
+    | mismatch = fileApp appSpec defaultFileAppSpec mismatchRoute req
     | exact = fileApp appSpec defaultFileAppSpec exactRoute req
     | otherwise = fileApp appSpec defaultFileAppSpec fileRoute req
   where
@@ -57,6 +58,7 @@ testApp mgr dir req
     upstream = "/upstream/" `BS.isPrefixOf` rawPathInfo req
     redirect = "/redirect-app/" `BS.isPrefixOf` rawPathInfo req
     cgi = "/cgi-bin/" `BS.isPrefixOf` rawPathInfo req
+    mismatch = "/mismatch" `BS.isPrefixOf` rawPathInfo req
     exact = "/exact-route.html" `BS.isPrefixOf` rawPathInfo req
     appSpec = defaultClassicAppSpec{softwareName = "ClassicTester"}
     redirectRoute =
@@ -73,6 +75,12 @@ testApp mgr dir req
         FileRoute
             { fileSrc = "/exact-route.html"
             , fileDst = fromString (dir </> "test/html/index.html")
+            }
+    -- Dispatched although the source does not match.
+    mismatchRoute =
+        FileRoute
+            { fileSrc = "/statics/"
+            , fileDst = fromString (dir </> "test/html/")
             }
     fileRoute =
         FileRoute

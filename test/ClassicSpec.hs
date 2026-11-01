@@ -169,6 +169,11 @@ spec = do
             rsp <- sendGET url
             lookupHeader HdrLocation (rspHeaders rsp)
                 `shouldBe` Just "//127.0.0.1:2345/redirect/?foo=bar"
+        it "returns 404 if the path does not match the route" $ do
+            -- "/mismatch" has the same length as "/statics/".
+            let url = "http://127.0.0.1:2345/mismatchindex.html"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 4)
         it "returns index.html for /exact-route.html matching exactRoute" $ do
             let url = "http://127.0.0.1:2345/exact-route.html"
             bdy <- rspBody <$> sendGET url
