@@ -49,7 +49,7 @@ pathinfoToFilePath req filei
 
 -- |
 --
--- It matters to 'pathinfoToFilePath' whether the 'FileRoute' has trailing slashes
+-- It matters to 'pathinfoToFilePath' whether the t'FileRoute' has trailing slashes
 -- which also influences 'addIndex':
 --
 -- >>> addIndex defaultFileAppSpec (pathinfoToFilePath (mkReq "/exact/match.html") (FileRoute "/exact/match.html" "/some/file.html"))

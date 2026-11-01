@@ -41,19 +41,19 @@ langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
 -- |
 --   Handle GET and HEAD for a static file.
 --
--- If 'pathInfo' ends with \'/\', 'indexFile' is automatically
--- added. In this case, "Acceptable-Language:" is also handled.  Suppose
+-- If 'rawPathInfo' ends with \'/\', 'indexFile' is automatically
+-- added. In this case, \"Accept-Language:\" is also handled.  Suppose
 -- 'indexFile' is "index.html" and if the value is "ja,en", then
 -- \"index.html.ja\", \"index.html.en\", and \"index.html\" are tried to be
 -- opened in order.
 --
--- If 'pathInfo' does not end with \'/\' and a corresponding index file
+-- If 'rawPathInfo' does not end with \'/\' and a corresponding index file
 -- exist, redirection is specified in HTTP response.
 --
 -- Directory contents are NOT automatically listed. To list directory
 -- contents, an index file must be created beforehand.
 --
--- The following HTTP headers are handled: Acceptable-Language:,
+-- The following HTTP headers are handled: Accept-Language:,
 -- If-Modified-Since:, Range:, If-Range:, If-Unmodified-Since:.
 fileApp :: ClassicAppSpec -> FileAppSpec -> FileRoute -> Application
 fileApp cspec spec filei req respond = do

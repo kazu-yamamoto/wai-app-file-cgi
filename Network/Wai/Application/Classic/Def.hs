@@ -6,7 +6,7 @@ import Network.Wai.Application.Classic.Path
 import Network.Wai.Application.Classic.Types
 
 -- |
--- Default value for 'ClassicAppSpec'. 'softwareName' is \"Classic\". 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
+-- Default value for t'ClassicAppSpec'. 'softwareName' is \"Classic\". 'statusFileDir' is \"\/usr\/local\/share\/html\/status\/\".
 defaultClassicAppSpec :: ClassicAppSpec
 defaultClassicAppSpec =
     ClassicAppSpec
@@ -22,11 +22,11 @@ defaultFileAppSpec :: FileAppSpec
 defaultFileAppSpec =
     FileAppSpec
         { indexFile = "index.html"
-        , isHTML = defaultIsHTml
+        , isHTML = defaultIsHTML
         }
 
-defaultIsHTml :: Path -> Bool
-defaultIsHTml file = ".html" `isSuffixOf` file || ".htm" `isSuffixOf` file
+defaultIsHTML :: Path -> Bool
+defaultIsHTML file = ".html" `isSuffixOf` file || ".htm" `isSuffixOf` file
 
 ----------------------------------------------------------------
 

@@ -15,7 +15,7 @@ data ClassicAppSpec = ClassicAppSpec
     }
 
 data StatusInfo
-    = -- | HTTP status body is created from 'LB.ByteString'.
+    = -- | HTTP status body is created from 'BL.ByteString'.
       StatusByteString BL.ByteString
     | -- | HTTP status body is created from 'FilePath'.
       StatusFile Path Integer
@@ -32,9 +32,9 @@ data FileAppSpec = FileAppSpec
     -- ^ Whether this is an HTML or not.
     }
 
--- | 'FileRoute' describes the relationship between Paths requested via HTTP
+-- | t'FileRoute' describes the relationship between Paths requested via HTTP
 --   and paths to serve on disk. Specifically, it maps a /single/ path
---   prefix to a destination path, so the 'FileRoute' needs to be applicable
+--   prefix to a destination path, so the t'FileRoute' needs to be applicable
 --   to the current request,
 --   e.g. @FileRoute "\/static\/" "\/var\/www\/static\/"@ will yield a 404 if
 --   @"/page.html"@ is requested.
@@ -51,13 +51,13 @@ data FileAppSpec = FileAppSpec
 --   * If 'fileSrc' and 'fileDst' lack a trailing slash, they are
 --     assumed to be files. This is supported since 3.2.0.
 --
---   If the path type inferrable from 'FileRoute' does not match
+--   If the path type inferrable from t'FileRoute' does not match
 --   the type of the destination path on disk, routes will not
 --   resolve correctly. If the inferrable type doesn't match
 --   between 'fileSrc' and 'fileDst', routing may also misbehave.
 data FileRoute = FileRoute
     { fileSrc :: Path
-    -- ^ Path (prefix) to be matched to 'rawPathInfo'.
+    -- ^ Path (prefix) to be matched to 'Network.Wai.rawPathInfo'.
     , fileDst :: Path
     -- ^ Path to the target directory or file.
     }
@@ -67,7 +67,7 @@ data FileRoute = FileRoute
 
 data RedirectRoute = RedirectRoute
     { redirectSrc :: Path
-    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    -- ^ Path prefix to be matched to 'Network.Wai.rawPathInfo'.
     , redirectDst :: Path
     -- ^ Path prefix to an actual file system.
     }
@@ -83,7 +83,7 @@ data CgiAppSpec = CgiAppSpec
 
 data CgiRoute = CgiRoute
     { cgiSrc :: Path
-    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    -- ^ Path prefix to be matched to 'Network.Wai.rawPathInfo'.
     , cgiDst :: Path
     -- ^ Path prefix to an actual file system.
     }
@@ -98,7 +98,7 @@ data RevProxyAppSpec = RevProxyAppSpec
 
 data RevProxyRoute = RevProxyRoute
     { revProxySrc :: Path
-    -- ^ Path prefix to be matched to 'rawPathInfo'.
+    -- ^ Path prefix to be matched to 'Network.Wai.rawPathInfo'.
     , revProxyDst :: Path
     -- ^ Destination path prefix.
     , revProxyDomain :: ByteString
