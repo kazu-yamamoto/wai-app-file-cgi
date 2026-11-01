@@ -142,6 +142,13 @@ spec = do
             bdy <- rspBody <$> sendGET url
             ans <- readFileAscii "test/html/index.html"
             bdy `shouldBe` ans
+    describe "redirectApp" $ do
+        it "redirects keeping the query string" $ do
+            let url = "http://127.0.0.1:2345/redirect-app/foo?bar=baz"
+            rsp <- sendGET url
+            rspCode rsp `shouldBe` (3, 0, 1)
+            lookupHeader HdrLocation (rspHeaders rsp)
+                `shouldBe` Just "//example.com/new/foo?bar=baz"
     describe "revProxyApp" $ do
         it "returns 502 if the upstream is not available" $ do
             let url = "http://127.0.0.1:2345/revproxy/"

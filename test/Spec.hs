@@ -36,15 +36,22 @@ testApp :: H.Manager -> FilePath -> Application
 testApp mgr dir req
     | revproxy = revProxyApp appSpec (RevProxyAppSpec mgr) revProxyRoute req
     | upstream = revProxyApp appSpec (RevProxyAppSpec mgr) upstreamRoute req
+    | redirect = redirectApp appSpec redirectRoute req
     | cgi = cgiApp appSpec defaultCgiAppSpec cgiRoute req
     | exact = fileApp appSpec defaultFileAppSpec exactRoute req
     | otherwise = fileApp appSpec defaultFileAppSpec fileRoute req
   where
     revproxy = "/revproxy/" `BS.isPrefixOf` rawPathInfo req
     upstream = "/upstream/" `BS.isPrefixOf` rawPathInfo req
+    redirect = "/redirect-app/" `BS.isPrefixOf` rawPathInfo req
     cgi = "/cgi-bin/" `BS.isPrefixOf` rawPathInfo req
     exact = "/exact-route.html" `BS.isPrefixOf` rawPathInfo req
     appSpec = defaultClassicAppSpec{softwareName = "ClassicTester"}
+    redirectRoute =
+        RedirectRoute
+            { redirectSrc = "/redirect-app/"
+            , redirectDst = "example.com/new/"
+            }
     cgiRoute =
         CgiRoute
             { cgiSrc = "/cgi-bin/"

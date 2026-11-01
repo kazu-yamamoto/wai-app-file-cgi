@@ -4,7 +4,7 @@ module Network.Wai.Application.Classic.Redirect (
     redirectApp,
 ) where
 
-import Data.ByteString.Char8
+import qualified Data.ByteString.Char8 as BS
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Classic.Field
@@ -20,6 +20,6 @@ redirectApp _ route req respond =
     dst = redirectDst route
     -- Scheme must not be included because of no way to tell
     -- http or https.
-    rurl = "//" `append` (dst </> (path <\> src))
+    rurl = BS.concat ["//", dst </> (path <\> src), rawQueryString req]
     hdr = locationHeader rurl
     status = movedPermanently301
