@@ -1,6 +1,6 @@
 # ChangeLog for wai-app-file-cgi
 
-## Unreleased
+## 3.3.0
 
 - **Breaking**: `rawPathInfo` is percent-decoded in `fileApp` and
   `cgiApp`, including `PATH_INFO` and `SCRIPT_NAME`. Callers that
