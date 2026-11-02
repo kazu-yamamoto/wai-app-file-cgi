@@ -97,6 +97,12 @@ spec = do
             bdy <- bracket_ (writeFile file "hello\n") (removeFile file) $
                 H.responseBody <$> H.httpLbs hreq' mgr
             bdy `shouldBe` "hello\n"
+        it "serves files with percent-encoded non-ASCII names" $ do
+            let url = "http://127.0.0.1:2345/%E6%97%A5%E6%9C%AC.txt"
+                file = "test/html/\26085\26412.txt"
+            bdy <- bracket_ (writeFile file "hello\n") (removeFile file) $
+                rspBody <$> sendGET url
+            bdy `shouldBe` "hello\n"
         it "returns 404 if not exist" $ do
             let url = "http://127.0.0.1:2345/dummy"
             sc <- rspCode <$> sendGET url
