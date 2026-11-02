@@ -1,5 +1,27 @@
 # ChangeLog for wai-app-file-cgi
 
+## 3.2.3
+
+- Security: request headers containing `_` are not passed to CGI
+  since they would collide with ones containing `-`
+  (e.g. `X_Forwarded_For` vs `X-Forwarded-For`).
+- Paths and CGI variables are converted with the file system
+  encoding. Non-ASCII file names and header values work now.
+- `cgiApp`:
+    - CGI processes are reaped by this library. The program does
+      not have to ignore SIGCHLD anymore. Ignoring it is still
+      possible but a PID may be reused before it is terminated.
+    - 404 is returned if the CGI program does not exist.
+- `fileApp`:
+    - `Vary: Accept-Language` is added to HTML responses.
+    - `Allow:` is added to 405 responses.
+- `redirectApp` keeps the query string.
+- `revProxyApp` appends `Via:` to requests to the upstream.
+- Dropping support for conduit < 1.3 and removing unused
+  dependencies.
+- The test suite works from the tarball. CGI scripts for tests
+  are made executable since `cabal sdist` drops the bit.
+
 ## 3.2.2
 
 - Security: request paths containing `..` segments are rejected
