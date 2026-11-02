@@ -1,5 +1,19 @@
 # ChangeLog for wai-app-file-cgi
 
+## Unreleased
+
+- **Breaking**: `rawPathInfo` is percent-decoded in `fileApp` and
+  `cgiApp`, including `PATH_INFO` and `SCRIPT_NAME`. Callers that
+  decode it beforehand (e.g. mighttpd2 up to now) must pass the
+  original request; otherwise paths containing `%` are decoded
+  twice.
+- **Breaking**: paths that do not match the source of a route are
+  rejected with 404 in all applications. A source with a trailing
+  slash also matches the path without it.
+- **Breaking**: paths containing a segment starting with `.` (e.g.
+  `.git`), NUL, or encoded `..` are rejected with 400 in `fileApp`
+  and `cgiApp`. `/.well-known/` is allowed.
+
 ## 3.2.3
 
 - Security: request headers containing `_` are not passed to CGI
