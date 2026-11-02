@@ -46,6 +46,8 @@ gatewayInterface = "CGI/1.1"
 {-|
   Handle any methods for CGI.
 
+Paths containing a segment starting with \'.\' are rejected with 400.
+
 CGI processes are reaped by this library. The program to link this
 library should not ignore SIGCHLD. Otherwise, the PID of a finished
 CGI process may be reused by another process before it is terminated.

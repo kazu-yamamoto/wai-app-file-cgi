@@ -65,6 +65,10 @@ spec = do
             let url = "http://127.0.0.1:2345/cgi-bin/broken"
             sc <- rspCode <$> sendPOST url "foo bar.\nbaz!\n"
             sc `shouldBe` (5, 0, 0)
+        it "returns 400 for hidden files" $ do
+            let url = "http://127.0.0.1:2345/cgi-bin/%2ehidden"
+            sc <- rspCode <$> sendGET url
+            sc `shouldBe` (4, 0, 0)
         it "returns 404 if the CGI does not exist" $ do
             let url = "http://127.0.0.1:2345/cgi-bin/nonexistent"
             sc <- rspCode <$> sendGET url
@@ -105,6 +109,14 @@ spec = do
             let url = "http://127.0.0.1:2345/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/hosts"
             sc <- rspCode <$> sendGET url
             sc `shouldBe` (4, 0, 0)
+        it "returns 400 for hidden files even if encoded" $ do
+            sc1 <- rspCode <$> sendGET "http://127.0.0.1:2345/.git/config"
+            sc1 `shouldBe` (4, 0, 0)
+            sc2 <- rspCode <$> sendGET "http://127.0.0.1:2345/%2egit/config"
+            sc2 `shouldBe` (4, 0, 0)
+        it "does not reject /.well-known/" $ do
+            sc <- rspCode <$> sendGET "http://127.0.0.1:2345/.well-known/acme-challenge/x"
+            sc `shouldBe` (4, 0, 4)
         it "decodes percent-encoded paths" $ do
             let url = "http://127.0.0.1:2345/no%5Fextension"
             bdy <- rspBody <$> sendGET url

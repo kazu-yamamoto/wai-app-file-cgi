@@ -50,6 +50,9 @@ langSuffixes hdr = map (\x -> (<.> x)) langs ++ [id, (<.> "en")]
 -- If 'rawPathInfo' does not end with \'/\' and a corresponding index file
 -- exist, redirection is specified in HTTP response.
 --
+-- Paths containing a segment starting with \'.\' (e.g. \".git\")
+-- are rejected with 400, except \"\/.well-known\/\".
+--
 -- Directory contents are NOT automatically listed. To list directory
 -- contents, an index file must be created beforehand.
 --

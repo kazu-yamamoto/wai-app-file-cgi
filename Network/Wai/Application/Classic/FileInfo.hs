@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.Wai.Application.Classic.FileInfo where
 
 import qualified Data.ByteString as BS
@@ -70,18 +72,33 @@ matchRoute src path =
     src `BS.isPrefixOf` path
         || hasTrailingPathSeparator src && path == BS.init src
 
--- | Whether the path, once decoded, contains a ".." segment or NUL.
+-- | Whether the path, once decoded, contains NUL or a segment
+--   starting with \'.\' (e.g. ".." and ".git").
+--   \"\/.well-known\/\" is allowed for ACME.
 --
 -- >>> isUnsafePath "/foo/%2e%2e/bar"
 -- True
 -- >>> isUnsafePath "/foo%00.html"
 -- True
 -- >>> isUnsafePath "/foo/..bar"
+-- True
+-- >>> isUnsafePath "/%2egit/config"
+-- True
+-- >>> isUnsafePath "/foo.d/bar.html"
 -- False
+-- >>> isUnsafePath "/.well-known/acme-challenge/x"
+-- False
+-- >>> isUnsafePath "/.well-known/.git/config"
+-- True
 isUnsafePath :: Path -> Bool
-isUnsafePath raw = hasDotDotSegment path || BS.elem 0 path
+isUnsafePath raw = BS.elem 0 path || any isHidden segs'
   where
     path = urlDecode False raw
+    segs = BS.splitWith (\w -> w == 47 || w == 92) path -- '/' and '\\'
+    segs' = case segs of
+        "" : ".well-known" : rest -> rest
+        _ -> segs
+    isHidden seg = "." `BS.isPrefixOf` seg
 
 -- |
 --
