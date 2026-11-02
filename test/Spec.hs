@@ -19,6 +19,12 @@ import Test.Hspec
 
 main :: IO ()
 main = do
+    -- "cabal sdist" drops the executable bit.
+    scripts <- listDirectory "test/cgi-bin"
+    forM_ scripts $ \f -> do
+        let file = "test/cgi-bin" </> f
+        p <- getPermissions file
+        setPermissions file $ setOwnerExecutable True p
     mgr <- H.newManager H.defaultManagerSettings
     ready1 <- newEmptyMVar
     ready2 <- newEmptyMVar
